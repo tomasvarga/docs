@@ -1,0 +1,55 @@
+---
+title: "Changelog"
+description: "New features, updates, and fixes for the E2B platform."
+---
+
+<Update label="2026-03-16" description="Snapshots, lifecycle controls, and SDK improvements" tags={["Feature", "SDK", "CLI"]}>
+## Sandbox snapshots
+
+You can now create persistent point-in-time captures of a running sandbox, including both filesystem and memory state. Use a snapshot to spawn new sandboxes that start from the exact same state — great for creating reusable checkpoints across multiple sandbox instances.
+
+Available in both the JavaScript and Python SDKs. [Learn more about snapshots](/docs/sandbox/snapshots).
+
+## Lifecycle configuration and AutoResume
+
+The new `lifecycle` option on `Sandbox.create` lets you control what happens when a sandbox times out. Set `onTimeout` to `pause` instead of `kill`, and enable `autoResume` so paused sandboxes automatically wake up when traffic arrives.
+
+This replaces the previous `betaPause` / `beta_pause` API. [See the AutoResume docs](/docs/sandbox/auto-resume).
+
+## CLI pause and resume commands
+
+You can now pause and resume sandboxes directly from the CLI:
+
+```bash
+e2b sandbox pause <sandboxID>
+e2b sandbox resume <sandboxID>
+```
+
+## Template tags API
+
+A new `getTags` (JS) / `get_tags` (Python) method lets you list all tags for a template, returning each tag's name, build ID, and creation date. [Read more about template tags](/docs/template/tags).
+
+## Recursive directory listing
+
+The `listDir` filesystem method now supports a `depth` parameter (1–10) for recursively listing subdirectory contents in a single call. [See the filesystem docs](/docs/filesystem).
+
+## CLI piping support
+
+The E2B CLI now supports piping, so you can compose commands with other tools in your shell workflows.
+
+---
+
+## Updates
+
+- **CLI sandbox list now has a default limit.** The `sandbox list` command defaults to returning up to 1,000 results. Pass `--limit 0` for no limit. A note is printed when results are truncated.
+- **API timeout responses changed from 503 to 408.** Requests that exceed the server timeout now return `408 Request Timeout` instead of `503 Service Unavailable`, making it easier to distinguish timeouts from server errors.
+
+## Bug fixes
+
+- **Dotfiles included in template uploads.** Files like `.env` and `.gitignore` are now correctly included when uploading template files. Previously, glob defaults excluded dotfiles.
+- **Python SDK async transport fix.** The async HTTP transport is now scoped per event loop, fixing errors when `asyncio.run()` is called multiple times or from different threads.
+- **JS SDK `listSandboxes` pagination fix.** Fixed a bug where passing a `limit` to `listSandboxes` could cause the SDK to paginate through all results instead of stopping at the requested count.
+- **JS SDK sandbox headers in self-hosted environments.** Sandbox headers are now correctly passed to the internal API client, fixing sandbox creation failures in self-hosted setups.
+- **Clearer error messages.** The `set_timeout` error message no longer incorrectly references "Paused" when a sandbox is not found.
+
+</Update>
