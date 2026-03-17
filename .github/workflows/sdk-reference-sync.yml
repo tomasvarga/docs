@@ -81,7 +81,7 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Determine sync parameters
+      - name: Resolve generation inputs from trigger
         id: params
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -92,45 +92,7 @@ jobs:
           PAYLOAD_SDK: ${{ github.event.client_payload.sdk }}
           PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
           PAYLOAD_LIMIT: ${{ github.event.client_payload.limit }}
-        run: |
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
-            TRIGGER="workflow_dispatch"
-            SDK="$INPUT_SDK"
-            VERSION="$INPUT_VERSION"
-            LIMIT="$INPUT_LIMIT"
-            FORCE="$INPUT_FORCE"
-          elif [[ "$EVENT_NAME" == "repository_dispatch" ]]; then
-            TRIGGER="repository_dispatch (sdk-release)"
-            SDK="$PAYLOAD_SDK"
-            VERSION="${PAYLOAD_VERSION:-latest}"
-            LIMIT="${PAYLOAD_LIMIT:-5}"
-            FORCE="false"
-          elif [[ "$EVENT_NAME" == "schedule" ]]; then
-            TRIGGER="schedule (*/15 * * * *)"
-            SDK="all"
-            VERSION="all"
-            LIMIT="3"
-            FORCE="false"
-          else
-            TRIGGER="$EVENT_NAME"
-            SDK="all"
-            VERSION="latest"
-            LIMIT="5"
-            FORCE="false"
-          fi
-
-          if [[ -z "$LIMIT" || "$LIMIT" == "0" ]]; then
-            LIMIT_DISPLAY="No limit"
-          else
-            LIMIT_DISPLAY="$LIMIT"
-          fi
-
-          echo "trigger=$TRIGGER" >> $GITHUB_OUTPUT
-          echo "sdk=${SDK:-all}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION:-latest}" >> $GITHUB_OUTPUT
-          echo "limit=${LIMIT:-5}" >> $GITHUB_OUTPUT
-          echo "limit_display=$LIMIT_DISPLAY" >> $GITHUB_OUTPUT
-          echo "force=${FORCE:-false}" >> $GITHUB_OUTPUT
+        run: bash scripts/resolve-sdk-reference-sync-params.sh
 
       - name: Generate SDK Reference
         working-directory: sdk-reference-generator
@@ -168,40 +130,24 @@ jobs:
           echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
           echo "total_mdx_files=$TOTAL_MDX_FILES" >> $GITHUB_OUTPUT
 
-      - name: Create pull request
+      - name: Commit changes and manage pull request
         if: steps.changes.outputs.changes == 'true'
-        id: cpr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          branch: automation/sdk-reference-sync
-          delete-branch: true
-          add-paths: |
-            docs/sdk-reference
-            docs.json
-          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          commit-message: docs: sync SDK reference for ${{ steps.params.outputs.sdk }} ${{ steps.params.outputs.version }}
-          title: docs: sync SDK reference for ${{ steps.params.outputs.sdk }} ${{ steps.params.outputs.version }}
-          body: |
-            ## Summary
-            This automated PR syncs generated SDK reference documentation.
-
-            ## Trigger
-            - Source: `${{ steps.params.outputs.trigger }}`
-            - SDK: `${{ steps.params.outputs.sdk }}`
-            - Version: `${{ steps.params.outputs.version }}`
-            - Limit: `${{ steps.params.outputs.limit_display }}`
-            - Force: `${{ steps.params.outputs.force }}`
-
-            ## Changes
-            - Updates generated reference files under `docs/sdk-reference/**`
-            - Updates `docs.json` navigation when generation changes the docs tree
-            - Changed files detected in this run: `${{ steps.changes.outputs.changed_files }}`
-            - Total tracked MDX reference files after generation: `${{ steps.changes.outputs.total_mdx_files }}`
-
-            ## Run Details
-            - Workflow: `${{ github.workflow }}`
-            - Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ github.ref_name }}
+          BRANCH_NAME: automation/sdk-reference-sync
+          TRIGGER: ${{ steps.params.outputs.trigger }}
+          SDK_NAME: ${{ steps.params.outputs.sdk }}
+          SDK_VERSION: ${{ steps.params.outputs.version }}
+          LIMIT_DISPLAY: ${{ steps.params.outputs.limit_display }}
+          FORCE: ${{ steps.params.outputs.force }}
+          CHANGED_FILES: ${{ steps.changes.outputs.changed_files }}
+          TOTAL_MDX_FILES: ${{ steps.changes.outputs.total_mdx_files }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: bash scripts/create-sdk-reference-sync-pr.sh
 
       - name: Summary
         env:
@@ -213,8 +159,8 @@ jobs:
           CHANGES: ${{ steps.changes.outputs.changes }}
           CHANGED_FILES: ${{ steps.changes.outputs.changed_files }}
           TOTAL_MDX_FILES: ${{ steps.changes.outputs.total_mdx_files }}
-          PR_OPERATION: ${{ steps.cpr.outputs.pull-request-operation }}
-          PR_URL: ${{ steps.cpr.outputs.pull-request-url }}
+          PR_OPERATION: ${{ steps.pr.outputs.operation }}
+          PR_URL: ${{ steps.pr.outputs.url }}
         run: |
           echo "## SDK Reference Generation Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
