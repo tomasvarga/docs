@@ -22,8 +22,9 @@ force="${FORCE:-false}"
 changed_files="${CHANGED_FILES:-0}"
 total_mdx_files="${TOTAL_MDX_FILES:-0}"
 workflow_name="${WORKFLOW_NAME:-}"
-repository="${REPOSITORY:-}"
-run_id="${RUN_ID:-}"
+repository="${REPOSITORY:?REPOSITORY is required}"
+run_id="${RUN_ID:?RUN_ID is required}"
+token_source="${TOKEN_SOURCE:-github.token}"
 
 if [[ "$base_branch" == "$branch_name" ]]; then
     echo "Base branch and PR branch cannot be the same" >&2
@@ -45,6 +46,7 @@ if git diff --staged --quiet; then
 fi
 
 title="docs: sync SDK reference for ${sdk_name} ${sdk_version}"
+compare_url="https://github.com/${repository}/compare/${base_branch}...${branch_name}?expand=1"
 
 git commit -m "$title"
 git push --force-with-lease origin "HEAD:${branch_name}"
@@ -88,13 +90,24 @@ if [[ -n "$pr_info" ]]; then
     gh pr edit "$pr_number" --repo "$repository" --title "$title" --body-file "$body_file" >/dev/null
     operation="updated"
 else
-    pr_url="$(gh pr create \
+    if ! pr_url="$(gh pr create \
         --repo "$repository" \
         --base "$base_branch" \
         --head "$branch_name" \
         --title "$title" \
-        --body-file "$body_file")"
-    operation="created"
+        --body-file "$body_file" 2>&1)"; then
+        if [[ "$token_source" == "github.token" ]] && [[ "$pr_url" == *"GitHub Actions is not permitted to create or approve pull requests"* ]]; then
+            echo "Automatic PR creation is blocked for github.token in this repository." >&2
+            echo "Enable the repository setting 'Allow GitHub Actions to create and approve pull requests' or configure the SDK_REFERENCE_SYNC_PR_TOKEN secret." >&2
+            pr_url="$compare_url"
+            operation="manual"
+        else
+            echo "$pr_url" >&2
+            exit 1
+        fi
+    else
+        operation="created"
+    fi
 fi
 
 {

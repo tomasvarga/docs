@@ -134,7 +134,8 @@ jobs:
         if: steps.changes.outputs.changes == 'true'
         id: pr
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.SDK_REFERENCE_SYNC_PR_TOKEN != '' && secrets.SDK_REFERENCE_SYNC_PR_TOKEN || github.token }}
+          TOKEN_SOURCE: ${{ secrets.SDK_REFERENCE_SYNC_PR_TOKEN != '' && 'SDK_REFERENCE_SYNC_PR_TOKEN' || 'github.token' }}
           BASE_BRANCH: ${{ github.ref_name }}
           BRANCH_NAME: automation/sdk-reference-sync
           TRIGGER: ${{ steps.params.outputs.trigger }}
@@ -178,6 +179,12 @@ jobs:
             echo "| Pull request | $PR_URL |" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "$PR_OPERATION" == "manual" ]]; then
+            echo "Automatic PR creation is blocked for \`github.token\` in this repository." >> $GITHUB_STEP_SUMMARY
+            echo "Enable the repository setting 'Allow GitHub Actions to create and approve pull requests' or add the \`SDK_REFERENCE_SYNC_PR_TOKEN\` secret for this workflow." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
 
           if [[ "$CHANGES" == "true" ]]; then
             echo "### Generated Files" >> $GITHUB_STEP_SUMMARY
