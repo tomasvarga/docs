@@ -21,7 +21,7 @@ E2B uses [usage-based pricing](#usage-based-pricing) - you pay only for what you
 Pro plan includes 100 concurrent sandboxes. Higher concurrency up to 1,100 is available as a purchasable [add-on](https://e2b.dev/dashboard?tab=billing).
 </Note>
 
-Plans have different [API rate limits](/docs/sandbox/rate-limits).
+Plans have different [API rate limits](/docs/sandbox/security#rate-limits).
 
 To upgrade your plan or purchase add-ons, visit the [dashboard billing tab](https://e2b.dev/dashboard?tab=billing). For Enterprise plans, [contact sales](mailto:enterprise@e2b.dev).
 
@@ -97,7 +97,7 @@ Check your usage and costs in the [dashboard usage tab](https://e2b.dev/dashboar
     - **Kill sandboxes you no longer need** - Use `sbx.kill()` to stop billing and release resources permanently
     - **Allocate only what you need** - Start with default resources (2 vCPU, 1 GB RAM) and increase only if necessary
     - **Monitor actively running sandboxes** - Use the [CLI](/docs/cli/list-sandboxes) or [dashboard](https://e2b.dev/dashboard?tab=usage) to track active sandboxes
-    - **Use lifecycle events** - Set up [webhooks](/docs/sandbox/lifecycle-events-webhooks) to get notified when sandboxes are created
+    - **Use lifecycle events** - Set up [webhooks](/docs/sandbox/observability#lifecycle-webhooks) to get notified when sandboxes are created
   </Accordion>
 
   <Accordion title="Do I pay for stopped sandboxes?">

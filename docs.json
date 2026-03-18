@@ -104,25 +104,24 @@
             "group": "Sandbox",
             "pages": [
               "docs/sandbox",
-              "docs/sandbox/lifecycle-events-api",
-              "docs/sandbox/lifecycle-events-webhooks",
-              "docs/sandbox/persistence",
-              "docs/sandbox/snapshots",
-              "docs/sandbox/auto-resume",
-              "docs/sandbox/git-integration",
-              "docs/sandbox/metrics",
-              "docs/sandbox/metadata",
-              "docs/sandbox/environment-variables",
-              "docs/sandbox/list",
-              "docs/sandbox/connect",
-              "docs/sandbox/internet-access",
-              "docs/sandbox/pty",
-              "docs/sandbox/ssh-access",
-              "docs/sandbox/connect-bucket",
-              "docs/sandbox/rate-limits",
-              "docs/sandbox/secured-access",
-              "docs/sandbox/ip-tunneling",
-              "docs/sandbox/custom-domain"
+              {
+                "group": "Core",
+                "pages": [
+                  "docs/sandbox/lifecycle",
+                  "docs/sandbox/commands",
+                  "docs/sandbox/configuration",
+                  "docs/sandbox/security",
+                  "docs/sandbox/observability"
+                ]
+              },
+              {
+                "group": "Guides",
+                "pages": [
+                  "docs/sandbox/git-integration",
+                  "docs/sandbox/proxy-tunneling",
+                  "docs/sandbox/custom-domain"
+                ]
+              }
             ]
           },
           {
@@ -3804,7 +3803,7 @@
     },
     {
       "source": "/docs/legacy/sandbox/api/envs",
-      "destination": "/docs/sandbox/environment-variables",
+      "destination": "/docs/sandbox/configuration",
       "permanent": true
     },
     {
@@ -3814,17 +3813,17 @@
     },
     {
       "source": "/docs/legacy/sandbox/api/reconnect",
-      "destination": "/docs/sandbox/connect",
+      "destination": "/docs/sandbox/lifecycle",
       "permanent": true
     },
     {
       "source": "/docs/legacy/sandbox/api/url",
-      "destination": "/docs/sandbox/internet-access",
+      "destination": "/docs/sandbox/security",
       "permanent": true
     },
     {
       "source": "/docs/legacy/sandbox/api/metadata",
-      "destination": "/docs/sandbox/metadata",
+      "destination": "/docs/sandbox/lifecycle",
       "permanent": true
     },
     {
@@ -3940,6 +3939,91 @@
     {
       "source": "/docs/git",
       "destination": "/docs/sandbox/git-integration",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/persistence",
+      "destination": "/docs/sandbox/lifecycle",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/snapshots",
+      "destination": "/docs/sandbox/lifecycle",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/auto-resume",
+      "destination": "/docs/sandbox/lifecycle",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/list",
+      "destination": "/docs/sandbox/lifecycle",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/connect",
+      "destination": "/docs/sandbox/lifecycle",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/metadata",
+      "destination": "/docs/sandbox/lifecycle",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/lifecycle-events-api",
+      "destination": "/docs/sandbox/observability",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/lifecycle-events-webhooks",
+      "destination": "/docs/sandbox/observability",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/metrics",
+      "destination": "/docs/sandbox/observability",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/secured-access",
+      "destination": "/docs/sandbox/security",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/internet-access",
+      "destination": "/docs/sandbox/security",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/rate-limits",
+      "destination": "/docs/sandbox/security",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/environment-variables",
+      "destination": "/docs/sandbox/configuration",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/connect-bucket",
+      "destination": "/docs/sandbox/configuration",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/pty",
+      "destination": "/docs/sandbox/commands",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/ssh-access",
+      "destination": "/docs/sandbox/commands",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/ip-tunneling",
+      "destination": "/docs/sandbox/proxy-tunneling",
       "permanent": true
     }
   ]

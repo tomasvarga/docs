@@ -1,0 +1,623 @@
+---
+title: "Observability"
+sidebarTitle: Observability
+---
+
+E2B provides several ways to monitor and track your sandboxes: resource metrics via the SDK and CLI, a REST API for lifecycle event history, and webhooks for real-time notifications.
+
+## Metrics
+
+Sandbox metrics let you monitor CPU, memory, and disk usage of running sandboxes. Metrics are collected every 5 seconds.
+
+### Getting metrics using the SDKs
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={9}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Wait for a few seconds to collect some metrics
+await new Promise((resolve) => setTimeout(resolve, 10_000))
+
+const metrics = await sbx.getMetrics()
+
+// You can also get the metrics by sandbox ID:
+// const metrics = await Sandbox.getMetrics(sbx.sandboxId)
+
+console.log('Sandbox metrics:', metrics)
+
+// Sandbox metrics:
+// [
+//   {
+//     timestamp: 2025-07-28T08:04:05.000Z,
+//     cpuUsedPct: 20.33,
+//     cpuCount: 2,
+//     memUsed: 32681984,  // in bytes
+//     memTotal: 507592704,  // in bytes
+//     diskUsed: 1514856448,  // in bytes
+//     diskTotal: 2573185024  // in bytes
+//   },
+//   {
+//     timestamp: 2025-07-28T08:04:10.000Z,
+//     cpuUsedPct: 0.2,
+//     cpuCount: 2,
+//     memUsed: 33316864,  // in bytes
+//     memTotal: 507592704, // in bytes
+//     diskUsed: 1514856448,  // in bytes
+//     diskTotal: 2573185024  // in bytes
+//   }
+// ]
+```
+```python Python highlight={10}
+from time import sleep
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+print('Sandbox created', sbx.sandbox_id)
+
+# Wait for a few seconds to collect some metrics
+sleep(10)
+
+metrics = sbx.get_metrics()
+
+# You can also get the metrics by sandbox ID:
+# metrics = Sandbox.get_metrics(sbx.sandbox_id)
+
+print('Sandbox metrics', metrics)
+
+# Sandbox metrics
+# [
+#     SandboxMetric(
+#         cpu_count=2,
+#         cpu_used_pct=13.97,
+#         disk_total=2573185024,  # in bytes
+#         disk_used=1514856448,  # in bytes
+#         mem_total=507592704,  # in bytes
+#         mem_used=30588928,  # in bytes
+#         timestamp=datetime.datetime(2025, 7, 28, 8, 8, 15, tzinfo=tzutc()),
+#     ),
+#     SandboxMetric(
+#         cpu_count=2,
+#         cpu_used_pct=0.1,
+#         disk_total=2573185024,  # in bytes
+#         disk_used=1514856448,  # in bytes
+#         mem_total=507592704,  # in bytes
+#         mem_used=31084544,  # in bytes
+#         timestamp=datetime.datetime(2025, 7, 28, 8, 8, 20, tzinfo=tzutc()),
+#     ),
+# ]
+```
+</CodeGroup>
+
+### Getting metrics using the CLI
+
+<CodeGroup>
+```bash Terminal highlight={1}
+e2b sandbox metrics <sandbox_id>
+
+# Metrics for sandbox <sandbox_id>
+#
+# [2025-07-25 14:05:55Z]  CPU:  8.27% /  2 Cores | Memory:    31 / 484   MiB | Disk:  1445 / 2453  MiB
+# [2025-07-25 14:06:00Z]  CPU:   0.5% /  2 Cores | Memory:    32 / 484   MiB | Disk:  1445 / 2453  MiB
+# [2025-07-25 14:06:05Z]  CPU:   0.1% /  2 Cores | Memory:    32 / 484   MiB | Disk:  1445 / 2453  MiB
+# [2025-07-25 14:06:10Z]  CPU:   0.3% /  2 Cores | Memory:    32 / 484   MiB | Disk:  1445 / 2453  MiB
+```
+</CodeGroup>
+
+<Note>
+   It may take a second or more to get the first metrics after the sandbox is created. Until the first metrics are collected from the sandbox, you will get an empty array.
+</Note>
+
+## Lifecycle events API
+
+The lifecycle API provides RESTful endpoints to request the latest sandbox lifecycle events. This allows you to track when sandboxes are created, paused, resumed, updated, snapshotted, or killed, along with metadata.
+All requests require authentication using your team [API key](/docs/api-key#where-to-find-api-key).
+
+Query Parameters:
+- `offset` (optional): Number of events to skip (default: 0, min: 0)
+- `limit` (optional): Number of events to return (default: 10, min: 1, max: 100)
+- `orderAsc` (optional): Sort order - true for ascending, false for descending (default: false)
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+
+// Get the latest events for a specific sandbox
+const resp1 = await fetch(
+  `https://api.e2b.app/events/sandboxes/${sbx.id}`,
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const sandboxEvents = await resp1.json()
+
+// Get the latest 10 events for all sandboxes associated with the team
+const resp2 = await fetch(
+  'https://api.e2b.app/events/sandboxes?limit=10',
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const teamSandboxEvents = await resp2.json()
+
+console.log(teamSandboxEvents)
+
+// [
+//   {
+//     "version": "v1",
+//     "id": "f5911677-cb60-498f-afed-f68143b3cc59",
+//     "type": "sandbox.lifecycle.killed",
+//     "eventData": null,
+//     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+//     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+//     "sandboxId": "${SANDBOX_ID}",
+//     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+//     "timestamp": "2025-08-06T20:59:36Z"
+//   },
+//   {
+//     "version": "v1",
+//     "id": "30b09e11-9ba2-42db-9cf6-d21f0f43a234",
+//     "type": "sandbox.lifecycle.updated",
+//     "eventData": {
+//       "set_timeout": "2025-08-06T20:59:59Z"
+//     },
+//     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+//     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+//     "sandboxId": "${SANDBOX_ID}",
+//     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+//     "timestamp": "2025-08-06T20:59:29Z"
+//   },
+//   [...]
+//   {
+//     "version": "v1",
+//     "id": "0568572b-a2ac-4e5f-85fa-fae90905f556",
+//     "type": "sandbox.lifecycle.created",
+//     "eventData": null,
+//     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+//     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+//     "sandboxId": "${SANDBOX_ID}",
+//     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+//     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+//     "timestamp": "2025-08-06T20:59:24Z"
+//   }
+// ]
+```
+```python Python
+import requests
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+
+# Get the latest events for a specific sandbox
+resp1 = requests.get(
+    f"https://api.e2b.app/events/sandboxes/{sbx.sandbox_id}",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+sandbox_events = resp1.json()
+
+# Get the latest 10 events for all sandboxes associated with the team
+resp2 = requests.get(
+    "https://api.e2b.app/events/sandboxes?limit=10",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+team_sandbox_events = resp2.json()
+
+print(team_sandbox_events)
+
+# [
+#   {
+#     "version": "v1",
+#     "id": "0568572b-a2ac-4e5f-85fa-fae90905f556",
+#     "type": "sandbox.lifecycle.killed",
+#     "eventData": null,
+#     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+#     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+#     "sandboxId": "${SANDBOX_ID}",
+#     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+#     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+#     "timestamp": "2025-08-06T20:59:36Z"
+#   },
+#   {
+#     "version": "v1",
+#     "id": "e7013704-2c51-4dd2-9f6c-388c91460149",
+#     "type": "sandbox.lifecycle.updated",
+#     "eventData": {
+#       "set_timeout": "2025-08-06T20:59:59Z"
+#     },
+#     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+#     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+#     "sandboxId": "${SANDBOX_ID}",
+#     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+#     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+#     "timestamp": "2025-08-06T20:59:29Z"
+#   },
+#   [...]
+#   {
+#     "version": "v1",
+#     "id": "f29ef778-2743-4c97-a802-7ba67f84ce24",
+#     "type": "sandbox.lifecycle.created",
+#     "eventData": null,
+#     "sandboxBuildId": "a979a14b-bdcc-49e6-bc04-1189fc9fe7c2",
+#     "sandboxExecutionId": "1dae9e1c-9957-4ce7-a236-a99d5779aadf",
+#     "sandboxId": "${SANDBOX_ID}",
+#     "sandboxTeamId": "460355b3-4f64-48f9-9a16-4442817f79f5",
+#     "sandboxTemplateId": "rki5dems9wqfm4r03t7g",
+#     "timestamp": "2025-08-06T20:59:24Z"
+#   }
+# ]
+```
+</CodeGroup>
+
+## Lifecycle webhooks
+
+Webhooks provide a way for notifications to be delivered to an external web server whenever certain sandbox lifecycle events occur.
+This allows you to receive real-time updates about sandbox creation, updates, and termination without having to poll the API.
+All webhook requests require authentication using your team [API key](/docs/api-key#where-to-find-api-key).
+
+### Register webhook
+
+Register a new webhook to receive sandbox lifecycle events. The webhook will be registered for the team ID associated with your API key. All events specified during webhook creation will be sent to URL provided during registration with the [webhook payload](#webhook-payload).
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Register a new webhook
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks',
+  {
+    method: 'POST',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: 'My Sandbox Webhook',
+      url: 'https://your-webhook-endpoint.com/webhook',
+      enabled: true,
+      events: ['sandbox.lifecycle.created', 'sandbox.lifecycle.updated', 'sandbox.lifecycle.killed'],
+      signatureSecret: 'secret-for-event-signature-verification'
+    }),
+  }
+)
+
+if (resp.status === 201) {
+  console.log('Webhook registered successfully')
+}
+```
+```python Python
+import requests
+
+# Register a new webhook
+resp = requests.post(
+    "https://api.e2b.app/events/webhooks",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+        "Content-Type": "application/json",
+    },
+    json={
+        "name": "My Sandbox Webhook",
+        "url": "https://your-webhook-endpoint.com/webhook",
+        "enabled": true,
+        "events": ["sandbox.lifecycle.created", "sandbox.lifecycle.updated", "sandbox.lifecycle.killed"],
+        "signatureSecret": "secret-for-event-signature-verification"
+    }
+)
+
+if resp.status_code == 201:
+    print("Webhook registered successfully")
+```
+</CodeGroup>
+
+### List webhooks
+
+List all registered webhooks for your team.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// List webhooks
+const resp = await fetch(
+  'https://api.e2b.app/events/webhooks',
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY
+    },
+  },
+)
+
+if (resp.status === 200) {
+  console.log('Webhooks listed successfully')
+  console.log(await resp.json())
+}
+```
+```python Python
+import requests
+
+# List webhooks
+resp = requests.get(
+    "https://api.e2b.app/events/webhooks",
+    headers={
+        "X-API-Key": E2B_API_KEY
+    },
+)
+
+if resp.status_code == 200:
+    print("Webhooks listed successfully")
+    print(resp.json())
+```
+</CodeGroup>
+
+
+### Get webhook configuration
+
+Retrieve the current webhook configuration for your team.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Get webhook configuration
+const resp = await fetch(
+  `https://api.e2b.app/events/webhooks/${webhookID}`,
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const webhookConfig = await resp.json()
+console.log(webhookConfig)
+// {
+//   "id": "<webhook-id>",
+//   "teamID": "<your-team-id>",
+//   "name": "My Sandbox Webhook",
+//   "createdAt": "2025-08-06T21:00:00Z",
+//   "enabled": true,
+//   "url": "https://your-webhook-endpoint.com/webhook",
+//   "events": ["sandbox.lifecycle.created", "sandbox.lifecycle.killed"]
+// }
+
+```
+```python Python
+import requests
+
+# Get webhook configuration
+resp = requests.get(
+    "https://api.e2b.app/events/webhooks/{webhookID}",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+
+webhook_config = resp.json()
+print(webhook_config)
+# {
+#   "id": "<webhook-id>",
+#   "teamID": "<your-team-id>",
+#   "name": "My Sandbox Webhook",
+#   "createdAt": "2025-08-06T21:00:00Z",
+#   "enabled": true,
+#   "url": "https://your-webhook-endpoint.com/webhook",
+#   "events": ["sandbox.lifecycle.created", "sandbox.lifecycle.killed"]
+# }
+```
+</CodeGroup>
+
+### Update webhook configuration
+
+Update an existing webhook configuration. The update will replace the previous configuration fields with provided fields.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Update webhook configuration
+const resp = await fetch(
+  `https://api.e2b.app/events/webhooks/${webhookID}`,
+  {
+    method: 'PATCH',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      url: 'https://your-updated-webhook-endpoint.com/webhook',
+      enabled: false,
+      events: ['sandbox.lifecycle.created']
+    }),
+  }
+)
+
+if (resp.status === 200) {
+  console.log('Webhook updated successfully')
+}
+```
+```python Python
+import requests
+
+# Update webhook configuration
+resp = requests.patch(
+    "https://api.e2b.app/events/webhooks/{webhookID}",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+        "Content-Type": "application/json",
+    },
+    json={
+        "url": "https://your-updated-webhook-endpoint.com/webhook",
+        "enabled": False,
+        "events": ["sandbox.lifecycle.created"]
+    }
+)
+
+if resp.status_code == 200:
+    print("Webhook updated successfully")
+```
+</CodeGroup>
+
+### Delete webhook
+
+Unregister the webhook.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Delete webhook configuration
+const resp = await fetch(
+  `https://api.e2b.app/events/webhooks/${webhookID}`,
+  {
+    method: 'DELETE',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+
+if (resp.status === 200) {
+  console.log('Webhook deleted successfully')
+}
+```
+```python Python
+import requests
+
+# Delete webhook configuration
+resp = requests.delete(
+    "https://api.e2b.app/events/webhooks/{webhookID}",
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+
+if resp.status_code == 200:
+    print("Webhook deleted successfully")
+```
+</CodeGroup>
+
+### Webhook payload
+
+When a webhook is triggered, your endpoint will receive a POST request with a JSON payload containing the sandbox event data.
+The payload structure matches the event format from the API:
+
+```json
+{
+  "version": "v2",
+  "id": "<event-id>",
+  "type": "<sandbox-event-type>",
+  "eventData": {
+    "sandbox_metadata": {
+      "<custom-key>": "<custom-value>"
+    },
+    "execution": {
+      "started_at": "2025-08-06T20:58:24Z",
+      "vcpu_count": 2,
+      "memory_mb": 512,
+      "execution_time": 1000,
+    }
+  },
+  "sandboxBuildId": "<template-build-id>",
+  "sandboxExecutionId": "<sandbox-unique-execution-id>",
+  "sandboxId": "<your-sandbox-id>",
+  "sandboxTeamId": "<your-team-id>",
+  "sandboxTemplateId": "<your-template-id>",
+  "timestamp": "2025-08-06T20:59:24Z"
+}
+```
+
+`eventData.execution` contains sandbox execution details and is included on `sandbox.lifecycle.killed` and `sandbox.lifecycle.paused` events:
+
+- `started_at` - UTC RFC3339 timestamp when the current sandbox execution started
+- `vcpu_count` - Number of vCPUs assigned to the sandbox
+- `memory_mb` - Memory assigned to the sandbox in MB
+- `execution_time` - Sandbox runtime in milliseconds
+
+### Webhook verification
+
+To ensure the authenticity of webhook requests, each request includes a signature in the `e2b-signature` header.
+You can verify the signature using the signature secret you provided when registering the webhook.
+This confirms that the request originated from E2B and has not been tampered with.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+function verifyWebhookSignature(secret : string, payload : string, payloadSignature : string) {
+    const expectedSignatureRaw = crypto.createHash('sha256').update(secret + payload).digest('base64');
+    const expectedSignature = expectedSignatureRaw.replace(/=+$/, '');
+    return  expectedSignature == payloadSignature
+}
+
+const payloadValid = verifyWebhookSignature(secret, webhookBodyRaw, webhookSignatureHeader)
+if (payloadValid) {
+    console.log("Payload signature is valid")
+} else {
+    console.log("Payload signature is INVALID")
+}
+```
+```python Python
+import hashlib
+import base64
+
+def verify_webhook_signature(secret: str, payload: str, payload_signature: str) -> bool:
+    hash_bytes = hashlib.sha256((secret + payload).encode('utf-8')).digest()
+    expected_signature = base64.b64encode(hash_bytes).decode('utf-8')
+    expected_signature = expected_signature.rstrip('=')
+
+    return expected_signature == payload_signature
+
+if verify_webhook_signature(secret, webhook_body_raw, webhook_signature_header):
+    print("Payload signature is valid")
+else:
+    print("Payload signature is INVALID")
+```
+```go Golang
+import (
+    "crypto/sha256"
+    "encoding/base64"
+    "fmt"
+    "strings"
+)
+
+func verifyWebhookSignature(secret, payload, payloadSignature string) bool {
+    hash := sha256.Sum256([]byte(secret + payload))
+    expectedSignature := base64.StdEncoding.EncodeToString(hash[:])
+
+    expectedSignature = strings.TrimRight(expectedSignature, "=")
+
+    return expectedSignature == payloadSignature
+}
+
+if verifyWebhookSignature(secret, webhookBodyString, webhookSignatureHeaderString) {
+    fmt.Println("Payload signature is valid")
+} else {
+    fmt.Println("Payload signature is INVALID")
+}
+```
+</CodeGroup>
+
+### Webhook request headers
+
+When a webhook is sent, E2B adds headers to help you verify authenticity and debug delivery:
+
+- `e2b-webhook-id` - Webhook ID that triggered the event
+- `e2b-delivery-id` - Unique ID for the delivery attempt
+- `e2b-signature-version` - Currently always `v1`, reserved for future use
+- `e2b-signature` - Signature for verifying the request authenticity
+
+### Available event types
+
+The following event types can be subscribed to via webhooks, they are used as the `type` field in the [payload](#webhook-payload).
+
+- `sandbox.lifecycle.created` - Sandbox creation
+- `sandbox.lifecycle.killed` - Sandbox termination
+- `sandbox.lifecycle.updated` - Sandbox configuration updates
+- `sandbox.lifecycle.paused` - Sandbox pausing
+- `sandbox.lifecycle.resumed` - Sandbox resuming
+- `sandbox.lifecycle.checkpointed` - Sandbox [snapshot](/docs/sandbox/lifecycle#snapshots) created
