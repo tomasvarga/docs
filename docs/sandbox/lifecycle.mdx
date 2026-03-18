@@ -18,7 +18,7 @@ Every sandbox has a configurable timeout that determines how long it stays runni
 ```js JavaScript & TypeScript highlight={6}
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Create sandbox with and keep it running for 60 seconds.
+// Create a sandbox and keep it running for 60 seconds.
 // 🚨 Note: The units are milliseconds.
 const sandbox = await Sandbox.create({
   timeoutMs: 60_000,
@@ -27,7 +27,7 @@ const sandbox = await Sandbox.create({
 ```python Python highlight={6}
 from e2b_code_interpreter import Sandbox
 
-# Create sandbox with and keep it running for 60 seconds.
+# Create a sandbox and keep it running for 60 seconds.
 # 🚨 Note: The units are seconds.
 sandbox = Sandbox.create(
   timeout=60,
@@ -48,7 +48,7 @@ You can for example start with a sandbox with 1 minute timeout and then periodic
 ```js JavaScript & TypeScript
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Create sandbox with and keep it running for 60 seconds.
+// Create a sandbox and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 
 // Change the sandbox timeout to 30 seconds.
@@ -58,7 +58,7 @@ await sandbox.setTimeout(30_000)
 ```python Python
 from e2b_code_interpreter import Sandbox
 
-# Create sandbox with and keep it running for 60 seconds.
+# Create a sandbox and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
 
 # Change the sandbox timeout to 30 seconds.
@@ -75,7 +75,7 @@ You can retrieve sandbox information like sandbox ID, template, metadata, starte
 ```js JavaScript & TypeScript
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Create sandbox with and keep it running for 60 seconds.
+// Create a sandbox and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 
 // Retrieve sandbox information.
@@ -96,7 +96,7 @@ console.log(info)
 ```python Python
 from e2b_code_interpreter import Sandbox
 
-# Create sandbox with and keep it running for 60 seconds.
+# Create a sandbox and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
 
 # Retrieve sandbox information.
@@ -339,7 +339,6 @@ For more granular pagination, you can set custom per-page item limit (default an
     ```python Python  highlight={5-6,13}
     from e2b_code_interpreter import Sandbox
 
-    # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
     paginator = Sandbox.list(
         limit=100,
         next_token="<base64-encoded-token>",
@@ -463,7 +462,7 @@ You can shutdown the sandbox any time even before the timeout is up by calling t
 ```js JavaScript & TypeScript
 import { Sandbox } from '@e2b/code-interpreter'
 
-// Create sandbox with and keep it running for 60 seconds.
+// Create a sandbox and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 
 // Shutdown the sandbox immediately.
@@ -472,7 +471,7 @@ await sandbox.kill()
 ```python Python
 from e2b_code_interpreter import Sandbox
 
-# Create sandbox with and keep it running for 60 seconds.
+# Create a sandbox and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
 
 # Shutdown the sandbox immediately.
