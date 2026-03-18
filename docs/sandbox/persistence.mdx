@@ -68,7 +68,9 @@ sandbox.kill()  # Running/Paused → Killed
 ```
 </CodeGroup>
 
-## Pausing sandbox
+## Pause and resume
+
+### Pausing a sandbox
 
 When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
 
@@ -97,8 +99,7 @@ print('Sandbox paused', sbx.sandbox_id)
 ```
 </CodeGroup>
 
-
-## Resuming sandbox
+### Resuming a sandbox
 
 When you resume a sandbox, it will be in the same state it was in when you paused it.
 This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
@@ -136,7 +137,7 @@ print('Connected to the sandbox', same_sbx.sandbox_id)
 ```
 </CodeGroup>
 
-## Listing paused sandboxes
+### Listing paused sandboxes
 
 You can list all paused sandboxes by calling the `Sandbox.list` method and supplying the `state` query parameter.
 
@@ -172,7 +173,7 @@ while paginator.has_next:
 ```
 </CodeGroup>
 
-## Removing paused sandboxes
+### Removing paused sandboxes
 
 You can remove paused sandboxes by calling the `kill` method on the Sandbox instance.
 
@@ -209,7 +210,7 @@ Sandbox.kill(sbx.sandbox_id)
 ```
 </CodeGroup>
 
-## Timeout on connect
+### Timeout on connect
 
 When you connect to a sandbox, the inactivity timeout resets. The default is 5 minutes, but you can pass a custom timeout to the `Sandbox.connect()` method:
 
@@ -225,39 +226,6 @@ from e2b_code_interpreter import Sandbox
 sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 ```
 </CodeGroup>
-
-## Auto-pause
-
-Auto-pause is configured in the sandbox lifecycle on create. Set `onTimeout`/`on_timeout` to `pause`.
-
-<CodeGroup>
-```js JavaScript & TypeScript
-import { Sandbox } from 'e2b'
-
-const sandbox = await Sandbox.create({
-  timeoutMs: 10 * 60 * 1000, // Optional: change default timeout (10 minutes)
-  lifecycle: {
-    onTimeout: 'pause',
-    autoResume: false, // Optional (default is false)
-  },
-})
-```
-```python Python
-from e2b import Sandbox
-
-sandbox = Sandbox.create(
-    timeout=10 * 60,  # Optional: change default timeout (10 minutes)
-    lifecycle={
-        "on_timeout": "pause", # Auto-pause after the sandbox times out
-        "auto_resume": False,  # Optional (default is False)
-    },
-)
-```
-</CodeGroup>
-
-Auto-pause is persistent, meaning if your sandbox resumes and later times out again, it will pause again.
-
-If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
 
 ### Network behavior during pause
 
@@ -280,12 +248,9 @@ If you resume the sandbox, the service will be accessible again but you need to 
   - **1 hour** on the **Base tier**
 - After a sandbox is paused and resumed, the continuous runtime limit is **reset**
 
-## AutoResume
+## Auto-pause and auto-resume
 
-Many workloads don't need a sandbox running all the time, but when they do need it, it should just work, whether it was paused or not.
-
-`AutoResume` handles this automatically: a paused sandbox wakes up when activity arrives, so your code does not have to check or manage sandbox state.
-Configure it through the `lifecycle` object when creating a sandbox.
+Auto-pause and auto-resume are configured together through the `lifecycle` object when creating a sandbox. Auto-pause suspends a sandbox when its timeout expires. Auto-resume wakes it back up when activity arrives.
 
 ### Configure lifecycle on create
 
@@ -296,8 +261,8 @@ import { Sandbox } from 'e2b'
 const sandbox = await Sandbox.create({
   timeoutMs: 10 * 60 * 1000,
   lifecycle: {
-    onTimeout: 'pause',
-    autoResume: true, // resume when activity arrives
+    onTimeout: 'pause',    // auto-pause when timeout expires
+    autoResume: true,       // auto-resume when activity arrives
   },
 })
 ```
@@ -307,12 +272,16 @@ from e2b import Sandbox
 sandbox = Sandbox.create(
     timeout=10 * 60,
     lifecycle={
-        "on_timeout": "pause",
-        "auto_resume": True,  # resume when activity arrives
+        "on_timeout": "pause",    # auto-pause when timeout expires
+        "auto_resume": True,      # auto-resume when activity arrives
     },
 )
 ```
 </CodeGroup>
+
+Auto-pause is persistent — if your sandbox resumes and later times out again, it will pause again.
+
+If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
 
 ### Lifecycle options
 
@@ -386,7 +355,7 @@ print(f"State after read: {sandbox.get_info().state}")
 ```
 </CodeGroup>
 
-### AutoResume use cases
+### Use cases
 
 #### Web and dev/preview servers
 
@@ -579,7 +548,7 @@ print(result.stdout)
 ```
 </CodeGroup>
 
-### AutoResume cleanup
+### Cleanup
 
 Auto-resume is persistent, meaning if your sandbox resumes and later times out again, it will pause again.
 
