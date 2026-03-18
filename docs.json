@@ -68,60 +68,22 @@
             ]
           },
           {
-            "group": "Code interpreting",
+            "group": "Sandbox core",
             "pages": [
-              {
-                "group": "Analyze data with AI",
-                "pages": [
-                  "docs/code-interpreting/analyze-data-with-ai",
-                  "docs/code-interpreting/analyze-data-with-ai/pre-installed-libraries"
-                ]
-              },
-              {
-                "group": "Charts & visualizations",
-                "pages": [
-                  "docs/code-interpreting/create-charts-visualizations",
-                  "docs/code-interpreting/create-charts-visualizations/static-charts",
-                  "docs/code-interpreting/create-charts-visualizations/interactive-charts"
-                ]
-              },
-              "docs/code-interpreting/streaming",
-              "docs/code-interpreting/contexts",
-              {
-                "group": "Supported languages",
-                "pages": [
-                  "docs/code-interpreting/supported-languages",
-                  "docs/code-interpreting/supported-languages/python",
-                  "docs/code-interpreting/supported-languages/javascript",
-                  "docs/code-interpreting/supported-languages/r",
-                  "docs/code-interpreting/supported-languages/java",
-                  "docs/code-interpreting/supported-languages/bash"
-                ]
-              }
+              "docs/sandbox",
+              "docs/sandbox/lifecycle",
+              "docs/sandbox/commands",
+              "docs/sandbox/configuration",
+              "docs/sandbox/security",
+              "docs/sandbox/observability"
             ]
           },
           {
-            "group": "Sandbox",
+            "group": "Sandbox guides",
             "pages": [
-              "docs/sandbox",
-              {
-                "group": "Core",
-                "pages": [
-                  "docs/sandbox/lifecycle",
-                  "docs/sandbox/commands",
-                  "docs/sandbox/configuration",
-                  "docs/sandbox/security",
-                  "docs/sandbox/observability"
-                ]
-              },
-              {
-                "group": "Guides",
-                "pages": [
-                  "docs/sandbox/git-integration",
-                  "docs/sandbox/proxy-tunneling",
-                  "docs/sandbox/custom-domain"
-                ]
-              }
+              "docs/sandbox/git-integration",
+              "docs/sandbox/proxy-tunneling",
+              "docs/sandbox/custom-domain"
             ]
           },
           {
@@ -182,6 +144,39 @@
               "docs/mcp/custom-templates",
               "docs/mcp/custom-servers",
               "docs/mcp/examples"
+            ]
+          },
+          {
+            "group": "Code interpreting",
+            "pages": [
+              {
+                "group": "Analyze data with AI",
+                "pages": [
+                  "docs/code-interpreting/analyze-data-with-ai",
+                  "docs/code-interpreting/analyze-data-with-ai/pre-installed-libraries"
+                ]
+              },
+              {
+                "group": "Charts & visualizations",
+                "pages": [
+                  "docs/code-interpreting/create-charts-visualizations",
+                  "docs/code-interpreting/create-charts-visualizations/static-charts",
+                  "docs/code-interpreting/create-charts-visualizations/interactive-charts"
+                ]
+              },
+              "docs/code-interpreting/streaming",
+              "docs/code-interpreting/contexts",
+              {
+                "group": "Supported languages",
+                "pages": [
+                  "docs/code-interpreting/supported-languages",
+                  "docs/code-interpreting/supported-languages/python",
+                  "docs/code-interpreting/supported-languages/javascript",
+                  "docs/code-interpreting/supported-languages/r",
+                  "docs/code-interpreting/supported-languages/java",
+                  "docs/code-interpreting/supported-languages/bash"
+                ]
+              }
             ]
           },
           {
