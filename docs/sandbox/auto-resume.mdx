@@ -20,7 +20,7 @@ const sandbox = await Sandbox.create({
   timeoutMs: 10 * 60 * 1000,
   lifecycle: {
     onTimeout: 'pause',
-    autoResume: true, // resume when traffic arrives
+    autoResume: true, // resume when activity arrives
   },
 })
 ```
@@ -31,7 +31,7 @@ sandbox = Sandbox.create(
     timeout=10 * 60,
     lifecycle={
         "on_timeout": "pause",
-        "auto_resume": True,  # resume when traffic arrives
+        "auto_resume": True,  # resume when activity arrives
     },
 )
 ```
@@ -50,6 +50,61 @@ sandbox = Sandbox.create(
 AutoResume is persistent — if a sandbox resumes and later times out again, it will pause again automatically. To permanently delete a sandbox, call `.kill()`. A killed sandbox cannot be resumed.
 
 If `autoResume` is `false`, you can still resume a paused sandbox manually with [`Sandbox.connect()`](/docs/sandbox/connect).
+
+## What counts as activity
+
+Auto-resume is triggered by sandbox activity — both HTTP traffic and SDK operations.
+
+That includes:
+- `sandbox.commands.run(...)`
+- `sandbox.files.read(...)`
+- `sandbox.files.write(...)`
+- Opening a tunneled app URL or sending requests to a service running inside the sandbox
+
+If a sandbox is paused and `autoResume` is enabled, the next supported operation resumes it automatically. You do not need to call [`Sandbox.connect()`](/docs/sandbox/connect) first.
+
+### SDK example: pause, then read a file
+
+The following example writes a file, pauses the sandbox, then reads the file back. The read operation triggers an automatic resume.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  timeoutMs: 10 * 60 * 1000,
+  lifecycle: {
+    onTimeout: 'pause',
+    autoResume: true,
+  },
+})
+
+await sandbox.files.write('/home/user/hello.txt', 'hello from a paused sandbox')
+await sandbox.pause()
+
+const content = await sandbox.files.read('/home/user/hello.txt')
+console.log(content)
+console.log(`State after read: ${(await sandbox.getInfo()).state}`)
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    timeout=10 * 60,
+    lifecycle={
+        "on_timeout": "pause",
+        "auto_resume": True,
+    },
+)
+
+sandbox.files.write("/home/user/hello.txt", "hello from a paused sandbox")
+sandbox.pause()
+
+content = sandbox.files.read("/home/user/hello.txt")
+print(content)
+print(f"State after read: {sandbox.get_info().state}")
+```
+</CodeGroup>
 
 ## Example: Web server with AutoResume
 

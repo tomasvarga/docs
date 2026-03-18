@@ -2479,8 +2479,15 @@
             "icon": "python",
             "versions": [
               {
-                "version": "v2.4.1",
+                "version": "v2.5.0",
                 "default": true,
+                "pages": [
+                  "docs/sdk-reference/code-interpreter-python-sdk/v2.5.0/code_interpreter"
+                ]
+              },
+              {
+                "version": "v2.4.1",
+                "default": false,
                 "pages": [
                   "docs/sdk-reference/code-interpreter-python-sdk/v2.4.1/sandbox"
                 ]
