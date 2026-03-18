@@ -68,7 +68,7 @@
             ]
           },
           {
-            "group": "Sandbox core",
+            "group": "Sandbox",
             "pages": [
               "docs/sandbox",
               "docs/sandbox/lifecycle",
@@ -76,12 +76,7 @@
               "docs/sandbox/commands",
               "docs/sandbox/configuration",
               "docs/sandbox/security",
-              "docs/sandbox/observability"
-            ]
-          },
-          {
-            "group": "Sandbox guides",
-            "pages": [
+              "docs/sandbox/observability",
               "docs/sandbox/runtime-customization",
               "docs/sandbox/git-integration",
               "docs/sandbox/proxy-tunneling",
