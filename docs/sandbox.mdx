@@ -8,12 +8,18 @@ description: "E2B sandboxes are persistent, secure cloud environments for AI age
 An E2B sandbox is a persistent, secure cloud environment where your AI agents execute code, run commands, manage files, and access the internet. Every sandbox supports **pause and resume** — when a sandbox times out, it can automatically pause and preserve its full state (filesystem and memory), then resume exactly where it left off when activity arrives.
 
 ```mermaid actions={false}
-flowchart LR
-    start(( )) -->|create| Running
-    Running -->|timeout or pause| Paused
-    Paused -->|connect or auto‑resume| Running
-    Running -->|snapshot| Snapshotting
-    Snapshotting -->|complete| Running
+flowchart TD
+    start(( )) -->|Sandbox.create| Running
+
+    Running["<b>Running</b><br/>• Active execution<br/>• Consumes resources"]
+    Paused["<b>Paused</b><br/>• Preserves memory and files<br/>• Cannot execute code"]
+    Snapshotting["<b>Snapshotting</b><br/>• Creates persistent snapshot<br/>• Briefly pauses execution"]
+    Killed["<b>Killed</b><br/>• Resources released<br/>• Cannot be resumed"]
+
+    Running -->|pause| Paused
+    Running -->|createSnapshot| Snapshotting
+    Paused -->|connect| Running
+    Snapshotting -->|snapshot complete| Running
     Running -->|kill| Killed
     Paused -->|kill| Killed
 ```
@@ -21,7 +27,7 @@ flowchart LR
 ## Key characteristics
 
 - **Persistent by default** — configure `onTimeout: 'pause'` and sandboxes preserve their full state (filesystem + memory) indefinitely. Resume at any time.
-- **Auto-resume** — paused sandboxes wake automatically when SDK calls or HTTP traffic arrive. No manual state management needed.
+- **Auto-resume** — when [enabled](/docs/sandbox/persistence#auto-pause-and-auto-resume), paused sandboxes wake automatically when SDK calls or HTTP traffic arrive. No manual state management needed.
 - **Snapshots** — capture a running sandbox's state and spawn multiple new sandboxes from it. Useful for checkpointing, forking, and rollback.
 - **Configurable timeouts** — sandboxes run for up to 24 hours (Pro) or 1 hour (Base) continuously. Pausing resets the runtime window.
 - **Isolated and secure** — each sandbox runs in its own microVM with network controls, access tokens, and rate limits.
