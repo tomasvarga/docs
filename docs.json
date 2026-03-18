@@ -82,6 +82,7 @@
           {
             "group": "Sandbox guides",
             "pages": [
+              "docs/sandbox/runtime-customization",
               "docs/sandbox/git-integration",
               "docs/sandbox/proxy-tunneling",
               "docs/sandbox/custom-domain"

@@ -1,0 +1,274 @@
+---
+title: "Customizing sandboxes at runtime"
+sidebarTitle: "Runtime customization"
+description: "Install packages, upload files, and configure E2B sandboxes at runtime when you can't bake everything into a template."
+---
+
+Templates define a sandbox's base environment, but many workloads need dynamic configuration — different packages per user, files uploaded at request time, or settings that change between runs. This guide covers patterns for customizing sandboxes at runtime without modifying your template.
+
+## When to use runtime customization vs. templates
+
+| Use case | Template | Runtime |
+|---|---|---|
+| Same packages for every sandbox | Yes | |
+| Packages vary per user or request | | Yes |
+| Large, slow-to-install dependencies | Yes | |
+| Small, fast-to-install dependencies | | Yes |
+| Static config files | Yes | |
+| User-uploaded files | | Yes |
+| Secrets that change per request | | Yes |
+
+When in doubt: put slow, stable dependencies in a [template](/docs/template/quickstart), and handle everything dynamic at runtime.
+
+## Install packages at runtime
+
+Use `sandbox.commands.run()` to install packages after the sandbox starts. This is useful when different users or requests need different dependencies.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+// Install Python packages
+await sandbox.commands.run('pip install pandas numpy matplotlib')
+
+// Install system packages
+await sandbox.commands.run('sudo apt-get update && sudo apt-get install -y ffmpeg')
+
+// Install Node.js packages
+await sandbox.commands.run('npm install express')
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+# Install Python packages
+sandbox.commands.run("pip install pandas numpy matplotlib")
+
+# Install system packages
+sandbox.commands.run("sudo apt-get update && sudo apt-get install -y ffmpeg")
+
+# Install Node.js packages
+sandbox.commands.run("npm install express")
+```
+</CodeGroup>
+
+<Tip>
+For packages you install in every sandbox, add them to a [template](/docs/template/quickstart) instead. Template-based installs are faster because they're baked into the sandbox image.
+</Tip>
+
+### Speed up repeated installs with snapshots
+
+If multiple sandboxes need the same runtime setup, install once and [snapshot](/docs/sandbox/persistence#snapshots) the result. New sandboxes start from the snapshot with everything already installed.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+// First time: install and snapshot
+const sandbox = await Sandbox.create()
+await sandbox.commands.run('pip install pandas numpy scikit-learn')
+
+const snapshot = await sandbox.createSnapshot()
+console.log('Snapshot ID:', snapshot.snapshotId)
+
+// Later: start from snapshot — packages are already installed
+const fast = await Sandbox.create(snapshot.snapshotId)
+```
+```python Python
+from e2b import Sandbox
+
+# First time: install and snapshot
+sandbox = Sandbox.create()
+sandbox.commands.run("pip install pandas numpy scikit-learn")
+
+snapshot = sandbox.create_snapshot()
+print("Snapshot ID:", snapshot.snapshot_id)
+
+# Later: start from snapshot — packages are already installed
+fast = Sandbox.create(snapshot.snapshot_id)
+```
+</CodeGroup>
+
+## Upload files at sandbox start
+
+Use `sandbox.files.write()` to upload configuration files, scripts, or user data into the sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+// Upload a configuration file
+await sandbox.files.write('/home/user/config.json', JSON.stringify({
+  apiEndpoint: 'https://api.example.com',
+  maxRetries: 3,
+}))
+
+// Upload a script
+await sandbox.files.write('/home/user/analyze.py', `
+import json
+with open('config.json') as f:
+    config = json.load(f)
+print(f"Connecting to {config['apiEndpoint']}")
+`)
+
+// Run the uploaded script
+const result = await sandbox.commands.run('cd /home/user && python analyze.py')
+console.log(result.stdout)
+```
+```python Python
+import json
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+# Upload a configuration file
+sandbox.files.write("/home/user/config.json", json.dumps({
+    "apiEndpoint": "https://api.example.com",
+    "maxRetries": 3,
+}))
+
+# Upload a script
+sandbox.files.write("/home/user/analyze.py", """
+import json
+with open('config.json') as f:
+    config = json.load(f)
+print(f"Connecting to {config['apiEndpoint']}")
+""")
+
+# Run the uploaded script
+result = sandbox.commands.run("cd /home/user && python analyze.py")
+print(result.stdout)
+```
+</CodeGroup>
+
+## Use environment variables
+
+Pass per-request configuration through [environment variables](/docs/sandbox/configuration#environment-variables). You can set them globally at sandbox creation or per command.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+// Set environment variables at creation
+const sandbox = await Sandbox.create({
+  envs: {
+    API_KEY: 'sk-user-123-key',
+    ENVIRONMENT: 'production',
+  },
+})
+
+// Or set per command
+const result = await sandbox.commands.run('echo $CUSTOM_VAR', {
+  envs: { CUSTOM_VAR: 'hello' },
+})
+console.log(result.stdout) // "hello"
+```
+```python Python
+from e2b import Sandbox
+
+# Set environment variables at creation
+sandbox = Sandbox.create(
+    envs={
+        "API_KEY": "sk-user-123-key",
+        "ENVIRONMENT": "production",
+    },
+)
+
+# Or set per command
+result = sandbox.commands.run("echo $CUSTOM_VAR", envs={"CUSTOM_VAR": "hello"})
+print(result.stdout)  # "hello"
+```
+</CodeGroup>
+
+## Use `start_cmd` for initialization
+
+If your [template](/docs/template/quickstart) supports a [start command](/docs/template/start-ready-command), you can override it at runtime to customize sandbox initialization.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('my-template', {
+  startCmd: 'python /home/user/setup.py && nginx -g "daemon off;"',
+})
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create("my-template", start_cmd="python /home/user/setup.py && nginx -g 'daemon off;'")
+```
+</CodeGroup>
+
+## Combine patterns
+
+For complex setups, combine multiple approaches. Here's an example setting up a data analysis sandbox per user:
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+async function createAnalysisSandbox(userId, dataUrl, packages) {
+  const sandbox = await Sandbox.create({
+    timeoutMs: 10 * 60 * 1000,
+    lifecycle: {
+      onTimeout: 'pause',
+      autoResume: true,
+    },
+    envs: {
+      USER_ID: userId,
+      DATA_URL: dataUrl,
+    },
+  })
+
+  // Install user-specific packages
+  if (packages.length > 0) {
+    await sandbox.commands.run(`pip install ${packages.join(' ')}`)
+  }
+
+  // Upload analysis script
+  await sandbox.files.write('/home/user/run.py', `
+import os, urllib.request
+urllib.request.urlretrieve(os.environ['DATA_URL'], '/home/user/data.csv')
+print(f"Data downloaded for user {os.environ['USER_ID']}")
+  `)
+
+  await sandbox.commands.run('python /home/user/run.py')
+  return sandbox
+}
+```
+```python Python
+from e2b import Sandbox
+
+def create_analysis_sandbox(user_id: str, data_url: str, packages: list[str]):
+    sandbox = Sandbox.create(
+        timeout=10 * 60,
+        lifecycle={
+            "on_timeout": "pause",
+            "auto_resume": True,
+        },
+        envs={
+            "USER_ID": user_id,
+            "DATA_URL": data_url,
+        },
+    )
+
+    # Install user-specific packages
+    if packages:
+        sandbox.commands.run(f"pip install {' '.join(packages)}")
+
+    # Upload analysis script
+    sandbox.files.write("/home/user/run.py", """
+import os, urllib.request
+urllib.request.urlretrieve(os.environ['DATA_URL'], '/home/user/data.csv')
+print(f"Data downloaded for user {os.environ['USER_ID']}")
+    """)
+
+    sandbox.commands.run("python /home/user/run.py")
+    return sandbox
+```
+</CodeGroup>
