@@ -1,0 +1,776 @@
+---
+title: "Pause, resume & snapshots"
+sidebarTitle: "Pause, resume & snapshots"
+description: "E2B sandboxes are persistent — pause and resume preserves filesystem and memory state. Use snapshots to checkpoint and fork sandbox state."
+---
+
+E2B sandboxes are persistent environments. When you pause a sandbox, its full state — filesystem and memory, including all running processes and loaded variables — is preserved indefinitely. Resume it at any time and pick up exactly where you left off. Snapshots let you capture that state and spawn multiple new sandboxes from it.
+
+## Sandbox state transitions
+
+Understanding how sandboxes transition between states:
+
+```mermaid actions={false}
+flowchart TD
+    start(( )) -->|Sandbox.create| Running
+
+    Running["<b>Running</b><br/>• Active execution<br/>• Consumes resources"]
+    Paused["<b>Paused</b><br/>• Preserves memory and files<br/>• Cannot execute code"]
+    Snapshotting["<b>Snapshotting</b><br/>• Creates persistent snapshot<br/>• Briefly pauses execution"]
+    Killed["<b>Killed</b><br/>• Resources released<br/>• Cannot be resumed"]
+
+    Running -->|pause| Paused
+    Running -->|createSnapshot| Snapshotting
+    Paused -->|connect| Running
+    Snapshotting -->|snapshot complete| Running
+    Running -->|kill| Killed
+    Paused -->|kill| Killed
+```
+
+### State descriptions
+
+- **Running**: The sandbox is actively running and can execute code. This is the initial state after creation.
+- **Paused**: The sandbox execution is suspended but its state is preserved.
+- **Snapshotting**: The sandbox is briefly paused while a persistent snapshot is being created. It automatically returns to Running. See [Snapshots](/docs/sandbox/persistence#snapshots).
+- **Killed**: The sandbox is terminated and all resources are released. This is a terminal state.
+
+### Changing sandbox state
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create() // Starts in Running state
+
+// Pause the sandbox
+await sandbox.pause() // Running → Paused
+
+// Resume the sandbox
+await sandbox.connect() // Running/Paused → Running
+
+// Kill the sandbox (from any state)
+await sandbox.kill() // Running/Paused → Killed
+```
+
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()  # Starts in Running state
+
+# Pause the sandbox
+sandbox.pause()  # Running → Paused
+
+# Resume the sandbox
+sandbox.connect()  # Running/Paused → Running
+
+# Kill the sandbox (from any state)
+sandbox.kill()  # Running/Paused → Killed
+```
+</CodeGroup>
+
+## Pausing sandbox
+
+When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={8-9}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Pause the sandbox
+// You can save the sandbox ID in your database to resume the sandbox later
+await sbx.pause()
+console.log('Sandbox paused', sbx.sandboxId)
+```
+```python Python highlight={8-9}
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+print('Sandbox created', sbx.sandbox_id)
+
+# Pause the sandbox
+# You can save the sandbox ID in your database to resume the sandbox later
+sbx.pause()
+print('Sandbox paused', sbx.sandbox_id)
+```
+</CodeGroup>
+
+
+## Resuming sandbox
+
+When you resume a sandbox, it will be in the same state it was in when you paused it.
+This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={12-13}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Pause the sandbox
+// You can save the sandbox ID in your database to resume the sandbox later
+await sbx.pause()
+console.log('Sandbox paused', sbx.sandboxId)
+
+// Connect to the sandbox (it will automatically resume the sandbox, if paused)
+const sameSbx = await sbx.connect()
+console.log('Connected to the sandbox', sameSbx.sandboxId)
+```
+```python Python highlight={12-13}
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+print('Sandbox created', sbx.sandbox_id)
+
+# Pause the sandbox
+# You can save the sandbox ID in your database to resume the sandbox later
+sbx.pause()
+print('Sandbox paused', sbx.sandbox_id)
+
+# Connect to the sandbox (it will automatically resume the sandbox, if paused)
+same_sbx = sbx.connect()
+print('Connected to the sandbox', same_sbx.sandbox_id)
+```
+</CodeGroup>
+
+## Listing paused sandboxes
+
+You can list all paused sandboxes by calling the `Sandbox.list` method and supplying the `state` query parameter.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={4,7}
+import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+
+// List all paused sandboxes
+const paginator = Sandbox.list({ query: { state: ['paused'] } })
+
+// Get the first page of paused sandboxes
+const sandboxes = await paginator.nextItems()
+
+// Get all paused sandboxes
+while (paginator.hasNext) {
+  const items = await paginator.nextItems()
+  sandboxes.push(...items)
+}
+```
+```python Python highlight={4,7}
+# List all paused sandboxes
+from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+
+paginator = Sandbox.list(SandboxQuery(state=[SandboxState.PAUSED]))
+
+# Get the first page of paused sandboxes
+sandboxes = paginator.next_items()
+
+# Get all paused sandboxes
+while paginator.has_next:
+  items = paginator.next_items()
+  sandboxes.extend(items)
+```
+</CodeGroup>
+
+## Removing paused sandboxes
+
+You can remove paused sandboxes by calling the `kill` method on the Sandbox instance.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={11,14}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+console.log('Sandbox created', sbx.sandboxId)
+
+// Pause the sandbox
+// You can save the sandbox ID in your database to resume the sandbox later
+await sbx.pause()
+
+// Remove the sandbox
+await sbx.kill()
+
+// Remove sandbox by id
+await Sandbox.kill(sbx.sandboxId)
+```
+```python Python highlight={9,12}
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.create()
+
+# Pause the sandbox
+sbx.pause()
+
+# Remove the sandbox
+sbx.kill()
+
+# Remove sandbox by id
+Sandbox.kill(sbx.sandbox_id)
+```
+</CodeGroup>
+
+## Timeout on connect
+
+When you connect to a sandbox, the inactivity timeout resets. The default is 5 minutes, but you can pass a custom timeout to the `Sandbox.connect()` method:
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.connect(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
+```
+</CodeGroup>
+
+## Auto-pause
+
+Auto-pause is configured in the sandbox lifecycle on create. Set `onTimeout`/`on_timeout` to `pause`.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  timeoutMs: 10 * 60 * 1000, // Optional: change default timeout (10 minutes)
+  lifecycle: {
+    onTimeout: 'pause',
+    autoResume: false, // Optional (default is false)
+  },
+})
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    timeout=10 * 60,  # Optional: change default timeout (10 minutes)
+    lifecycle={
+        "on_timeout": "pause", # Auto-pause after the sandbox times out
+        "auto_resume": False,  # Optional (default is False)
+    },
+)
+```
+</CodeGroup>
+
+Auto-pause is persistent, meaning if your sandbox resumes and later times out again, it will pause again.
+
+If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
+
+### Network behavior during pause
+
+If you have a service (for example a server) running inside your sandbox and you pause the sandbox, the service won't be accessible from the outside and all the clients will be disconnected.
+If you resume the sandbox, the service will be accessible again but you need to connect clients again.
+
+### Limitations
+
+#### Pause and resume performance
+- Pausing a sandbox takes approximately **4 seconds per 1 GiB of RAM**
+- Resuming a sandbox takes approximately **1 second**
+
+#### Paused sandbox retention
+- Paused sandboxes are kept **indefinitely** — there is no automatic deletion or time-to-live limit
+- You can resume a paused sandbox at any time
+
+#### Continuous runtime limits
+- A sandbox can remain running (without being paused) for:
+  - **24 hours** on the **Pro tier**
+  - **1 hour** on the **Base tier**
+- After a sandbox is paused and resumed, the continuous runtime limit is **reset**
+
+## AutoResume
+
+Many workloads don't need a sandbox running all the time, but when they do need it, it should just work, whether it was paused or not.
+
+`AutoResume` handles this automatically: a paused sandbox wakes up when activity arrives, so your code does not have to check or manage sandbox state.
+Configure it through the `lifecycle` object when creating a sandbox.
+
+### Configure lifecycle on create
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  timeoutMs: 10 * 60 * 1000,
+  lifecycle: {
+    onTimeout: 'pause',
+    autoResume: true, // resume when activity arrives
+  },
+})
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    timeout=10 * 60,
+    lifecycle={
+        "on_timeout": "pause",
+        "auto_resume": True,  # resume when activity arrives
+    },
+)
+```
+</CodeGroup>
+
+### Lifecycle options
+
+- `onTimeout` / `on_timeout`
+  - `kill` (default): sandbox is terminated when timeout is reached
+  - `pause`: sandbox is paused when timeout is reached
+- `autoResume` / `auto_resume`
+  - `false` (default): paused sandboxes do not auto-resume
+  - `true`: paused sandboxes auto-resume on activity
+  - `true` is valid only when `onTimeout`/`on_timeout` is `pause`
+
+### Behavior summary
+
+- Default behavior is equivalent to `onTimeout: "kill"` with `autoResume: false`.
+- `onTimeout: "pause"` with `autoResume: false` gives auto-pause without auto-resume.
+- `onTimeout: "pause"` with `autoResume: true` gives auto-pause with auto-resume.
+- `Sandbox.connect()` can still be used to resume a paused sandbox manually.
+
+If you use `autoResume: false`, resume explicitly with `Sandbox.connect()`.
+
+### What counts as activity
+
+Auto-resume is triggered by the sandbox activity - that's both HTTP traffic and controlling the sandbox from the SDK.
+
+That includes SDK operations like:
+- `sandbox.commands.run(...)`
+- `sandbox.files.read(...)`
+- `sandbox.files.write(...)`
+- opening a tunneled app URL or sending requests to a service running inside the sandbox
+
+If a sandbox is paused and `autoResume` is enabled, the next supported operation resumes it automatically. You do not need to call `Sandbox.connect()` first.
+
+#### SDK example: pause, then read a file
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  timeoutMs: 10 * 60 * 1000,
+  lifecycle: {
+    onTimeout: 'pause',
+    autoResume: true,
+  },
+})
+
+await sandbox.files.write('/home/user/hello.txt', 'hello from a paused sandbox')
+await sandbox.pause()
+
+const content = await sandbox.files.read('/home/user/hello.txt')
+console.log(content)
+console.log(`State after read: ${(await sandbox.getInfo()).state}`)
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    timeout=10 * 60,
+    lifecycle={
+        "on_timeout": "pause",
+        "auto_resume": True,
+    },
+)
+
+sandbox.files.write("/home/user/hello.txt", "hello from a paused sandbox")
+sandbox.pause()
+
+content = sandbox.files.read("/home/user/hello.txt")
+print(content)
+print(f"State after read: {sandbox.get_info().state}")
+```
+</CodeGroup>
+
+### AutoResume use cases
+
+#### Web and dev/preview servers
+
+Use `onTimeout: "pause"` + `autoResume: true` so inbound traffic can wake a paused sandbox automatically.
+This works for both basic web/API servers and dev or preview servers you open occasionally.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  timeoutMs: 10 * 60 * 1000,
+  lifecycle: {
+    onTimeout: 'pause',
+    autoResume: true,
+  },
+})
+
+await sandbox.commands.run(
+  `python3 -m pip -q install 'flask>=2.2'`
+)
+
+await sandbox.files.write(
+  '/home/user/app.py',
+  [
+    'from flask import Flask',
+    'app = Flask(__name__)',
+    '@app.route("/")',
+    'def hello():',
+    '    return "Hello, World!"',
+    'app.run(host="0.0.0.0", port=3000)',
+    '',
+  ].join('\n')
+)
+
+await sandbox.commands.run(
+  'python3 -u /home/user/app.py > /home/user/flask.log 2>&1',
+  { background: true }
+)
+
+await new Promise((resolve) => setTimeout(resolve, 1000))
+
+const previewHost = sandbox.getHost(3000)
+console.log(`Preview URL: https://${previewHost}`)
+
+console.log(`Status before pause: ${(await sandbox.getInfo()).state}`)
+await sandbox.pause()
+console.log(`Status after pause: ${(await sandbox.getInfo()).state}`)
+```
+```python Python
+import time
+
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    timeout=10 * 60,
+    lifecycle={
+        "on_timeout": "pause",
+        "auto_resume": True,
+    },
+)
+
+sandbox.commands.run("python3 -m pip -q install 'flask>=2.2'")
+
+sandbox.files.write(
+    "/home/user/app.py",
+    'from flask import Flask\n'
+    'app = Flask(__name__)\n'
+    '@app.route("/")\n'
+    'def hello():\n'
+    '    return "Hello, World!"\n'
+    'app.run(host="0.0.0.0", port=3000)\n'
+)
+
+sandbox.commands.run(
+    "python3 -u /home/user/app.py > /home/user/flask.log 2>&1",
+    background=True,
+)
+
+time.sleep(1)
+
+preview_host = sandbox.get_host(3000)
+print(f"Preview URL: https://{preview_host}")
+
+print(f"Status before pause: {sandbox.get_info().state}")
+sandbox.pause()
+print(f"Status after pause: {sandbox.get_info().state}")
+```
+</CodeGroup>
+
+#### Agent/tool execution
+
+For queued tasks or tool calls, create once and keep using the same sandbox handle. If it is paused, it will auto-resume when you run the next command.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+// One-time setup
+const sandbox = await Sandbox.create({
+  timeoutMs: 5 * 60 * 1000,
+  lifecycle: {
+    onTimeout: 'pause',
+    autoResume: true,
+  },
+})
+
+// Later: called for each agent/tool task
+async function runToolTask(command) {
+  const result = await sandbox.commands.run(command)
+  return result.stdout
+}
+
+console.log(await runToolTask('python -c "print(2 + 2)"'))
+```
+```python Python
+from e2b import Sandbox
+
+# One-time setup
+sandbox = Sandbox.create(
+    timeout=5 * 60,
+    lifecycle={
+        "on_timeout": "pause",
+        "auto_resume": True,
+    },
+)
+
+# Later: called for each agent/tool task
+def run_tool_task(command: str) -> str:
+    result = sandbox.commands.run(command)
+    return result.stdout
+
+print(run_tool_task('python -c "print(2 + 2)"'))
+```
+</CodeGroup>
+
+#### Per-user sandboxes
+
+For multi-tenant apps, keep a map of sandbox IDs by user. On each request, connect to the user's existing sandbox (which auto-resumes if paused) or create a new one.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const userSandboxes = new Map() // userId → Sandbox
+
+async function getSandbox(userId) {
+  let sandbox = userSandboxes.get(userId)
+
+  if (!sandbox) {
+    sandbox = await Sandbox.create({
+      timeoutMs: 5 * 60 * 1000,
+      lifecycle: {
+        onTimeout: 'pause',
+        autoResume: true,
+      },
+    })
+    userSandboxes.set(userId, sandbox)
+  }
+
+  return sandbox
+}
+
+// On each user request (auto-resumes if paused)
+const sandbox = await getSandbox('user-123')
+const result = await sandbox.commands.run('echo "Hello from your sandbox"')
+console.log(result.stdout)
+```
+```python Python
+from e2b import Sandbox
+
+user_sandboxes: dict[str, Sandbox] = {}  # user_id → Sandbox
+
+def get_sandbox(user_id: str) -> Sandbox:
+    if user_id not in user_sandboxes:
+        user_sandboxes[user_id] = Sandbox.create(
+            timeout=5 * 60,
+            lifecycle={
+                "on_timeout": "pause",
+                "auto_resume": True,
+            },
+        )
+
+    return user_sandboxes[user_id]
+
+# On each user request (auto-resumes if paused)
+sandbox = get_sandbox("user-123")
+result = sandbox.commands.run('echo "Hello from your sandbox"')
+print(result.stdout)
+```
+</CodeGroup>
+
+### AutoResume cleanup
+
+Auto-resume is persistent, meaning if your sandbox resumes and later times out again, it will pause again.
+
+If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
+
+## Snapshots
+
+Snapshots let you create a persistent point-in-time capture of a running sandbox, including both its filesystem and memory state.
+You can then use a snapshot to spawn new sandboxes that start from the exact same state.
+
+The original sandbox continues running after the snapshot is created, and a single snapshot can be used to create many new sandboxes.
+
+### Prerequisites
+
+Snapshots require templates with envd version `v0.5.0` or above. If you are using a custom template created before envd `v0.5.0`, you need to rebuild it.
+
+You can check the template envd version using the `e2b template list` command or by viewing the templates list on the dashboard.
+
+### Snapshots vs. Pause/Resume
+
+| | Pause/Resume | Snapshots |
+|---|---|---|
+| Effect on original sandbox | Pauses (stops) the sandbox | Sandbox briefly pauses, then continues running |
+| Relationship | One-to-one — resume restores the same sandbox | One-to-many — snapshot can spawn many new sandboxes |
+| Use case | Suspend and resume a single sandbox | Create a reusable checkpoint |
+
+### Snapshot flow
+
+```mermaid actions={false}
+graph LR
+    A[Running Sandbox] -->|createSnapshot| B[Snapshotting]
+    B --> C[Snapshot Created]
+    B --> A
+    C -->|Sandbox.create| D[New Sandbox 1]
+    C -->|Sandbox.create| E[New Sandbox 2]
+    C -->|Sandbox.create| F[New Sandbox N]
+```
+
+The sandbox is briefly paused during the snapshot process but automatically returns to running state. The sandbox ID stays the same after the snapshot completes.
+
+<Warning>
+During the snapshot, the sandbox is temporarily paused and resumed. This causes all active connections (e.g. WebSocket, PTY, command streams) to be dropped. Make sure your client handles reconnection properly.
+</Warning>
+
+### Create a snapshot
+
+You can create a snapshot from a running sandbox instance.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+// Create a snapshot from a running sandbox
+const snapshot = await sandbox.createSnapshot()
+console.log('Snapshot ID:', snapshot.snapshotId)
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+# Create a snapshot from a running sandbox
+snapshot = sandbox.create_snapshot()
+print('Snapshot ID:', snapshot.snapshot_id)
+```
+</CodeGroup>
+
+You can also create a snapshot by sandbox ID using the static method.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+// Create a snapshot by sandbox ID
+const snapshot = await Sandbox.createSnapshot(sandboxId)
+console.log('Snapshot ID:', snapshot.snapshotId)
+```
+```python Python
+from e2b import Sandbox
+
+# Create a snapshot by sandbox ID
+snapshot = Sandbox.create_snapshot(sandbox_id)
+print('Snapshot ID:', snapshot.snapshot_id)
+```
+</CodeGroup>
+
+### Create a sandbox from a snapshot
+
+The snapshot ID can be used directly with `Sandbox.create()` to spawn a new sandbox from the snapshot. The new sandbox starts with the exact filesystem and memory state captured in the snapshot.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={5}
+import { Sandbox } from 'e2b'
+
+const snapshot = await sandbox.createSnapshot()
+
+// Create a new sandbox from the snapshot
+const newSandbox = await Sandbox.create(snapshot.snapshotId)
+```
+```python Python highlight={5}
+from e2b import Sandbox
+
+snapshot = sandbox.create_snapshot()
+
+# Create a new sandbox from the snapshot
+new_sandbox = Sandbox.create(snapshot.snapshot_id)
+```
+</CodeGroup>
+
+### List snapshots
+
+You can list all snapshots. The method returns a paginator for iterating through results.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const paginator = Sandbox.listSnapshots()
+
+const snapshots = []
+while (paginator.hasNext) {
+  const items = await paginator.nextItems()
+  snapshots.push(...items)
+}
+```
+```python Python
+from e2b import Sandbox
+
+paginator = Sandbox.list_snapshots()
+
+snapshots = []
+while paginator.has_next:
+    items = paginator.next_items()
+    snapshots.extend(items)
+```
+</CodeGroup>
+
+#### Filter by sandbox
+
+You can filter snapshots created from a specific sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const paginator = Sandbox.listSnapshots({ sandboxId: 'your-sandbox-id' })
+const snapshots = await paginator.nextItems()
+```
+```python Python
+from e2b import Sandbox
+
+paginator = Sandbox.list_snapshots(sandbox_id="your-sandbox-id")
+snapshots = paginator.next_items()
+```
+</CodeGroup>
+
+### Delete a snapshot
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+// Returns true if deleted, false if the snapshot was not found
+const deleted = await Sandbox.deleteSnapshot(snapshot.snapshotId)
+```
+```python Python
+from e2b import Sandbox
+
+Sandbox.delete_snapshot(snapshot.snapshot_id)
+```
+</CodeGroup>
+
+### Snapshots vs. Templates
+
+Both snapshots and [templates](/docs/template/quickstart) create reusable starting points for sandboxes, but they solve different problems.
+
+| | Templates | Snapshots |
+|---|---|---|
+| Defined by | Declarative code (Template builder) | Capturing a running sandbox |
+| Reproducibility | Same definition produces the same sandbox every time | Captures whatever state exists at that moment |
+| Best for | Repeatable base environments | Checkpointing, rollback, forking runtime state |
+
+Use templates when every sandbox should start from an identical, known state — pre-installed tools, fixed configurations, consistent environments.
+Use snapshots when you need to capture or fork live runtime state that depends on what happened during execution.
+
+### Snapshot use cases
+
+- **Checkpointing agent work** — an AI agent has loaded data and produced partial results in memory. Snapshot it so you can resume or fork from that point later.
+- **Rollback points** — snapshot before a risky or expensive operation (running untrusted code, applying a migration, refactoring a web app). If it fails, rollback - spawn a fresh sandbox from the snapshot before the operation happened.
+- **Forking workflows** — spawn multiple sandboxes from the same snapshot to explore different approaches in parallel.
+- **Cached sandboxes** — avoid repeating expensive setup by snapshotting a sandbox that has already loaded a large dataset or started a long-running process.
+- **Sharing state** — one user or agent configures an environment interactively, snapshots it, and others start from that exact state.

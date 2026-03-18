@@ -72,6 +72,7 @@
             "pages": [
               "docs/sandbox",
               "docs/sandbox/lifecycle",
+              "docs/sandbox/persistence",
               "docs/sandbox/commands",
               "docs/sandbox/configuration",
               "docs/sandbox/security",
@@ -3937,18 +3938,13 @@
       "permanent": true
     },
     {
-      "source": "/docs/sandbox/persistence",
-      "destination": "/docs/sandbox/lifecycle",
-      "permanent": true
-    },
-    {
       "source": "/docs/sandbox/snapshots",
-      "destination": "/docs/sandbox/lifecycle",
+      "destination": "/docs/sandbox/persistence",
       "permanent": true
     },
     {
       "source": "/docs/sandbox/auto-resume",
-      "destination": "/docs/sandbox/lifecycle",
+      "destination": "/docs/sandbox/persistence",
       "permanent": true
     },
     {

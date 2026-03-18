@@ -1,13 +1,73 @@
 ---
 title: "Sandbox"
 sidebarTitle: Overview
+description: "E2B sandboxes are persistent, secure cloud environments for AI agents — with pause/resume, snapshots, and auto-resume built in."
 ---
 
-An E2B sandbox is a secure, isolated cloud environment where your AI agents can execute code, run commands, interact with the filesystem, and access the internet. Sandboxes support long-lived sessions with pause/resume, snapshots, and configurable timeouts.
+An E2B sandbox is a persistent, secure cloud environment where your AI agents execute code, run commands, manage files, and access the internet. Every sandbox supports **pause and resume** — when a sandbox times out, it can automatically pause and preserve its full state (filesystem and memory), then resume exactly where it left off when activity arrives.
+
+```mermaid actions={false}
+flowchart LR
+    start(( )) -->|create| Running
+    Running -->|timeout or pause| Paused
+    Paused -->|connect or auto‑resume| Running
+    Running -->|snapshot| Snapshotting
+    Snapshotting -->|complete| Running
+    Running -->|kill| Killed
+    Paused -->|kill| Killed
+```
+
+## Key characteristics
+
+- **Persistent by default** — configure `onTimeout: 'pause'` and sandboxes preserve their full state (filesystem + memory) indefinitely. Resume at any time.
+- **Auto-resume** — paused sandboxes wake automatically when SDK calls or HTTP traffic arrive. No manual state management needed.
+- **Snapshots** — capture a running sandbox's state and spawn multiple new sandboxes from it. Useful for checkpointing, forking, and rollback.
+- **Configurable timeouts** — sandboxes run for up to 24 hours (Pro) or 1 hour (Base) continuously. Pausing resets the runtime window.
+- **Isolated and secure** — each sandbox runs in its own microVM with network controls, access tokens, and rate limits.
+
+## Quick setup: persistent sandbox
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  timeoutMs: 5 * 60 * 1000,
+  lifecycle: {
+    onTimeout: 'pause',     // pause instead of kill on timeout
+    autoResume: true,        // wake on activity
+  },
+})
+
+// Use the sandbox — it auto-pauses when idle, auto-resumes when needed
+const result = await sandbox.commands.run('echo "Hello from a persistent sandbox"')
+console.log(result.stdout)
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    timeout=5 * 60,
+    lifecycle={
+        "on_timeout": "pause",   # pause instead of kill on timeout
+        "auto_resume": True,     # wake on activity
+    },
+)
+
+# Use the sandbox — it auto-pauses when idle, auto-resumes when needed
+result = sandbox.commands.run('echo "Hello from a persistent sandbox"')
+print(result.stdout)
+```
+</CodeGroup>
+
+## Core
 
 <CardGroup cols={2}>
   <Card title="Lifecycle" icon="rotate" href="/docs/sandbox/lifecycle">
-    Timeouts, pause/resume, snapshots, listing and connecting to sandboxes.
+    Timeouts, sandbox info, metadata, listing, connecting, and shutdown.
+  </Card>
+  <Card title="Pause, resume & snapshots" icon="pause" href="/docs/sandbox/persistence">
+    Pause/resume, auto-pause, auto-resume, snapshots, and state transitions.
   </Card>
   <Card title="Commands" icon="terminal" href="/docs/sandbox/commands">
     Interactive terminal (PTY) and SSH access.
