@@ -12,13 +12,11 @@ Templates define a sandbox's base environment, but many workloads need dynamic c
 |---|---|---|
 | Same packages for every sandbox | Yes | |
 | Packages vary per user or request | | Yes |
-| Large, slow-to-install dependencies | Yes | |
-| Small, fast-to-install dependencies | | Yes |
-| Static config files | Yes | |
-| User-uploaded files | | Yes |
+| Static config files, shared across sandboxes | Yes | |
+| User-uploaded files or per-request data | | Yes |
 | Secrets that change per request | | Yes |
 
-When in doubt: put slow, stable dependencies in a [template](/docs/template/quickstart), and handle everything dynamic at runtime.
+When in doubt: if every sandbox needs it, put it in a [template](/docs/template/quickstart). If it varies per user or request, handle it at runtime.
 
 ## Install packages at runtime
 
