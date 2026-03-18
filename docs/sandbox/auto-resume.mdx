@@ -66,6 +66,8 @@ That includes SDK operations like:
 
 If a sandbox is paused and `autoResume` is enabled, the next supported operation resumes it automatically. You do not need to call [`Sandbox.connect()`](/docs/sandbox/connect) first.
 
+When auto-resume triggers, the SDK handles the resume transparently — if the sandbox is mid-transition, operations wait for the transition to complete. See [Behavior during state transitions](/docs/sandbox/persistence#behavior-during-state-transitions) for the full error reference.
+
 ### SDK example: pause, then read a file
 
 <CodeGroup>

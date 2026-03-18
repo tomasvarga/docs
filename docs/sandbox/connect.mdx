@@ -74,3 +74,5 @@ r = sandbox.commands.run("whoami")
 print(f"Running in sandbox {sandbox.sandbox_id} as \"{r.stdout.strip()}\"")
 ```
 </CodeGroup>
+
+If the sandbox is paused, `Sandbox.connect()` automatically resumes it before returning. If the sandbox is mid-transition (for example, currently pausing), the SDK waits for the transition to complete. See [Behavior during state transitions](/docs/sandbox/persistence#behavior-during-state-transitions) for details and error handling.

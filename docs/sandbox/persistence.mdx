@@ -69,6 +69,81 @@ sandbox.kill()  # Running/Paused → Killed
 ```
 </CodeGroup>
 
+## Behavior during state transitions
+
+Lifecycle operations like `pause()`, `connect()`, and `kill()` can take a variable amount of time to complete — pausing, for example, takes approximately 4 seconds per GiB of RAM. If you call an SDK operation while a sandbox is mid-transition, the SDK automatically waits for the transition to finish and then executes your operation. From your code's perspective, the transition appears instant.
+
+<Note>
+You do not need to poll sandbox state or add retry logic around transitions. The SDK handles waiting for you.
+</Note>
+
+Here's what happens in specific scenarios:
+
+| Scenario | What the SDK does |
+|---|---|
+| Call `commands.run()` while sandbox is pausing | Waits for pause to complete, then resumes the sandbox, then runs the command |
+| Call `connect()` on a paused sandbox | Automatically resumes the sandbox and returns a connected instance |
+| Call `connect()` on an already-running sandbox | Connects immediately — no state change needed |
+| Call `kill()` from any state | Transitions the sandbox to Killed, regardless of current state |
+| Call `pause()` on an already-paused sandbox | Returns immediately — no-op |
+
+### Errors during lifecycle operations
+
+When a lifecycle operation fails, the SDK raises one of the following errors. This table covers the most common cases — see the full error reference for [JavaScript](/docs/sdk-reference/js-sdk/v2.14.1/errors) and [Python](/docs/sdk-reference/python-sdk/v2.9.1/exceptions).
+
+| Operation | Error (JS / Python) | When it occurs |
+|---|---|---|
+| `pause()` | `NotFoundError` / `NotFoundException` | Sandbox doesn't exist or was already killed |
+| `connect()` | `NotFoundError` / `NotFoundException` | Sandbox ID doesn't exist |
+| `connect()` | `TimeoutError` / `TimeoutException` | Resume didn't complete within the timeout window |
+| `kill()` | `NotFoundError` / `NotFoundException` | Sandbox doesn't exist |
+| Any operation during a transition | `TimeoutError` / `TimeoutException` | The transition plus the operation together exceeded the request timeout |
+
+Here's an example of handling errors during lifecycle operations:
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox, TimeoutError, NotFoundError } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+const sandboxId = sbx.sandboxId
+
+await sbx.pause()
+
+try {
+  // connect() automatically resumes a paused sandbox
+  const resumed = await Sandbox.connect(sandboxId)
+  const result = await resumed.commands.run('echo hello')
+  console.log(result.stdout)
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    console.error('Sandbox no longer exists:', error.message)
+  } else if (error instanceof TimeoutError) {
+    console.error('Operation timed out during transition:', error.message)
+  }
+}
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+from e2b import TimeoutException, NotFoundException
+
+sbx = Sandbox.create()
+sandbox_id = sbx.sandbox_id
+
+sbx.pause()
+
+try:
+    # connect() automatically resumes a paused sandbox
+    resumed = Sandbox.connect(sandbox_id)
+    result = resumed.commands.run("echo hello")
+    print(result.stdout)
+except NotFoundException as e:
+    print(f"Sandbox no longer exists: {e}")
+except TimeoutException as e:
+    print(f"Operation timed out during transition: {e}")
+```
+</CodeGroup>
+
 ## Pausing sandbox
 When you pause a sandbox, both the sandbox's filesystem and memory state will be saved. This includes all the files in the sandbox's filesystem and all the running processes, loaded variables, data, etc.
 
