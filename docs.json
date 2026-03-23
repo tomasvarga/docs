@@ -216,6 +216,12 @@
               "docs/troubleshooting/templates/49999-port-not-open",
               "docs/troubleshooting/pip-install-error"
             ]
+          },
+          {
+            "group": "Changelog",
+            "pages": [
+              "docs/changelog"
+            ]
           }
         ]
       },

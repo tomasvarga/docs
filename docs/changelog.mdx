@@ -1,0 +1,50 @@
+---
+title: Changelog
+description: Latest updates and improvements to E2B.
+---
+
+<Update label="2026-03-23" description="Week of March 17–23" tags={["Feature", "Update", "Fix"]}>
+## New features
+
+- **Sandbox lifecycle configuration.** You can now control what happens when a sandbox times out using the new `lifecycle` option on `Sandbox.create()`. Set `on_timeout` to `pause` (instead of the default `kill`) to enable resuming later, and enable `auto_resume` so paused sandboxes wake up automatically on incoming traffic. This replaces the previous `beta_pause` API, which is now deprecated. [Learn more](/docs/sandbox/persistence)
+
+- **`fixMissing` option for template package installs.** The `aptInstall()` helper in the JS SDK and `apt_install()` in the Python SDK now accept a `fixMissing` / `fix_missing` option, which passes `--fix-missing` to `apt-get install` during template builds. This helps resolve incomplete package downloads without manual intervention. [Learn more](/docs/template/quickstart)
+
+- **`getTags` / `get_tags` for templates.** Both the JS and Python SDKs now include a method to list all tags for a given template, making it easier to manage template versions programmatically. [Learn more](/docs/template/tags)
+
+- **CLI pause and resume commands.** You can now pause and resume sandboxes directly from the CLI with `e2b sandbox pause <id>` and `e2b sandbox resume <id>`. [Learn more](/docs/cli)
+
+- **Detached sandbox creation in CLI.** Use `e2b sandbox create <template> -d` to create a sandbox without attaching a terminal session. The command prints the sandbox ID and dashboard link, then exits immediately.
+
+## Updates
+
+- **Sandbox metrics enabled by default.** Sandbox CPU and memory metrics are now collected and queryable by default — no feature flag required. You can monitor resource usage for your sandboxes without any additional configuration. [Learn more](/docs/sandbox/metrics)
+
+- **CLI `template init` uses `name` parameter.** The `e2b template init` command now generates code using the current `name` parameter instead of the deprecated `alias`. Existing templates continue to work.
+
+- **Default limit for `sandbox list`.** The CLI now defaults to returning 1,000 sandboxes when listing, preventing unbounded queries. Pass `--limit 0` to list all sandboxes.
+
+- **Python SDK timeout handling improvements.** Server-streaming requests in the Python SDK now include proper read timeouts, reducing the chance of hanging connections on slow or stalled streams.
+
+- **Dotfiles included in template uploads.** Files starting with a dot (`.env`, `.gitignore`, etc.) are now correctly included when uploading template files via the JS and Python SDKs.
+
+- **arm64 support for the base template Docker image.** The base template image is now built for both `amd64` and `arm64` architectures.
+
+## Bug fixes
+
+- **Fixed template builds on older infrastructure.** Resolved an issue where template builds could fail with an "Invalid filesystem option" error on certain orchestrator versions.
+
+- **Fixed `listSandboxes` pagination in JS SDK.** The pagination logic in the JS SDK's `listSandboxes` now correctly stops when the requested limit is reached.
+
+- **Fixed CLI crash on non-standard API errors.** The CLI error handler no longer crashes when the API returns an error without a standard HTTP status code (e.g., network failures or timeouts).
+
+- **Fixed CLI update check.** Replaced the update notification library so update checks work correctly in the bundled CLI. Errors during update checks are now caught gracefully.
+
+- **Fixed CLI sandbox logs timeout.** The `sandbox logs` command no longer times out unnecessarily when `--follow` is not set.
+
+- **Fixed sandbox creation in self-hosted JS SDK.** Sandbox headers are now correctly passed to the internal API client, fixing `Sandbox.create()` failures in self-hosted environments.
+
+- **Fixed Python async SDK transport reuse across event loops.** The async Python SDK now creates a separate HTTP transport per event loop, preventing errors when `asyncio.run()` is called multiple times or from different threads.
+
+- **Fixed error message in Python SDK `set_timeout`.** Corrected the error message when calling `set_timeout` on a non-existent sandbox (previously incorrectly referred to "Paused").
+</Update>
