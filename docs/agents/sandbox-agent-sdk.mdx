@@ -1,0 +1,159 @@
+---
+title: "Sandbox Agent SDK"
+description: "Run Sandbox Agent inside an E2B sandbox and control it from a local Node.js script."
+---
+
+This guide shows how to run [Sandbox Agent](https://github.com/rivet-dev/sandbox-agent) inside an E2B sandbox and control it with the [Sandbox Agent SDK](https://sandboxagent.dev/docs/sdk-overview).
+
+Sandbox Agent lets you run coding agents in sandboxes and control them from your own backend over HTTP.
+
+- **Universal Agent API** - A single interface to manage Claude Code, Codex, OpenCode, Cursor, Amp, and Pi with full feature coverage across every supported agent.
+- **Universal Session Schema** - A standardized schema that normalizes all agent event formats into a consistent structure for storage and replay.
+- **Server or SDK Mode** - Run as a standalone HTTP server or integrate natively using the TypeScript SDK.
+
+## Workflow overview
+
+- A local Node.js script starts an E2B sandbox and boots the Sandbox Agent server inside it.
+- The script opens a session, sends a prompt to an agent (Claude in this example), and prints the response.
+- When the script exits, the sandbox is destroyed.
+
+## Prerequisites
+
+- `E2B_API_KEY` — get your key from the [E2B Dashboard](https://e2b.dev/dashboard?tab=keys)
+- At least one provider key: `OPENAI_API_KEY`, `CODEX_API_KEY`, or `ANTHROPIC_API_KEY`
+
+## Setup
+
+Install the [Sandbox Agent SDK](https://www.npmjs.com/package/sandbox-agent) and its dependencies. [dotenv](https://www.npmjs.com/package/dotenv) loads environment variables from your `.env` file, and [tsx](https://www.npmjs.com/package/tsx) lets you run TypeScript directly without a build step.
+
+```bash
+npm install sandbox-agent dotenv tsx e2b
+```
+
+Create a `.env` file with your API keys:
+
+```text .env
+E2B_API_KEY=e2b_***
+ANTHROPIC_API_KEY=your_anthropic_api_key
+# OPENAI_API_KEY=your_openai_api_key
+```
+
+## Run headless
+
+Create an `index.ts` file and follow the steps below to build a script that boots an agent inside an E2B sandbox, sends a prompt, and streams the response.
+
+<Steps>
+<Step title="Forward provider credentials">
+Load your environment variables and collect the provider API keys that need to be forwarded into the sandbox so the agent can authenticate with the LLM provider.
+
+```ts
+import "dotenv/config";
+
+const envs: Record<string, string> = {};
+if (process.env.ANTHROPIC_API_KEY) envs.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+if (process.env.OPENAI_API_KEY) envs.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+```
+</Step>
+<Step title="Start Sandbox Agent">
+Initialize the SDK with the E2B provider. This creates a sandbox and boots the Sandbox Agent server inside it. The [inspector UI](https://sandboxagent.dev/docs/sdk-overview) lets you view sessions, events, and agent state in real time.
+
+```ts
+import { SandboxAgent } from 'sandbox-agent';
+import { e2b } from 'sandbox-agent/e2b';
+
+const sdk = await SandboxAgent.start({
+  sandbox: e2b({
+    create: { envs },
+  })
+});
+
+console.log(`Inspector URL: ${sdk.inspectorUrl}`);
+```
+</Step>
+<Step title="Send a prompt and stream events">
+Create a session targeting a specific agent (Claude in this example), send a prompt, and stream the resulting events. Read more about [Sessions and Events](https://sandboxagent.dev/docs/agent-sessions).
+
+```ts
+const session = await sdk.createSession({ agent: 'claude' });
+const off = session.onEvent((event) => {
+    console.log(`[event] from ${event.sender}`, event.payload);
+});
+await session.prompt([
+  { type: 'text', text: 'Summarize this repository' }
+]);
+off();
+```
+
+To use a different agent, update the `agent` value in `createSession` (for example, `codex`) and ensure the corresponding provider credentials are available in the environment.
+</Step>
+<Step title="Destroy the sandbox">
+Once you're done, destroy the sandbox to free resources.
+
+```ts
+await sdk.destroySandbox();
+```
+</Step>
+<Step title="Run the script">
+Run the completed `index.ts` file:
+
+```bash
+node --import tsx index.ts
+```
+</Step>
+</Steps>
+
+### Full file preview
+
+<CodeGroup>
+```ts index.ts expandable
+import "dotenv/config";
+import { SandboxAgent } from "sandbox-agent";
+import { e2b } from "sandbox-agent/e2b";
+
+// Forward provider credentials into the sandbox
+const envs: Record<string, string> = {};
+if (process.env.ANTHROPIC_API_KEY) envs.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+if (process.env.OPENAI_API_KEY) envs.OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+// Start Sandbox Agent with the E2B provider
+const sdk = await SandboxAgent.start({
+  sandbox: e2b({
+    create: { envs },
+  }),
+});
+
+console.log(`Inspector URL: ${sdk.inspectorUrl}`);
+
+// Create a session targeting Claude and stream events
+const session = await sdk.createSession({ agent: "claude" });
+const off = session.onEvent((event) => {
+  console.log(`[event] from ${event.sender}`, event.payload);
+});
+
+await session.prompt([
+  { type: "text", text: "Summarize this repository" },
+]);
+off();
+
+// Clean up
+await sdk.destroySandbox();
+```
+</CodeGroup>
+
+## Full example
+
+See the complete project in the [e2b-cookbook repo](https://github.com/rivet-dev/e2b-cookbook/tree/main/examples/sandbox-agent-sdk).
+
+## Related guides
+
+<CardGroup cols={3}>
+  <Card title="Sandbox persistence" icon="clock" href="/docs/sandbox/persistence">
+    Auto-pause, resume, and manage sandbox lifecycle
+  </Card>
+  <Card title="Git integration" icon="code-branch" href="/docs/sandbox/git-integration">
+    Clone repos, manage branches, and push changes
+  </Card>
+  <Card title="SSH access" icon="terminal" href="/docs/sandbox/ssh-access">
+    Connect to the sandbox via SSH for interactive sessions
+  </Card>
+</CardGroup>
