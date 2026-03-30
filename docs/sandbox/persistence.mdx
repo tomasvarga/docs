@@ -303,6 +303,26 @@ If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
 
 If you use `autoResume: false`, resume explicitly with `Sandbox.connect()`.
 
+### Timeout after auto-resume
+
+When a sandbox auto-resumes, it restarts with a **5-minute minimum timeout**. If you originally created the sandbox with a longer timeout, that value carries over.
+The countdown begins from the moment the sandbox resumes, not from when it was first created.
+
+For example, if you create a sandbox with a 2-minute timeout:
+
+1. The sandbox runs for 2 minutes, then pauses.
+2. Activity arrives and the sandbox auto-resumes.
+3. A 5-minute timeout starts (the 5-minute minimum applies because the original timeout was shorter).
+4. If no further activity resets the timeout, the sandbox pauses again after 5 minutes.
+
+If you create a sandbox with a 1-hour timeout, the auto-resume timeout will also be 1 hour, since it exceeds the 5-minute minimum.
+
+This cycle repeats every time the sandbox auto-resumes — the lifecycle configuration (`onTimeout: "pause"` + `autoResume: true`) is persistent across pause/resume cycles.
+
+<Note>
+You can change the timeout after the sandbox resumes by calling `setTimeout`/`set_timeout`. See [Change sandbox timeout during runtime](/docs/sandbox/lifecycle#change-sandbox-timeout-during-runtime).
+</Note>
+
 ### What counts as activity
 
 Auto-resume is triggered by the sandbox activity - that's both HTTP traffic and controlling the sandbox from the SDK.
@@ -552,6 +572,7 @@ print(result.stdout)
 ### Cleanup
 
 Auto-resume is persistent, meaning if your sandbox resumes and later times out again, it will pause again.
+Each time the sandbox resumes, it gets a fresh timeout (at least 5 minutes, or longer if the original creation timeout exceeds that) — so the sandbox keeps cycling between running and paused as long as activity arrives.
 
 If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
 

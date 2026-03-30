@@ -1,0 +1,86 @@
+name: API Reference Validation
+
+on:
+  # schedule:
+  #   # Every Thursday at 8 PM UTC
+  #   - cron: '0 20 * * 4'
+  workflow_dispatch:
+
+concurrency:
+  group: api-reference-validation
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      # Step 1: Generate spec from source
+      - name: Generate OpenAPI spec
+        run: python3 scripts/generate_openapi_reference.py --output openapi-generated.yml
+
+      # Step 2: Compare with committed spec
+      - name: Compare specs
+        id: diff
+        run: |
+          if diff -q openapi-public.yml openapi-generated.yml > /dev/null 2>&1; then
+            echo "Spec is up to date — nothing to do"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Spec has drifted from source"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 3: Create PR if spec has drifted
+      - name: Create PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp openapi-generated.yml openapi-public.yml
+
+          BRANCH="api-spec-update-$(date +%Y-%m-%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add openapi-public.yml
+          git commit -m "docs: update openapi-public.yml from source specs $(date +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+
+          gh pr create \
+            --title "Update API spec $(date +%Y-%m-%d)" \
+            --body "$(cat <<EOF
+          ## OpenAPI Spec Update
+
+          The generated \`openapi-public.yml\` has drifted from the source specs.
+          This PR updates it to match the latest upstream definitions.
+          EOF
+          )" \
+            --base main
+
+      - name: Summary
+        if: always()
+        env:
+          CHANGED: ${{ steps.diff.outputs.changed }}
+        run: |
+          echo "## API Reference Spec Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Result | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Spec changed | ${CHANGED:-false} |" >> $GITHUB_STEP_SUMMARY

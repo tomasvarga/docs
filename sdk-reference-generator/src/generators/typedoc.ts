@@ -1,12 +1,20 @@
 import { execa } from "execa";
 import fs from "fs-extra";
 import path from "path";
+import { fileURLToPath } from "url";
 import { log } from "../lib/log.js";
 import { buildTypedocConfig } from "../lib/config.js";
 import { CONSTANTS } from "../lib/constants.js";
 import type { TypedocConfig } from "../types.js";
 
 const GENERATED_CONFIG_NAME = "typedoc.generated.json";
+
+// Resolve the generator's node_modules so typedoc can find its plugins
+// even when running from the SDK directory's cwd.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const generatorRoot = path.resolve(__dirname, "../..");
+const generatorNodeModules = path.join(generatorRoot, "node_modules");
+const typedocBin = path.join(generatorNodeModules, ".bin/typedoc");
 
 /**
  * Removes any existing typedoc config from the repo to prevent interference.
@@ -41,10 +49,16 @@ export async function generateTypedoc(
   log.info("Running TypeDoc with generated config...", 1);
   log.data(`Entry points: ${resolvedConfig.entryPoints.join(", ")}`, 1);
 
+  // Extend NODE_PATH so typedoc (running in SDK dir) can resolve plugins
+  // from the generator's node_modules instead of the SDK's.
+  const existingNodePath = process.env.NODE_PATH || "";
+  const nodePath = existingNodePath
+    ? `${generatorNodeModules}${path.delimiter}${existingNodePath}`
+    : generatorNodeModules;
+
   await execa(
-    "npx",
+    typedocBin,
     [
-      "typedoc",
       "--options",
       `./${GENERATED_CONFIG_NAME}`,
       "--plugin",
@@ -55,6 +69,10 @@ export async function generateTypedoc(
     {
       cwd: sdkDir,
       stdio: "inherit",
+      env: {
+        ...process.env,
+        NODE_PATH: nodePath,
+      },
     }
   );
 

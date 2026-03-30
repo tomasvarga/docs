@@ -90,3 +90,13 @@ code {
     background-color: rgba(255, 136, 0, 0.25) !important;
     border-color: rgba(255, 136, 0, 0.6) !important;
 }
+
+/* Hide scrollbar on sidebar API endpoint rows with deprecated badges */
+#sidebar a .overflow-x-hidden {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+#sidebar a .overflow-x-hidden::-webkit-scrollbar {
+    display: none !important;
+}

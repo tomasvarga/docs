@@ -125,6 +125,18 @@
             ]
           },
           {
+            "group": "Volumes",
+            "pages": [
+              "docs/volumes",
+              "docs/volumes/manage",
+              "docs/volumes/mount",
+              "docs/volumes/read-write",
+              "docs/volumes/info",
+              "docs/volumes/upload",
+              "docs/volumes/download"
+            ]
+          },
+          {
             "group": "Commands",
             "pages": [
               "docs/commands",
@@ -3611,6 +3623,14 @@
             ]
           }
         ]
+      },
+      {
+        "anchor": "API reference",
+        "icon": "code",
+        "openapi": {
+          "source": "openapi-public.yml",
+          "directory": "docs/api-reference"
+        }
       }
     ],
     "global": {}
