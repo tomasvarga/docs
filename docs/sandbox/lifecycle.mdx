@@ -17,7 +17,7 @@ Every sandbox has a configurable timeout that determines how long it stays runni
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={6}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create a sandbox and keep it running for 60 seconds.
 // 🚨 Note: The units are milliseconds.
@@ -26,7 +26,7 @@ const sandbox = await Sandbox.create({
 })
 ```
 ```python Python highlight={6}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create a sandbox and keep it running for 60 seconds.
 # 🚨 Note: The units are seconds.
@@ -47,7 +47,7 @@ You can for example start with a sandbox with 1 minute timeout and then periodic
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create a sandbox and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
@@ -57,7 +57,7 @@ const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 await sandbox.setTimeout(30_000)
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create a sandbox and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
@@ -74,7 +74,7 @@ You can retrieve sandbox information like sandbox ID, template, metadata, starte
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create a sandbox and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
@@ -95,7 +95,7 @@ console.log(info)
 ```
 
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create a sandbox and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
@@ -123,7 +123,7 @@ You specify metadata when creating a sandbox and can access it later through [li
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={6}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create sandbox with metadata.
 const sandbox = await Sandbox.create({
@@ -142,7 +142,7 @@ const runningSandboxes = await paginator.nextItems()
 console.log(runningSandboxes[0].metadata)
 ```
 ```python Python highlight={6}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create sandbox with metadata.
 sandbox = Sandbox.create(
@@ -174,7 +174,7 @@ You can list sandboxes using the `Sandbox.list()` method. The method supports pa
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={6,11,14,24}
-    import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+    import { Sandbox, SandboxInfo } from 'e2b'
 
     const sandbox = await Sandbox.create(
       {
@@ -200,7 +200,7 @@ You can list sandboxes using the `Sandbox.list()` method. The method supports pa
     const nextPage = await paginator.nextItems()
     ```
     ```python Python highlight={5,9,12,22}
-    from e2b_code_interpreter import Sandbox, SandboxInfo
+    from e2b import Sandbox, SandboxInfo
 
     sandbox = Sandbox.create(
         metadata={
@@ -231,7 +231,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={9,13}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     // Create a sandbox.
     const sandbox = await Sandbox.create()
@@ -246,7 +246,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
     const sandboxes = await paginator.nextItems()
     ```
     ```python Python highlight={9,14}
-    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+    from e2b import Sandbox, SandboxQuery, SandboxState
 
     # Create a sandbox with metadata.
     sandbox = Sandbox.create()
@@ -267,7 +267,7 @@ You can also filter sandboxes by metadata key-value pairs specified during creat
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={6-8,15,18}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     // Create sandbox with metadata.
     const sandbox = await Sandbox.create({
@@ -288,7 +288,7 @@ You can also filter sandboxes by metadata key-value pairs specified during creat
     const sandboxes = await paginator.nextItems()
     ```
     ```python Python highlight={6-8,16-17}
-    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+    from e2b import Sandbox, SandboxQuery, SandboxState
 
     # Create sandbox with metadata.
     sandbox = Sandbox.create(
@@ -320,7 +320,7 @@ For more granular pagination, you can set custom per-page item limit (default an
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={4-5,16}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     const paginator = Sandbox.list({
       limit: 100,
@@ -338,7 +338,7 @@ For more granular pagination, you can set custom per-page item limit (default an
     await paginator.nextItems()
     ```
     ```python Python  highlight={5-6,13}
-    from e2b_code_interpreter import Sandbox
+    from e2b import Sandbox
 
     paginator = Sandbox.list(
         limit=100,
@@ -357,7 +357,7 @@ You can fetch all pages by looping through the paginator while checking if there
 
 <CodeGroup>
     ```js JavaScript & TypeScript  highlight={7}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     const paginator = Sandbox.list()
 
@@ -369,7 +369,7 @@ You can fetch all pages by looping through the paginator while checking if there
     }
     ```
     ```python Python highlight={7}
-    from e2b_code_interpreter import Sandbox, SandboxQuery
+    from e2b import Sandbox, SandboxQuery
 
     paginator = Sandbox.list()
 
@@ -391,7 +391,7 @@ To connect to a running sandbox, you first need to retrieve its ID. You can do t
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 
@@ -410,7 +410,7 @@ const sandboxId = runningSandboxes[0].sandboxId
 ```
 
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 
@@ -433,7 +433,7 @@ Now that you have the sandbox ID, you can connect to the sandbox using the `Sand
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={3}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.connect(sandboxId)
 
@@ -444,7 +444,7 @@ console.log(`Running in sandbox ${sandbox.sandboxId} as "${result.stdout.trim()}
 ```
 
 ```python Python highlight={3}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.connect(sandbox_id)
 
@@ -461,7 +461,7 @@ You can shutdown the sandbox any time even before the timeout is up by calling t
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create a sandbox and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
@@ -470,7 +470,7 @@ const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 await sandbox.kill()
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create a sandbox and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)

@@ -17,13 +17,13 @@ You can read files from the sandbox filesystem using the `files.read()` method.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const fileContent = await sandbox.files.read('/path/to/file')
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 file_content = sandbox.files.read('/path/to/file')
@@ -36,14 +36,14 @@ You can write single files to the sandbox filesystem using the `files.write()` m
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
 await sandbox.files.write('/path/to/file', 'file content')
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -57,7 +57,7 @@ You can also write multiple files to the sandbox.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -67,7 +67,7 @@ await sandbox.files.write([
 ])
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -86,7 +86,7 @@ You can get information about a file or directory using the `files.getInfo()` / 
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -111,7 +111,7 @@ console.log(info)
 // }
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -141,7 +141,7 @@ print(info)
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -166,7 +166,7 @@ console.log(info)
 // }
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -203,7 +203,7 @@ It's recommended not to collect or close watcher immediately after making a chan
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={7-12}
-import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+import { Sandbox, FilesystemEventType } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const dirname = '/home/user'
@@ -220,7 +220,7 @@ const handle = await sandbox.files.watchDir(dirname, async (event) => {
 await sandbox.files.write(`${dirname}/my-file`, 'hello')
 ```
 ```python Python highlight={7,12-16}
-from e2b_code_interpreter import Sandbox, FilesystemEventType
+from e2b import Sandbox, FilesystemEventType
 
 sandbox = Sandbox.create()
 dirname = '/home/user'
@@ -249,7 +249,7 @@ When rapidly creating new folders (e.g., deeply nested path of folders), events 
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={13,17}
-import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+import { Sandbox, FilesystemEventType } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const dirname = '/home/user'
@@ -268,7 +268,7 @@ const handle = await sandbox.files.watchDir(dirname, async (event) => {
 await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello')
 ```
 ```python Python highlight={7,9}
-from e2b_code_interpreter import Sandbox, FilesystemEventType
+from e2b import Sandbox, FilesystemEventType
 
 sandbox = Sandbox.create()
 dirname = '/home/user'
@@ -296,7 +296,7 @@ You can upload data to the sandbox using the `files.write()` method.
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -306,7 +306,7 @@ const content = fs.readFileSync('/local/path')
 await sandbox.files.write('/path/in/sandbox', content)
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -327,7 +327,7 @@ You can optionally set an expiration time for the URL so that it will be valid o
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Start a secured sandbox (all operations must be authorized by default)
 const sandbox = await Sandbox.create(template, { secure: true })
@@ -370,7 +370,7 @@ content = sandbox.files.read('/path/in/sandbox')
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -412,7 +412,7 @@ await sandbox.files.write(files)
 ```
 ```python Python
 import os
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -455,7 +455,7 @@ You can download data from the sandbox using the `files.read()` method.
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -465,7 +465,7 @@ const content = await sandbox.files.read('/path/in/sandbox')
 fs.writeFileSync('/local/path', content)
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -488,7 +488,7 @@ You can optionally set an expiration time for the URL so that it will be valid o
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Start a secured sandbox (all operations must be authorized by default)
 const sandbox = await Sandbox.create(template, { secure: true })

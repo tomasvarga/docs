@@ -39,7 +39,7 @@ flowchart TD
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create() // Starts in Running state
 
@@ -54,7 +54,7 @@ await sandbox.kill() // Running/Paused → Killed
 ```
 
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()  # Starts in Running state
 
@@ -77,7 +77,7 @@ When you pause a sandbox, both the sandbox's filesystem and memory state will be
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={8-9}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -88,7 +88,7 @@ await sbx.pause()
 console.log('Sandbox paused', sbx.sandboxId)
 ```
 ```python Python highlight={8-9}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
@@ -107,7 +107,7 @@ This means that all the files in the sandbox's filesystem will be restored and a
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={12-13}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -122,7 +122,7 @@ const sameSbx = await sbx.connect()
 console.log('Connected to the sandbox', sameSbx.sandboxId)
 ```
 ```python Python highlight={12-13}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
@@ -144,7 +144,7 @@ You can list all paused sandboxes by calling the `Sandbox.list` method and suppl
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={4,7}
-import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+import { Sandbox, SandboxInfo } from 'e2b'
 
 // List all paused sandboxes
 const paginator = Sandbox.list({ query: { state: ['paused'] } })
@@ -160,7 +160,7 @@ while (paginator.hasNext) {
 ```
 ```python Python highlight={4,7}
 # List all paused sandboxes
-from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+from e2b import Sandbox, SandboxQuery, SandboxState
 
 paginator = Sandbox.list(SandboxQuery(state=[SandboxState.PAUSED]))
 
@@ -180,7 +180,7 @@ You can remove paused sandboxes by calling the `kill` method on the Sandbox inst
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={11,14}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -196,7 +196,7 @@ await sbx.kill()
 await Sandbox.kill(sbx.sandboxId)
 ```
 ```python Python highlight={9,12}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 
@@ -217,12 +217,12 @@ When you connect to a sandbox, the inactivity timeout resets. The default is 5 m
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.connect(sandboxId, { timeoutMs: 60 * 1000 }) // 60 seconds
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 ```

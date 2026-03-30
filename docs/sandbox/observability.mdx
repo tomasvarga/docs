@@ -15,7 +15,7 @@ Sandbox metrics let you monitor CPU, memory, and disk usage of running sandboxes
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={9}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 console.log('Sandbox created', sbx.sandboxId)
@@ -54,7 +54,7 @@ console.log('Sandbox metrics:', metrics)
 ```
 ```python Python highlight={10}
 from time import sleep
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 print('Sandbox created', sbx.sandbox_id)
@@ -124,7 +124,7 @@ Query Parameters:
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 
@@ -198,7 +198,7 @@ console.log(teamSandboxEvents)
 ```
 ```python Python
 import requests
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 
