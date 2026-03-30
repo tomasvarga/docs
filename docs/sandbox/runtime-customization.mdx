@@ -1,13 +1,13 @@
 ---
-title: "Customizing sandboxes at runtime"
-sidebarTitle: "Runtime customization"
+title: "Customizing sandboxes"
+sidebarTitle: "Customizing sandboxes"
 icon: "wrench"
-description: "Install packages, upload files, and configure E2B sandboxes at runtime when you can't bake everything into a template."
+description: "Install packages, upload files, and configure E2B sandboxes dynamically when you can't bake everything into a template."
 ---
 
-Templates define a sandbox's base environment, but many workloads need dynamic configuration — different packages per user, files uploaded at request time, or settings that change between runs. This guide covers patterns for customizing sandboxes at runtime without modifying your template.
+Templates define a sandbox's base environment, but many workloads need dynamic configuration — different packages per user, files uploaded at request time, or settings that change between runs. This page covers patterns for customizing sandboxes after creation.
 
-## When to use runtime customization vs. templates
+## When to use templates vs. runtime setup
 
 | Use case | Template | Runtime |
 |---|---|---|
@@ -19,7 +19,7 @@ Templates define a sandbox's base environment, but many workloads need dynamic c
 
 When in doubt: if every sandbox needs it, put it in a [template](/docs/template/quickstart). If it varies per user or request, handle it at runtime.
 
-## Install packages at runtime
+## Install packages
 
 Use `sandbox.commands.run()` to install packages after the sandbox starts. This is useful when different users or requests need different dependencies.
 
@@ -91,9 +91,9 @@ fast = Sandbox.create(snapshot.snapshot_id)
 ```
 </CodeGroup>
 
-## Upload files at sandbox start
+## Upload files
 
-Use `sandbox.files.write()` to upload configuration files, scripts, or user data into the sandbox.
+Use `sandbox.files.write()` to upload configuration files, scripts, or user data into the sandbox. See the [Filesystem](/docs/sandbox/filesystem) page for the full file operations API.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -142,45 +142,6 @@ print(f"Connecting to {config['apiEndpoint']}")
 # Run the uploaded script
 result = sandbox.commands.run("cd /home/user && python analyze.py")
 print(result.stdout)
-```
-</CodeGroup>
-
-## Use environment variables
-
-Pass per-request configuration through [environment variables](/docs/sandbox/configuration#environment-variables). You can set them globally at sandbox creation or per command.
-
-<CodeGroup>
-```js JavaScript & TypeScript
-import { Sandbox } from 'e2b'
-
-// Set environment variables at creation
-const sandbox = await Sandbox.create({
-  envs: {
-    API_KEY: 'sk-user-123-key',
-    ENVIRONMENT: 'production',
-  },
-})
-
-// Or set per command
-const result = await sandbox.commands.run('echo $CUSTOM_VAR', {
-  envs: { CUSTOM_VAR: 'hello' },
-})
-console.log(result.stdout) // "hello"
-```
-```python Python
-from e2b import Sandbox
-
-# Set environment variables at creation
-sandbox = Sandbox.create(
-    envs={
-        "API_KEY": "sk-user-123-key",
-        "ENVIRONMENT": "production",
-    },
-)
-
-# Or set per command
-result = sandbox.commands.run("echo $CUSTOM_VAR", envs={"CUSTOM_VAR": "hello"})
-print(result.stdout)  # "hello"
 ```
 </CodeGroup>
 

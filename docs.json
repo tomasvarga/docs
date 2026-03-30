@@ -75,7 +75,8 @@
               "docs/sandbox/persistence",
               "docs/sandbox/commands",
               "docs/sandbox/filesystem",
-              "docs/sandbox/configuration",
+              "docs/sandbox/environment-variables",
+              "docs/sandbox/connect-bucket",
               "docs/sandbox/security",
               "docs/sandbox/observability",
               "docs/sandbox/runtime-customization",
@@ -3666,6 +3667,11 @@
   },
   "redirects": [
     {
+      "source": "/docs/sandbox/configuration",
+      "destination": "/docs/sandbox/environment-variables",
+      "permanent": true
+    },
+    {
       "source": "/docs/filesystem",
       "destination": "/docs/sandbox/filesystem",
       "permanent": true
@@ -3887,7 +3893,7 @@
     },
     {
       "source": "/docs/legacy/sandbox/api/envs",
-      "destination": "/docs/sandbox/configuration",
+      "destination": "/docs/sandbox/environment-variables",
       "permanent": true
     },
     {
@@ -4078,16 +4084,6 @@
     {
       "source": "/docs/sandbox/rate-limits",
       "destination": "/docs/sandbox/security",
-      "permanent": true
-    },
-    {
-      "source": "/docs/sandbox/environment-variables",
-      "destination": "/docs/sandbox/configuration",
-      "permanent": true
-    },
-    {
-      "source": "/docs/sandbox/connect-bucket",
-      "destination": "/docs/sandbox/configuration",
       "permanent": true
     },
     {
