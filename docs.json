@@ -74,6 +74,7 @@
               "docs/sandbox/lifecycle",
               "docs/sandbox/persistence",
               "docs/sandbox/commands",
+              "docs/sandbox/filesystem",
               "docs/sandbox/configuration",
               "docs/sandbox/security",
               "docs/sandbox/observability",
@@ -81,7 +82,6 @@
               "docs/sandbox/git-integration",
               "docs/sandbox/proxy-tunneling",
               "docs/sandbox/custom-domain",
-              "docs/sandbox/filesystem",
               "docs/sandbox/volumes",
               "docs/sandbox/mcp",
               "docs/sandbox/mcp/available-servers"
