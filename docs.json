@@ -80,7 +80,49 @@
               "docs/sandbox/runtime-customization",
               "docs/sandbox/git-integration",
               "docs/sandbox/proxy-tunneling",
-              "docs/sandbox/custom-domain"
+              "docs/sandbox/custom-domain",
+              {
+                "group": "Filesystem",
+                "pages": [
+                  "docs/filesystem",
+                  "docs/filesystem/read-write",
+                  "docs/filesystem/info",
+                  "docs/filesystem/watch",
+                  "docs/filesystem/upload",
+                  "docs/filesystem/download"
+                ]
+              },
+              {
+                "group": "Volumes",
+                "pages": [
+                  "docs/volumes",
+                  "docs/volumes/manage",
+                  "docs/volumes/mount",
+                  "docs/volumes/read-write",
+                  "docs/volumes/info",
+                  "docs/volumes/upload",
+                  "docs/volumes/download"
+                ]
+              },
+              {
+                "group": "Commands",
+                "pages": [
+                  "docs/commands",
+                  "docs/commands/streaming",
+                  "docs/commands/background"
+                ]
+              },
+              {
+                "group": "MCP gateway",
+                "pages": [
+                  "docs/mcp",
+                  "docs/mcp/quickstart",
+                  "docs/mcp/available-servers",
+                  "docs/mcp/custom-templates",
+                  "docs/mcp/custom-servers",
+                  "docs/mcp/examples"
+                ]
+              }
             ]
           },
           {
@@ -111,48 +153,6 @@
                 ]
               },
               "docs/template/migration-v2"
-            ]
-          },
-          {
-            "group": "Filesystem",
-            "pages": [
-              "docs/filesystem",
-              "docs/filesystem/read-write",
-              "docs/filesystem/info",
-              "docs/filesystem/watch",
-              "docs/filesystem/upload",
-              "docs/filesystem/download"
-            ]
-          },
-          {
-            "group": "Volumes",
-            "pages": [
-              "docs/volumes",
-              "docs/volumes/manage",
-              "docs/volumes/mount",
-              "docs/volumes/read-write",
-              "docs/volumes/info",
-              "docs/volumes/upload",
-              "docs/volumes/download"
-            ]
-          },
-          {
-            "group": "Commands",
-            "pages": [
-              "docs/commands",
-              "docs/commands/streaming",
-              "docs/commands/background"
-            ]
-          },
-          {
-            "group": "MCP gateway",
-            "pages": [
-              "docs/mcp",
-              "docs/mcp/quickstart",
-              "docs/mcp/available-servers",
-              "docs/mcp/custom-templates",
-              "docs/mcp/custom-servers",
-              "docs/mcp/examples"
             ]
           },
           {
