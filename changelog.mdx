@@ -1,0 +1,60 @@
+---
+title: Changelog
+description: "The latest updates and improvements to E2B."
+---
+
+<Update label="2026-03-30" description="Week of March 24" tags={["Feature", "Update", "Fix"]}>
+## Sandbox lifecycle configuration
+
+You can now configure sandbox lifecycle behavior directly when creating a sandbox. The new `lifecycle` option lets you control what happens when a sandbox times out — either `kill` (default) or `pause` — and whether the sandbox should automatically resume on incoming traffic.
+
+This replaces the previous beta pause API with a cleaner, more flexible approach. Learn more in the [AutoResume docs](/docs/sandbox/auto-resume).
+
+## CLI: `sandbox info` command
+
+The CLI now includes a `sandbox info` command that displays detailed information about a sandbox, including its state, template, CPU/memory configuration, network rules, and lifecycle settings. Supports both human-readable and JSON output.
+
+```bash
+e2b sandbox info <sandboxID>
+e2b sandbox info <sandboxID> --format json
+```
+
+## CLI: `sandbox pause` and `sandbox resume` commands
+
+You can now pause and resume sandboxes directly from the CLI:
+
+```bash
+e2b sandbox pause <sandboxID>
+e2b sandbox resume <sandboxID>
+```
+
+See the [CLI reference](/docs/cli) for details.
+
+## Expanded sandbox info API
+
+The SDK `getInfo()` / `get_info()` methods now return additional fields: `lifecycle` configuration, `network` rules, and `allowInternetAccess`. This gives you full visibility into a sandbox's configuration without needing to track it separately.
+
+## Template tags API
+
+A new `getTags()` / `get_tags()` method lets you list all tags for a template, returning each tag's name, associated build ID, and creation timestamp. Useful for managing versioned deployments. See the [tags docs](/docs/template/tags).
+
+## `fixMissing` option for template `aptInstall`
+
+The template builder's `aptInstall()` / `apt_install()` method now accepts a `fixMissing` / `fix_missing` option, which passes `--fix-missing` to `apt-get install`. This helps resolve broken package states during template builds.
+
+---
+
+### Updates
+
+- **Improved auto-resume reliability** — Auto-resume now correctly handles sandboxes that are mid-transition (pausing or snapshotting), preventing transient 502 errors when traffic arrives during state changes.
+- **Better error types in SDKs** — The SDKs now distinguish between "sandbox not found" and "file not found" errors with dedicated `SandboxNotFound` and `FileNotFound` error types, making it easier to handle each case in your code.
+- **Connection config propagation fix** — Instance-level connection config (API key, domain, headers) is now correctly forwarded to all SDK methods including `pause` and `connect`.
+
+### Bug fixes
+
+- **Dotfiles included in template uploads** — Template file uploads now correctly include dotfiles (e.g., `.env`, `.gitignore`) that were previously skipped.
+- **CLI `sandbox list` pagination** — Fixed an issue where `sandbox list` could fetch all sandboxes regardless of the specified limit. The command now defaults to 1,000 results and respects the `--limit` flag.
+- **CLI `sandbox logs` timeout** — Fixed a bug where `sandbox logs` without `--follow` could hang due to unnecessary status polling.
+- **CLI error handling** — The CLI no longer crashes when the API returns non-standard HTTP status codes.
+- **Python SDK stream timeout** — Improved timeout handling for streaming requests to prevent hanging connections.
+</Update>

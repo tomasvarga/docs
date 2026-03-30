@@ -3642,7 +3642,15 @@
         }
       }
     ],
-    "global": {}
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Changelog",
+          "icon": "list",
+          "href": "/changelog"
+        }
+      ]
+    }
   },
   "logo": {
     "light": "/logo/light.svg",
