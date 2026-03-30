@@ -4104,6 +4104,16 @@
       "source": "/docs/sandbox/ip-tunneling",
       "destination": "/docs/sandbox/proxy-tunneling",
       "permanent": true
+    },
+    {
+      "source": "/docs/use-cases/agent-browser",
+      "destination": "/docs/use-cases/computer-use",
+      "permanent": true
+    },
+    {
+      "source": "/docs/use-cases/browser-use",
+      "destination": "/docs/use-cases/computer-use",
+      "permanent": true
     }
   ]
 }
