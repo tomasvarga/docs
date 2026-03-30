@@ -1,0 +1,517 @@
+---
+title: "Filesystem"
+sidebarTitle: Filesystem
+icon: "folder"
+description: "Read, write, upload, and download files in E2B sandboxes. Each sandbox has an isolated filesystem with up to 20 GB of storage."
+---
+
+Each E2B Sandbox has its own isolated filesystem. The [Hobby tier](https://e2b.dev/pricing) sandboxes come with 10 GB of the free disk space and [Pro tier](https://e2b.dev/pricing) sandboxes come with 20 GB.
+
+With E2B SDK you can read and write files, get file and directory metadata, watch directories for changes, upload data to the sandbox, and download data from the sandbox.
+
+## Read and write files
+
+### Reading files
+
+You can read files from the sandbox filesystem using the `files.read()` method.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const fileContent = await sandbox.files.read('/path/to/file')
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+file_content = sandbox.files.read('/path/to/file')
+```
+</CodeGroup>
+
+### Writing single files
+
+You can write single files to the sandbox filesystem using the `files.write()` method.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+await sandbox.files.write('/path/to/file', 'file content')
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+sandbox.files.write('/path/to/file', 'file content')
+```
+</CodeGroup>
+
+### Writing multiple files
+
+You can also write multiple files to the sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+await sandbox.files.write([
+    { path: '/path/to/a', data: 'file content' },
+    { path: '/another/path/to/b', data: 'file content' }
+])
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+sandbox.files.write_files([
+    { "path": "/path/to/a", "data": "file content" },
+    { "path": "another/path/to/b", "data": "file content" }
+])
+```
+</CodeGroup>
+
+## File and directory metadata
+
+You can get information about a file or directory using the `files.getInfo()` / `files.get_info()` methods. Information such as file name, type, and path is returned.
+
+### File metadata
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Create a new file
+await sandbox.files.write('test_file.txt', 'Hello, world!')
+
+// Get information about the file
+const info = await sandbox.files.getInfo('test_file.txt')
+
+console.log(info)
+// {
+//   name: 'test_file.txt',
+//   type: 'file',
+//   path: '/home/user/test_file.txt',
+//   size: 13,
+//   mode: 0o644,
+//   permissions: '-rw-r--r--',
+//   owner: 'user',
+//   group: 'user',
+//   modifiedTime: '2025-05-26T12:00:00.000Z',
+//   symlinkTarget: null
+// }
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Create a new file
+sandbox.files.write('test_file', 'Hello, world!')
+
+# Get information about the file
+info = sandbox.files.get_info('test_file')
+
+print(info)
+# EntryInfo(
+#   name='test_file.txt',
+#   type=<FileType.FILE: 'file'>,
+#   path='/home/user/test_file.txt',
+#   size=13,
+#   mode=0o644,
+#   permissions='-rw-r--r--',
+#   owner='user',
+#   group='user',
+#   modified_time='2025-05-26T12:00:00.000Z',
+#   symlink_target=None
+# )
+```
+</CodeGroup>
+
+### Directory metadata
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Create a new directory
+await sandbox.files.makeDir('test_dir')
+
+// Get information about the directory
+const info = await sandbox.files.getInfo('test_dir')
+
+console.log(info)
+// {
+//   name: 'test_dir',
+//   type: 'dir',
+//   path: '/home/user/test_dir',
+//   size: 0,
+//   mode: 0o755,
+//   permissions: 'drwxr-xr-x',
+//   owner: 'user',
+//   group: 'user',
+//   modifiedTime: '2025-05-26T12:00:00.000Z',
+//   symlinkTarget: null
+// }
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Create a new directory
+sandbox.files.make_dir('test_dir')
+
+# Get information about the directory
+info = sandbox.files.get_info('test_dir')
+
+print(info)
+# EntryInfo(
+#   name='test_dir',
+#   type=<FileType.DIR: 'dir'>,
+#   path='/home/user/test_dir',
+#   size=0,
+#   mode=0o755,
+#   permissions='drwxr-xr-x',
+#   owner='user',
+#   group='user',
+#   modified_time='2025-05-26T12:00:00.000Z',
+#   symlink_target=None
+# )
+```
+</CodeGroup>
+
+## Watch directory for changes
+
+You can watch a directory for changes using the `files.watchDir()` method in JavaScript and `files.watch_dir()` method in Python.
+
+<Note>
+Since events are tracked asynchronously, their delivery may be delayed.
+It's recommended not to collect or close watcher immediately after making a change.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={7-12}
+import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const dirname = '/home/user'
+
+// Start watching directory for changes
+const handle = await sandbox.files.watchDir(dirname, async (event) => {
+  console.log(event)
+  if (event.type === FilesystemEventType.WRITE) {
+    console.log(`wrote to file ${event.name}`)
+  }
+})
+
+// Trigger file write event
+await sandbox.files.write(`${dirname}/my-file`, 'hello')
+```
+```python Python highlight={7,12-16}
+from e2b_code_interpreter import Sandbox, FilesystemEventType
+
+sandbox = Sandbox.create()
+dirname = '/home/user'
+
+# Watch directory for changes
+handle = sandbox.files.watch_dir(dirname)
+# Trigger file write event
+sandbox.files.write(f"{dirname}/my-file", "hello")
+
+# Retrieve the latest new events since the last `get_new_events()` call
+events = handle.get_new_events()
+for event in events:
+  print(event)
+  if event.type == FilesystemEventType.WRITE:
+    print(f"wrote to file {event.name}")
+```
+</CodeGroup>
+
+### Recursive watching
+
+You can enable recursive watching using the parameter `recursive`.
+
+<Note>
+When rapidly creating new folders (e.g., deeply nested path of folders), events other than `CREATE` might not be emitted. To avoid this behavior, create the required folder structure in advance.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={13,17}
+import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const dirname = '/home/user'
+
+// Start watching directory for changes
+const handle = await sandbox.files.watchDir(dirname, async (event) => {
+  console.log(event)
+  if (event.type === FilesystemEventType.WRITE) {
+    console.log(`wrote to file ${event.name}`)
+  }
+}, {
+  recursive: true
+})
+
+// Trigger file write event
+await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello')
+```
+```python Python highlight={7,9}
+from e2b_code_interpreter import Sandbox, FilesystemEventType
+
+sandbox = Sandbox.create()
+dirname = '/home/user'
+
+# Watch directory for changes
+handle = sandbox.files.watch_dir(dirname, recursive=True)
+# Trigger file write event
+sandbox.files.write(f"{dirname}/my-folder/my-file", "hello")
+
+# Retrieve the latest new events since the last `get_new_events()` call
+events = handle.get_new_events()
+for event in events:
+  print(event)
+  if event.type == FilesystemEventType.WRITE:
+    print(f"wrote to file {event.name}")
+```
+</CodeGroup>
+
+## Upload data
+
+You can upload data to the sandbox using the `files.write()` method.
+
+### Upload single file
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Read file from local filesystem
+const content = fs.readFileSync('/local/path')
+// Upload file to sandbox
+await sandbox.files.write('/path/in/sandbox', content)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Read file from local filesystem
+with open("path/to/local/file", "rb") as file:
+  # Upload file to sandbox
+  sandbox.files.write("/path/in/sandbox", file)
+```
+</CodeGroup>
+
+### Upload with pre-signed URL
+
+Sometimes, you may want to let users from unauthorized environments, like a browser, upload files to the sandbox.
+For this use case, you can use pre-signed URLs to let users upload files securely.
+
+All you need to do is create a sandbox with the `secure: true` option. An upload URL will then be generated with a signature that allows only authorized users to upload files.
+You can optionally set an expiration time for the URL so that it will be valid only for a limited time.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Start a secured sandbox (all operations must be authorized by default)
+const sandbox = await Sandbox.create(template, { secure: true })
+
+// Create a pre-signed URL for file upload with a 10 second expiration
+const publicUploadUrl = await sandbox.uploadUrl(
+  'demo.txt', {
+    useSignatureExpiration: 10_000, // optional
+  },
+)
+
+// Upload a file with a pre-signed URL (this can be used in any environment, such as a browser)
+const form = new FormData()
+form.append('file', 'file content')
+
+await fetch(publicUploadUrl, { method: 'POST', body: form })
+
+// File is now available in the sandbox and you can read it
+const content = sandbox.files.read('/path/in/sandbox')
+```
+```python Python
+from e2b import Sandbox
+import requests
+
+# Start a secured sandbox (all operations must be authorized by default)
+sandbox = Sandbox.create(timeout=12_000, secure=True)
+
+# Create a pre-signed URL for file upload with a 10 second expiration
+signed_url = sandbox.upload_url(path="demo.txt", user="user", use_signature_expiration=10_000)
+
+form_data = {"file":"file content"}
+requests.post(signed_url, data=form_data)
+
+# File is now available in the sandbox and you can read it
+content = sandbox.files.read('/path/in/sandbox')
+```
+</CodeGroup>
+
+### Upload directory / multiple files
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Read all files in the directory and store their paths and contents in an array
+const readDirectoryFiles = (directoryPath) => {
+  // Read all files in the local directory
+  const files = fs.readdirSync(directoryPath);
+
+  // Map files to objects with path and data
+  const filesArray = files
+    .filter(file => {
+      const fullPath = path.join(directoryPath, file);
+      // Skip if it's a directory
+      return fs.statSync(fullPath).isFile();
+    })
+    .map(file => {
+      const filePath = path.join(directoryPath, file);
+
+      // Read the content of each file
+      return {
+        path: filePath,
+        data: fs.readFileSync(filePath, 'utf8')
+      };
+    });
+
+  return filesArray;
+};
+
+// Usage example
+const files = readDirectoryFiles('/local/dir');
+console.log(files);
+// [
+//   { path: '/local/dir/file1.txt', data: 'File 1 contents...' },
+//   { path: '/local/dir/file2.txt', data: 'File 2 contents...' },
+//   ...
+// ]
+
+await sandbox.files.write(files)
+```
+```python Python
+import os
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+def read_directory_files(directory_path):
+    files = []
+
+    # Iterate through all files in the directory
+    for filename in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, filename)
+
+        # Skip if it's a directory
+        if os.path.isfile(file_path):
+            # Read file contents in binary mode
+            with open(file_path, "rb") as file:
+                files.append({
+                    'path': file_path,
+                    'data': file.read()
+                })
+
+    return files
+
+files = read_directory_files("/local/dir")
+print(files)
+# [
+#  {"path": "/local/dir/file1.txt", "data": "File 1 contents..." },
+#   { "path": "/local/dir/file2.txt", "data": "File 2 contents..." },
+#   ...
+# ]
+
+sandbox.files.write_files(files)
+```
+</CodeGroup>
+
+## Download data
+
+You can download data from the sandbox using the `files.read()` method.
+
+### Download single file
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Read file from sandbox
+const content = await sandbox.files.read('/path/in/sandbox')
+// Write file to local filesystem
+fs.writeFileSync('/local/path', content)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Read file from sandbox
+content = sandbox.files.read('/path/in/sandbox')
+# Write file to local filesystem
+with open('/local/path', 'w') as file:
+  file.write(content)
+```
+</CodeGroup>
+
+### Download with pre-signed URL
+
+Sometimes, you may want to let users from unauthorized environments, like a browser, download files from the sandbox.
+For this use case, you can use pre-signed URLs to let users download files securely.
+
+All you need to do is create a sandbox with the `secure: true` option. A download URL will then be generated with a signature that allows only authorized users to access files.
+You can optionally set an expiration time for the URL so that it will be valid only for a limited time.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import fs from 'fs'
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Start a secured sandbox (all operations must be authorized by default)
+const sandbox = await Sandbox.create(template, { secure: true })
+
+// Create a pre-signed URL for file download with a 10 second expiration
+const publicUrl = await sandbox.downloadUrl(
+  'demo.txt', {
+    useSignatureExpiration: 10_000, // optional
+  },
+)
+
+// Download a file with a pre-signed URL (this can be used in any environment, such as a browser)
+const res = await fetch(publicUrl)
+const content = await res.text()
+```
+```python Python
+from e2b import Sandbox
+
+# Start a secured sandbox (all operations must be authorized by default)
+sandbox = Sandbox.create(timeout=12_000, secure=True)
+
+# Create a pre-signed URL for file download with a 10 second expiration
+# The user only has to visit the URL to download the file, this also works in a browser.
+signed_url = sbx.download_url(path="demo.txt", user="user", use_signature_expiration=10_000)
+```
+</CodeGroup>

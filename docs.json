@@ -81,48 +81,10 @@
               "docs/sandbox/git-integration",
               "docs/sandbox/proxy-tunneling",
               "docs/sandbox/custom-domain",
-              {
-                "group": "Filesystem",
-                "pages": [
-                  "docs/filesystem",
-                  "docs/filesystem/read-write",
-                  "docs/filesystem/info",
-                  "docs/filesystem/watch",
-                  "docs/filesystem/upload",
-                  "docs/filesystem/download"
-                ]
-              },
-              {
-                "group": "Volumes",
-                "pages": [
-                  "docs/volumes",
-                  "docs/volumes/manage",
-                  "docs/volumes/mount",
-                  "docs/volumes/read-write",
-                  "docs/volumes/info",
-                  "docs/volumes/upload",
-                  "docs/volumes/download"
-                ]
-              },
-              {
-                "group": "Commands",
-                "pages": [
-                  "docs/commands",
-                  "docs/commands/streaming",
-                  "docs/commands/background"
-                ]
-              },
-              {
-                "group": "MCP gateway",
-                "pages": [
-                  "docs/mcp",
-                  "docs/mcp/quickstart",
-                  "docs/mcp/available-servers",
-                  "docs/mcp/custom-templates",
-                  "docs/mcp/custom-servers",
-                  "docs/mcp/examples"
-                ]
-              }
+              "docs/sandbox/filesystem",
+              "docs/sandbox/volumes",
+              "docs/sandbox/mcp",
+              "docs/sandbox/mcp/available-servers"
             ]
           },
           {
@@ -3703,6 +3665,116 @@
     }
   },
   "redirects": [
+    {
+      "source": "/docs/filesystem",
+      "destination": "/docs/sandbox/filesystem",
+      "permanent": true
+    },
+    {
+      "source": "/docs/filesystem/read-write",
+      "destination": "/docs/sandbox/filesystem",
+      "permanent": true
+    },
+    {
+      "source": "/docs/filesystem/info",
+      "destination": "/docs/sandbox/filesystem",
+      "permanent": true
+    },
+    {
+      "source": "/docs/filesystem/watch",
+      "destination": "/docs/sandbox/filesystem",
+      "permanent": true
+    },
+    {
+      "source": "/docs/filesystem/upload",
+      "destination": "/docs/sandbox/filesystem",
+      "permanent": true
+    },
+    {
+      "source": "/docs/filesystem/download",
+      "destination": "/docs/sandbox/filesystem",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/manage",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/mount",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/read-write",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/info",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/upload",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/download",
+      "destination": "/docs/sandbox/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/commands",
+      "destination": "/docs/sandbox/commands",
+      "permanent": true
+    },
+    {
+      "source": "/docs/commands/streaming",
+      "destination": "/docs/sandbox/commands",
+      "permanent": true
+    },
+    {
+      "source": "/docs/commands/background",
+      "destination": "/docs/sandbox/commands",
+      "permanent": true
+    },
+    {
+      "source": "/docs/mcp",
+      "destination": "/docs/sandbox/mcp",
+      "permanent": true
+    },
+    {
+      "source": "/docs/mcp/quickstart",
+      "destination": "/docs/sandbox/mcp",
+      "permanent": true
+    },
+    {
+      "source": "/docs/mcp/available-servers",
+      "destination": "/docs/sandbox/mcp/available-servers",
+      "permanent": true
+    },
+    {
+      "source": "/docs/mcp/custom-templates",
+      "destination": "/docs/sandbox/mcp",
+      "permanent": true
+    },
+    {
+      "source": "/docs/mcp/custom-servers",
+      "destination": "/docs/sandbox/mcp",
+      "permanent": true
+    },
+    {
+      "source": "/docs/mcp/examples",
+      "destination": "/docs/sandbox/mcp",
+      "permanent": true
+    },
     {
       "source": "/docs/template/aliases",
       "destination": "/docs/template/names",

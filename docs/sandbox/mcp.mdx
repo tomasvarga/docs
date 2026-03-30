@@ -1,0 +1,514 @@
+---
+title: "MCP gateway"
+sidebarTitle: MCP gateway
+icon: "plug"
+description: "Connect E2B sandboxes to 200+ MCP tools — Browserbase, Exa, Notion, Stripe, GitHub, and more — through a built-in MCP gateway."
+---
+
+E2B provides a batteries-included MCP gateway that runs inside sandboxes, giving you type-safe access to 200+ MCP tools from the [Docker MCP Catalog](https://hub.docker.com/mcp) or [custom MCP servers](#custom-mcp-servers) through a unified interface. This integration gives developers instant access to tools like [Browserbase](https://www.browserbase.com/), [Exa](https://exa.ai/), [Notion](https://www.notion.so/), [Stripe](https://stripe.com/), or [GitHub](https://github.com/).
+
+The [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) is an open standard for connecting AI models to external tools and data sources. E2B sandboxes provide an ideal environment for running MCP tools, giving AI full access to an internet-connected Linux machine where it can safely install packages, write files, run terminal commands, and AI-generated code.
+
+<Frame>
+    <img src="/images/mcp-overview.png" />
+</Frame>
+
+## Quickstart
+
+Create a sandbox with MCP servers configured and connect it to an AI agent. This example sets up Browserbase, Exa, and Airtable MCP servers and uses Claude to orchestrate them.
+
+<CodeGroup>
+
+```typescript TypeScript
+import Sandbox from 'e2b'
+
+const sbx = await Sandbox.create({
+    mcp: {
+        browserbase: {
+            apiKey: process.env.BROWSERBASE_API_KEY!,
+            geminiApiKey: process.env.GEMINI_API_KEY!,
+            projectId: process.env.BROWSERBASE_PROJECT_ID!,
+        },
+        exa: {
+            apiKey: process.env.EXA_API_KEY!,
+        },
+        airtable: {
+            airtableApiKey: process.env.AIRTABLE_API_KEY!,
+        },
+    },
+});
+
+const mcpUrl = sbx.getMcpUrl();
+const mcpToken = await sbx.getMcpToken();
+
+// You can now connect the gateway to any MCP client, for example claude:
+// This also works for your local claude!
+await sbx.commands.run(`claude mcp add --transport http e2b-mcp-gateway ${mcpUrl} --header "Authorization: Bearer ${mcpToken}"`, { timeoutMs: 0, onStdout: console.log, onStderr: console.log });
+
+await sbx.commands.run(
+    `echo 'Use browserbase and exa to research open positions at e2b.dev. Collect your findings in Airtable.' | claude -p --dangerously-skip-permissions`,
+    { timeoutMs: 0, onStdout: console.log, onStderr: console.log }
+)
+
+```
+
+```python Python
+import asyncio
+from e2b import AsyncSandbox
+import os
+import dotenv
+
+dotenv.load_dotenv()
+
+async def main():
+    sbx = await AsyncSandbox.create(mcp={
+        "browserbase": {
+            "apiKey": os.getenv("BROWSERBASE_API_KEY"),
+            "geminiApiKey": os.getenv("GEMINI_API_KEY"),
+            "projectId": os.getenv("BROWSERBASE_PROJECT_ID"),
+        },
+        "exa": {
+            "apiKey": os.getenv("EXA_API_KEY"),
+        },
+        "airtable": {
+            "airtableApiKey": os.getenv("AIRTABLE_API_KEY"),
+        },
+    })
+
+    mcp_url = sbx.get_mcp_url()
+    mcp_token = await sbx.get_mcp_token()
+
+    # You can now connect the gateway to any MCP client, for example claude:
+    # This also works for your local claude!
+    await sbx.commands.run(f'claude mcp add --transport http e2b-mcp-gateway {mcp_url} --header "Authorization: Bearer {mcp_token}"', timeout=0, on_stdout=print, on_stderr=print)
+
+    await sbx.commands.run(
+        "echo 'Use browserbase and exa to research open positions at e2b.dev. Collect your findings in Airtable.' | claude -p --dangerously-skip-permissions",
+        timeout=0, on_stdout=print, on_stderr=print
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+</CodeGroup>
+
+## Connecting to the MCP gateway
+
+You can connect to the MCPs running inside the sandbox both from outside and inside the sandbox.
+
+### From outside the sandbox
+
+To connect to the MCPs running inside the sandbox, use the `sandbox.getMcpUrl()` in JavaScript and `sandbox.get_mcp_url()` in Python.
+
+<CodeGroup>
+```typescript TypeScript
+import Sandbox from 'e2b'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const sandbox = await Sandbox.create({
+    mcp: {
+        browserbase: {
+            apiKey: process.env.BROWSERBASE_API_KEY!,
+            geminiApiKey: process.env.GEMINI_API_KEY!,
+            projectId: process.env.BROWSERBASE_PROJECT_ID!,
+        },
+        exa: {
+            apiKey: process.env.EXA_API_KEY!,
+        },
+        notion: {
+            internalIntegrationToken: process.env.NOTION_API_KEY!,
+        },
+    },
+});
+
+const client = new Client({
+    name: 'e2b-mcp-client',
+    version: '1.0.0'
+});
+
+const transport = new StreamableHTTPClientTransport(
+    new URL(sandbox.getMcpUrl()),
+    {
+        requestInit: {
+            headers: {
+                'Authorization': `Bearer ${await sandbox.getMcpToken()}`
+            }
+        }
+    }
+);
+
+await client.connect(transport);
+
+const tools = await client.listTools();
+console.log('Available tools:', tools.tools.map(t => t.name));
+
+await client.close();
+await sandbox.kill();
+```
+
+```python Python
+import os
+import dotenv
+dotenv.load_dotenv()
+from e2b import AsyncSandbox
+import asyncio
+from datetime import timedelta
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+async def main():
+    sandbox = await AsyncSandbox.create(
+        mcp={
+            "browserbase": {
+                "apiKey": os.environ["BROWSERBASE_API_KEY"],
+                "geminiApiKey": os.environ["GEMINI_API_KEY"],
+                "projectId": os.environ["BROWSERBASE_PROJECT_ID"],
+            },
+            "exa": {
+                "apiKey": os.environ["EXA_API_KEY"],
+            },
+            "notion": {
+                "internalIntegrationToken": os.environ["NOTION_API_KEY"],
+            },
+        }
+    )
+
+    async with streamablehttp_client(
+        url=sandbox.get_mcp_url(),
+        headers={"Authorization": f"Bearer {await sandbox.get_mcp_token()}"},
+        timeout=timedelta(seconds=600)
+    ) as (read_stream, write_stream, _):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+            tools = await session.list_tools()
+            print(f"Available tools: {[tool.name for tool in tools.tools]}")
+    await sandbox.kill()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+</CodeGroup>
+
+### From inside the sandbox
+
+If you need to access the MCP gateway from within the sandbox itself, it's available at:
+```
+http://localhost:50005/mcp
+```
+
+You'll need to include the Authorization header with the MCP token when making requests from inside the sandbox. How that is added depends on the MCP client you use.
+
+## MCP client integrations
+
+### Claude
+
+```
+claude mcp add --transport http e2b-mcp-gateway <url goes here> --header "Authorization: Bearer <token goes here>"
+```
+
+### OpenAI Agents
+
+<CodeGroup>
+```typescript TypeScript
+import { MCPServerStreamableHttp } from '@openai/agents';
+
+const mcp = new MCPServerStreamableHttp({
+    url: mcpUrl,
+    name: 'E2B MCP Gateway',
+    requestInit: {
+        headers: {
+            'Authorization': `Bearer ${await sandbox.getMcpToken()}`
+        }
+    },
+});
+```
+
+```python Python
+import asyncio
+import os
+from e2b import AsyncSandbox
+from agents.mcp import MCPServerStreamableHttp
+
+async def main():
+    async with MCPServerStreamableHttp(
+        name="e2b-mcp-client",
+        params={
+            "url": sandbox.get_mcp_url(),
+            "headers": {"Authorization": f"Bearer {await sandbox.get_mcp_token()}"},
+        },
+    ) as server:
+        tools = await server.list_tools()
+        print("Available tools:", [t.name for t in tools])
+
+    # Clean up
+    await sandbox.kill()
+
+asyncio.run(main())
+```
+</CodeGroup>
+
+### Official MCP client
+
+<CodeGroup>
+```typescript TypeScript
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const client = new Client({
+    name: 'e2b-mcp-client',
+    version: '1.0.0'
+});
+
+const transport = new StreamableHTTPClientTransport(
+    new URL(sandbox.getMcpUrl()),
+    {
+        requestInit: {
+            headers: {
+                'Authorization': `Bearer ${await sandbox.getMcpToken()}`
+            }
+        }
+    }
+);
+await client.connect(transport);
+```
+```python Python
+import asyncio
+from datetime import timedelta
+from mcp.client.session import ClientSession
+from mcp.client.streamable_http import streamablehttp_client
+
+async def main():
+    async with streamablehttp_client(
+        url=sandbox.get_mcp_url(),
+        headers={"Authorization": f"Bearer {await sandbox.get_mcp_token()}"},
+        timeout=timedelta(seconds=600)
+    ) as (read_stream, write_stream, _):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+
+            tools = await session.list_tools()
+            print(f"Available tools: {[tool.name for tool in tools.tools]}")
+    await sandbox.kill()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+```
+
+</CodeGroup>
+
+This list is not exhaustive. You can find more examples in the [E2B Cookbook](https://github.com/e2b-dev/e2b-cookbook).
+
+## Custom templates
+
+You can prepull MCP server Docker images during template build time to significantly improve runtime performance.
+
+When you build a template with prepulled MCP servers, the Docker images for those servers are downloaded and cached during the build process. This means when you create a sandbox from that template, the MCP servers are ready to use immediately without waiting for image downloads.
+
+<Info>
+You must use the MCP gateway enabled template (`mcp-gateway`) as your base template to use this feature.
+</Info>
+
+### Building a template with MCP servers
+
+Use the `addMcpServer()` method (TypeScript) or `add_mcp_server()` method (Python) to prepull MCP server images during template build. You can pass a single server or an array of servers.
+
+The server names (like `"browserbase"` and `"exa"`) correspond to the keys defined in the [Available Servers](/docs/sandbox/mcp/available-servers) documentation.
+
+<CodeGroup>
+
+```typescript JavaScript & TypeScript
+import "dotenv/config";
+import { Template, defaultBuildLogger } from 'e2b';
+
+export const template = Template()
+  .fromTemplate("mcp-gateway")
+  .addMcpServer(["browserbase", "exa"]);
+
+await Template.build(template, 'my-mcp-gateway', {
+  cpuCount: 8,
+  memoryMB: 8192,
+  onBuildLogs: defaultBuildLogger(),
+});
+```
+
+```python Python
+from dotenv import load_dotenv
+from e2b import Template, default_build_logger
+
+load_dotenv()
+
+template = (
+    Template()
+    .from_template("mcp-gateway")
+    .add_mcp_server(["browserbase", "exa"])
+)
+
+Template.build(
+    template,
+    'my-mcp-gateway',
+    cpu_count=8,
+    memory_mb=8192,
+    on_build_logs=default_build_logger(),
+)
+```
+
+</CodeGroup>
+
+### Using the template
+
+Once built, create sandboxes from your template. You still need to provide the configuration for each MCP server.
+
+<CodeGroup>
+
+```typescript JavaScript & TypeScript
+import { Sandbox } from 'e2b';
+
+const sandbox = await Sandbox.create({
+    template: "my-mcp-gateway",
+    mcp: {
+        browserbase: {
+            apiKey: process.env.BROWSERBASE_API_KEY!,
+            geminiApiKey: process.env.GEMINI_API_KEY!,
+            projectId: process.env.BROWSERBASE_PROJECT_ID!,
+        },
+        exa: {
+            apiKey: process.env.EXA_API_KEY!,
+        },
+    },
+});
+
+```
+
+```python Python
+from e2b import Sandbox
+import os
+
+sbx = Sandbox.create(
+    template="my-mcp-gateway",
+    mcp={
+        "browserbase": {
+            "apiKey": os.getenv("BROWSERBASE_API_KEY"),
+            "geminiApiKey": os.getenv("GEMINI_API_KEY"),
+            "projectId": os.getenv("BROWSERBASE_PROJECT_ID"),
+        },
+        "exa": {
+            "apiKey": os.getenv("EXA_API_KEY"),
+        },
+    }
+)
+```
+
+</CodeGroup>
+
+For more information about working with templates, see:
+- [Template Quickstart](/docs/template/quickstart) - Get started with custom templates
+- [Defining Templates](/docs/template/defining-template) - Learn all template configuration options
+- [Template Build](/docs/template/build) - Understand the build process
+
+## Custom MCP servers
+
+In addition to the 200+ pre-built MCP servers from the [Docker MCP Catalog](https://hub.docker.com/mcp), you can run custom MCP servers directly from public GitHub repositories.
+
+When you specify a GitHub repository, E2B will:
+1. Clone the repository into the sandbox
+2. Run the `installCmd` (optional) to install dependencies
+3. Run the `runCmd` to start the MCP server with stdio transport
+
+The `runCmd` must start an MCP server that follows the [MCP specification](https://modelcontextprotocol.io/specification/2025-06-18) and communicates via stdio (standard input/output).
+
+<CodeGroup>
+
+```typescript TypeScript
+import Sandbox from 'e2b'
+
+const sandbox = await Sandbox.create({
+    mcp: {
+        'github/modelcontextprotocol/servers': {
+            installCmd: 'npm install',
+            runCmd: 'sudo npx -y @modelcontextprotocol/server-filesystem /root',
+        },
+    },
+});
+```
+
+```python Python
+from e2b import Sandbox
+import os
+
+sbx = Sandbox.create(
+    mcp={
+        "github/modelcontextprotocol/servers": {
+                "install_cmd": "npm install",
+                "run_cmd": "sudo npx -y @modelcontextprotocol/server-filesystem /root",
+        },
+    }
+)
+```
+
+</CodeGroup>
+
+### Configuration
+
+<ParamField path="installCmd" type="string">
+  Optional command to run before starting the MCP server. Use this to install dependencies (e.g., `npm install`, `pip install -r requirements.txt`).
+</ParamField>
+
+<ParamField path="runCmd" type="string" required>
+  Command to start the MCP server. Must launch a stdio-enabled MCP server.
+</ParamField>
+
+<Note>
+**Important for npx-based servers:** Always include `installCmd: 'npm install'` (or equivalent) when using `npx` in your `runCmd`. Without installing dependencies first, npx will try to use the local repository and fail.
+</Note>
+
+### Troubleshooting
+
+If your custom MCP server doesn't work as expected:
+
+1. Explore the sandbox either via the [dashboard](https://e2b.dev/dashboard) or by connecting to it via `e2b connect <sandbox-id>`
+2. Check the gateway log file with `sudo cat /var/log/mcp-gateway/gateway.log`.
+
+## Debugging with MCP Inspector
+
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is a useful tool for debugging and testing your MCP server setup. Get the command to run:
+
+```bash
+npx @modelcontextprotocol/inspector --transport http --url <your-mcp-url> --header "Authorization: Bearer ${mcpToken}"
+```
+
+Run the command in your terminal. This will open a web interface where you can:
+- Browse available tools
+- Test tool calls with different parameters
+- Inspect request/response payloads
+- Debug connection issues
+
+## Examples
+
+<CardGroup cols={3}>
+  <Card title="Claude Code" icon="terminal" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-claude-code-js">
+    Claude Code with MCP integration
+  </Card>
+  <Card title="Browserbase" icon="browser" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-browserbase-js">
+    Web automation agent with Browserbase
+  </Card>
+  <Card title="Groq + Exa" icon="sparkles" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-groq-exa-js">
+    AI research using Groq and Exa
+  </Card>
+  <Card title="Research agent" icon="magnifying-glass" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-research-agent-js">
+    Research Agent using the OpenAI Agents framework
+  </Card>
+  <Card title="MCP client" icon="plug" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-client-js">
+    Basic MCP client connecting to an E2B Sandbox
+  </Card>
+  <Card title="Custom MCP server" icon="server" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-custom-server-js">
+    Use custom MCP servers installed from GitHub
+  </Card>
+  <Card title="Custom template" icon="box" href="https://github.com/e2b-dev/e2b-cookbook/tree/main/examples/mcp-custom-template-js">
+    Create a custom E2B Sandbox with pre-installed MCP servers
+  </Card>
+</CardGroup>
+
+For the full list of available MCP servers, see [Available servers](/docs/sandbox/mcp/available-servers).

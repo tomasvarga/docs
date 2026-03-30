@@ -5,7 +5,100 @@ icon: "terminal"
 description: "Run commands, use interactive terminals, and connect via SSH in E2B sandboxes."
 ---
 
-E2B sandboxes provide multiple ways to run commands and interact with the terminal: the PTY module for interactive terminal sessions, and SSH access for remote connectivity.
+E2B sandboxes provide multiple ways to run commands and interact with the terminal: `commands.run()` for executing commands, the PTY module for interactive terminal sessions, and SSH access for remote connectivity.
+
+## Running commands
+
+Use `commands.run()` to execute terminal commands inside the sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+const result = await sandbox.commands.run('ls -l')
+console.log(result)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+result = sandbox.commands.run('ls -l')
+print(result)
+```
+</CodeGroup>
+
+### Streaming output
+
+To stream command output as it is being executed, pass `onStdout`/`onStderr` callbacks (JavaScript) or `on_stdout`/`on_stderr` callbacks (Python).
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+const result = await sandbox.commands.run('echo hello; sleep 1; echo world', {
+  onStdout: (data) => {
+    console.log(data)
+  },
+  onStderr: (data) => {
+    console.log(data)
+  },
+})
+console.log(result)
+```
+```python Python
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+result = sandbox.commands.run('echo hello; sleep 1; echo world', on_stdout=lambda data: print(data), on_stderr=lambda data: print(data))
+print(result)
+```
+</CodeGroup>
+
+### Running commands in background
+
+To run commands in background, pass the `background` option. This returns immediately and the command continues running in the sandbox. You can later kill the command using `commands.kill()`.
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={7}
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sandbox = await Sandbox.create()
+
+// Start the command in the background
+const command = await sandbox.commands.run('echo hello; sleep 10; echo world', {
+  background: true,
+  onStdout: (data) => {
+    console.log(data)
+  },
+})
+
+// Kill the command
+await command.kill()
+```
+```python Python highlight={6}
+from e2b_code_interpreter import Sandbox
+
+sandbox = Sandbox.create()
+
+# Start the command in the background
+command = sandbox.commands.run('echo hello; sleep 10; echo world', background=True)
+
+# Get stdout and stderr from the command running in the background.
+# You can run this code in a separate thread or use command.wait() to wait for the command to finish.
+for stdout, stderr, _ in command:
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr)
+
+# Kill the command
+command.kill()
+```
+</CodeGroup>
 
 ## Interactive terminal (PTY)
 
