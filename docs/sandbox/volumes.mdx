@@ -10,7 +10,7 @@ Volumes are currently in private beta.
 If you'd like access, please reach out to us at [support@e2b.dev](mailto:support@e2b.dev).
 </Note>
 
-Volumes provide persistent storage that exists independently of any single sandbox. Data written to a volume survives sandbox shutdowns and can be shared across multiple sandbox sessions. Use volumes when you need files, datasets, or other artifacts to persist beyond the lifecycle of an individual sandbox.
+Every sandbox already has its own persistent filesystem — when you [pause and resume](/docs/sandbox/persistence) a sandbox, all files are preserved. Volumes solve a different problem: storage that exists independently of any single sandbox. Data written to a volume survives sandbox shutdowns and can be shared across multiple sandbox sessions. Use volumes when you need to share files between sandboxes or keep data accessible even after a sandbox is killed.
 
 **One volume shared across multiple sandboxes**
 
