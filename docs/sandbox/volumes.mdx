@@ -5,9 +5,39 @@ icon: "hard-drive"
 description: "Persistent storage volumes for E2B sandboxes — create, mount, read, write, and manage files that persist across sandbox sessions."
 ---
 
-<Note>Volumes is currently in private beta.</Note>
+<Note>
+Volumes are currently in private beta.
+If you'd like access, please reach out to us at [support@e2b.dev](mailto:support@e2b.dev).
+</Note>
 
 Volumes provide persistent storage that exists independently of any single sandbox. Data written to a volume survives sandbox shutdowns and can be shared across multiple sandbox sessions. Use volumes when you need files, datasets, or other artifacts to persist beyond the lifecycle of an individual sandbox.
+
+**One volume shared across multiple sandboxes**
+
+```mermaid actions={false}
+graph LR
+  V1[Volume A] --- S1[Sandbox 1]
+  V1 --- S2[Sandbox 2]
+  V1 --- S3[Sandbox 3]
+```
+
+**Each sandbox with its own volume**
+
+```mermaid actions={false}
+graph LR
+  V2[Volume A] --- S4[Sandbox 1]
+  V3[Volume B] --- S5[Sandbox 2]
+```
+
+**Standalone usage via SDK**
+
+```mermaid actions={false}
+graph LR
+  SDK[SDK] --- V4[Volume A]
+  SDK --- V5[Volume B]
+```
+
+When a volume is mounted to a sandbox, files can be read and written directly at the mount path. The SDK methods below are meant to be used when the volume is not mounted to any sandbox.
 
 ## Managing volumes
 
