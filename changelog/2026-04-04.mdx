@@ -1,0 +1,44 @@
+---
+title: "April 4, 2026"
+description: "Volume SDK support, gzip file transfers, CLI improvements, and performance upgrades."
+---
+
+## New features
+
+### Volume CRUD operations in SDKs
+
+You can now create, list, and delete [volumes](/docs/volumes/manage) directly from the JavaScript and Python SDKs. Previously, volume management required the dashboard or API. This makes it easier to programmatically manage persistent storage for your sandboxes.
+
+### Gzip content encoding for file operations
+
+File uploads and downloads now support gzip compression. This reduces bandwidth usage and speeds up transfers, especially for large text-based files. The SDKs handle compression automatically when enabled.
+
+### CLI `info` command
+
+A new `e2b sandbox info` command lets you inspect a running sandbox's details, including its lifecycle state and network configuration. See the [CLI docs](/docs/cli) for usage.
+
+## Updates
+
+### Faster sandbox pause with filesystem reflinks
+
+Pausing a sandbox is now significantly faster. The platform uses copy-on-write filesystem reflinks during pause, which avoids copying unchanged data. You should notice reduced pause times, especially for sandboxes with large filesystems.
+
+### Increased volume upload timeout
+
+Volume file uploads now have a 1-hour timeout (previously shorter), so you can upload larger datasets to [volumes](/docs/volumes/upload) without running into timeout errors.
+
+### Binary file uploads use `application/octet-stream`
+
+Sandbox file uploads now use the `application/octet-stream` content type, improving compatibility with binary file transfers.
+
+### Firecracker v1.12
+
+The underlying VM runtime has been upgraded to Firecracker v1.12, bringing performance improvements and better resource management for sandboxes.
+
+## Bug fixes
+
+- **Snapshot deletion on CLI create**: The `e2b sandbox create` command no longer inadvertently deletes snapshots when shutting down a sandbox.
+- **Connection config propagation**: Default connection configuration is now correctly applied across all SDK operations.
+- **Better error messages**: Sandbox-not-found and file-not-found errors are now distinguished, so you get clearer feedback when something goes wrong.
+- **Paused sandbox template names**: Template names now resolve correctly for paused sandboxes in the API and dashboard.
+- **Auto-resume reliability**: Improved state handling during auto-resume reduces edge cases where sandboxes could fail to resume properly.
