@@ -1,0 +1,50 @@
+---
+title: "Changelog - April 13, 2026"
+description: "Volume CRUD in SDKs, gzip file transfers, CLI sandbox info command, and more."
+---
+
+<Update label="2026-04-13" description="Week of April 7–13" tags={["Feature", "Update", "Fix"]}>
+## New features
+
+### Volume management in SDKs
+You can now create, list, inspect, and delete [volumes](/docs/volumes) directly from the JavaScript and Python SDKs. Volumes provide persistent storage that survives sandbox shutdowns and can be mounted across multiple sandboxes. The SDK also supports file operations (read, write, list, remove) on volumes.
+
+### Gzip compression for file operations
+A new optional `gzip` parameter on sandbox file read and write operations lets you compress uploads and request compressed downloads. This can significantly reduce transfer times for large files. See the [file upload](/docs/filesystem/upload) and [file download](/docs/filesystem/download) docs.
+
+### CLI `sandbox info` command
+A new `e2b sandbox info <sandboxID>` command displays detailed sandbox information including template, state, CPU, memory, and metadata. Supports `--format pretty` and `--format json` output.
+
+### Richer sandbox info from the SDK
+`Sandbox.getInfo()` now returns network configuration, lifecycle settings (such as `onTimeout` and `autoResume`), and internet access status. Learn more in the [sandbox lifecycle](/docs/sandbox) docs.
+
+### `fixMissing` option for template `aptInstall`
+The `aptInstall()` method in both JavaScript and Python template SDKs now supports a `fixMissing` option, which passes `--fix-missing` to `apt-get install` during template builds.
+
+## Updates
+
+### Faster file uploads with binary encoding
+File uploads in both SDKs now use binary encoding (`application/octet-stream`) instead of `multipart/form-data` when supported, improving upload efficiency. The change is backward-compatible and falls back automatically for older sandbox environments.
+
+### Longer volume file transfer timeout
+The default timeout for volume file read and write operations has been increased from 60 seconds to 1 hour, preventing timeouts on large file transfers. You can still set a custom timeout.
+
+### More specific error types
+The SDKs now throw distinct `SandboxNotFoundException` and `FileNotFoundException` errors instead of a generic not-found error. This makes it easier to handle "sandbox not found" vs "file not found" scenarios in your code. The previous error types are deprecated but still work.
+
+### Improved sandbox scheduling reliability
+Sandbox creation under high concurrency is now more reliable thanks to improved scheduling logic that prevents request bursts from overwhelming individual nodes.
+
+### More accurate CPU metrics
+CPU usage metrics for sandboxes are now sampled in the background, preventing short spikes from inflating reported values.
+
+## Bug fixes
+
+- **CLI `sandbox create` no longer deletes snapshots.** Previously, exiting a terminal session after `e2b sandbox create` could accidentally delete the sandbox's snapshots. The sandbox now expires gracefully instead.
+- **Custom connection config now propagates correctly.** Fixed a bug where a custom API key, domain, or headers set on a `Sandbox` instance were not forwarded to `pause()`, `connect()`, and `getInfo()` calls.
+- **CLI template init uses current API.** `e2b template init` now generates code with the current `Template.build()` API instead of the deprecated `alias` parameter.
+- **CLI update notifications restored.** The CLI update-available banner was silently broken due to a bundling issue and now displays correctly again.
+- **Streaming timeout fix in Python SDK.** Fixed an issue where streaming operations (e.g., `commands.run`) could hang indefinitely if a sandbox became unreachable. The `request_timeout` parameter now correctly applies to streaming calls.
+- **CLI `sandbox list` now returns bounded results.** Defaults to 1,000 sandboxes with a note when results are truncated. Use `--limit 0` for no limit.
+- **Template cache TTL fix.** Long-running sandboxes no longer risk template cache expiration before their configured lifetime ends.
+</Update>
