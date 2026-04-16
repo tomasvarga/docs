@@ -1,0 +1,192 @@
+---
+title: "CLI"
+sidebarTitle: "CLI"
+icon: "rectangle-terminal"
+description: "Use the E2B CLI to create, connect, manage, and debug sandboxes from your terminal."
+---
+
+The E2B CLI lets you create, connect to, and manage sandboxes directly from your terminal. It's also used to manage [templates](/docs/template/quickstart).
+
+## Installation
+
+**Using Homebrew (on macOS)**
+
+```bash
+brew install e2b
+```
+
+**Using NPM**
+
+```bash
+npm i -g @e2b/cli
+```
+
+## Authentication
+
+There are two ways to authenticate with the E2B CLI:
+
+### Browser authentication
+
+<Warning>
+This option requires an interactive browser environment.
+</Warning>
+
+Run the following command to sign in through your browser:
+
+```bash
+e2b auth login
+```
+
+This will open your default browser and prompt you to authenticate with your E2B account.
+
+### Environment variables
+
+Set your environment variables:
+
+```bash
+export E2B_API_KEY=your_api_key_here
+export E2B_ACCESS_TOKEN=your_acces_token_here
+```
+
+<Info>
+Learn more about obtaining and managing your API key and access token on the [API Key page](/docs/api-key).
+</Info>
+
+## Create a sandbox
+
+Create a sandbox and connect an interactive terminal to it.
+
+```bash
+e2b sandbox create <template>
+```
+
+For example, to create a sandbox from the `base` template:
+
+```bash
+e2b sandbox create base
+```
+
+This will:
+1. Create a new sandbox from the specified template
+2. Connect your terminal to the sandbox
+3. Keep the sandbox alive while you're connected
+4. Automatically kill the sandbox when you exit the terminal
+
+Once connected, you can inspect the sandbox filesystem and processes to debug or experiment, or use it as a dedicated environment for running agents instead of your local computer.
+
+## Connect to a sandbox
+
+Connect an interactive terminal to an already running sandbox.
+
+```bash
+e2b sandbox connect <sandbox-id>
+```
+
+Unlike the `create` command, `connect` does not kill the sandbox when you disconnect. When you exit the terminal, only your terminal session is closed — the sandbox continues running.
+
+## Execute commands
+
+Execute commands in a running sandbox.
+
+```bash
+e2b sandbox exec <sandbox-id> <command>
+```
+
+### Pipe from stdin
+
+```bash
+echo "foo" | e2b sandbox exec <sandbox-id> <command>
+```
+
+### Run in background
+
+Use the `--background` flag to run a command in the background and return immediately. The command will print the process ID (PID) to stderr:
+
+```bash
+e2b sandbox exec --background <sandbox-id> "sleep 60 && echo done"
+```
+
+### Set working directory
+
+```bash
+e2b sandbox exec --cwd /home/user <sandbox-id> ls
+```
+
+### Run as specific user
+
+```bash
+e2b sandbox exec --user root <sandbox-id> apt-get update
+```
+
+### Set environment variables
+
+Use the `--env` flag to set environment variables. This flag can be repeated for multiple variables:
+
+```bash
+e2b sandbox exec --env NODE_ENV=production --env DEBUG=true <sandbox-id> node app.js
+```
+
+## List sandboxes
+
+List all sandboxes:
+
+```bash
+e2b sandbox list
+```
+
+This returns running sandboxes by default. Use `--state` to filter by state.
+
+### Filter by state
+
+```bash
+e2b sandbox list --state running,paused
+```
+
+### Filter by metadata
+
+```bash
+e2b sandbox list --metadata key1=value1,key2=value2
+```
+
+### Limit results
+
+```bash
+e2b sandbox list --limit 10
+```
+
+### Output format
+
+```bash
+# Pretty print (default)
+e2b sandbox list --format pretty
+
+# JSON
+e2b sandbox list --format json
+```
+
+## Shutdown sandboxes
+
+### Shutdown specific sandboxes
+
+```bash
+e2b sandbox kill <sandbox-id1> <sandbox-id2> <sandbox-id3>
+```
+
+### Shutdown all sandboxes
+
+```bash
+e2b sandbox kill --all
+```
+
+You can filter which sandboxes to shut down by state, metadata, or both:
+
+```bash
+# By state
+e2b sandbox kill --all --state=running,paused
+
+# By metadata
+e2b sandbox kill --all --metadata=key=value
+
+# Both
+e2b sandbox kill --all --state=running,paused --metadata=key=value
+```

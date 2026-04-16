@@ -74,6 +74,7 @@
               "docs/sandbox/lifecycle",
               "docs/sandbox/persistence",
               "docs/sandbox/commands",
+              "docs/sandbox/cli",
               "docs/sandbox/filesystem",
               "docs/sandbox/environment-variables",
               "docs/sandbox/connect-bucket",
@@ -149,18 +150,6 @@
                   "docs/code-interpreting/supported-languages/bash"
                 ]
               }
-            ]
-          },
-          {
-            "group": "CLI",
-            "pages": [
-              "docs/cli",
-              "docs/cli/auth",
-              "docs/cli/list-sandboxes",
-              "docs/cli/create-sandbox",
-              "docs/cli/connect-to-sandbox",
-              "docs/cli/exec-command",
-              "docs/cli/shutdown-sandboxes"
             ]
           },
           {
@@ -3674,6 +3663,41 @@
     }
   },
   "redirects": [
+    {
+      "source": "/docs/cli",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/auth",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/list-sandboxes",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/create-sandbox",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/connect-to-sandbox",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/exec-command",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/shutdown-sandboxes",
+      "destination": "/docs/sandbox/cli",
+      "permanent": true
+    },
     {
       "source": "/docs/sandbox/configuration",
       "destination": "/docs/sandbox/environment-variables",
