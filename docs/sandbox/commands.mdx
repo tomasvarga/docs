@@ -100,6 +100,50 @@ command.kill()
 ```
 </CodeGroup>
 
+### Listing running processes
+
+Use `commands.list()` to get all running processes in the sandbox, including background commands and PTY sessions.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+// Start a background process
+const cmd = await sandbox.commands.run('sleep 300', { background: true })
+
+// List all running processes
+const processes = await sandbox.commands.list()
+for (const proc of processes) {
+  console.log(`PID: ${proc.pid}, Command: ${proc.cmd}`)
+}
+
+// Kill a process by PID
+await sandbox.commands.kill(processes[0].pid)
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+# Start a background process
+cmd = sandbox.commands.run("sleep 300", background=True)
+
+# List all running processes
+processes = sandbox.commands.list()
+for proc in processes:
+    print(f"PID: {proc.pid}, Command: {proc.cmd}")
+
+# Kill a process by PID
+sandbox.commands.kill(processes[0].pid)
+```
+</CodeGroup>
+
+<Note>
+Background commands started with `commands.run()` appear as `/bin/bash` in the `cmd` field, not the inner command string. Only currently running processes are returned — exited or killed processes are not included.
+</Note>
+
 ## Interactive terminal (PTY)
 
 The PTY (pseudo-terminal) module allows you to create interactive terminal sessions in the sandbox with real-time, bidirectional communication.
