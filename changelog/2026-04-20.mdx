@@ -1,0 +1,31 @@
+---
+title: Changelog
+description: The latest updates and improvements to E2B.
+---
+
+<Update label="2026-04-20" description="Week of April 14 - 20">
+  ## New features
+
+  - **Volume CRUD operations in SDKs** -- You can now create, list, inspect, and destroy [volumes](/docs/volumes) directly from the JavaScript and Python SDKs. Mount volumes to sandboxes with the new `volumeMounts` (JS) or `volume_mounts` (Python) parameter when creating a sandbox. See the [volumes documentation](/docs/volumes/manage) for details.
+
+  - **Gzip compression for file operations** -- File uploads and downloads now support optional gzip compression in both SDKs. Pass `gzip: true` (JS) or `gzip=True` (Python) to `writeFile` / `write_file` and `readFile` / `read_file` to reduce transfer sizes. See the [filesystem documentation](/docs/filesystem/upload) for usage.
+
+  - **Pass template as an option in `Sandbox.create()`** -- The JavaScript SDK now supports `Sandbox.create({ template: 'my-template' })` as an alternative to `Sandbox.create('my-template')`. This makes it easier to pass the template alongside other options. The Python SDK already supported this via named parameters.
+
+  ## Updates
+
+  - **Sandbox base image upgraded to Ubuntu 24.04** -- Sandboxes now run on Ubuntu 24.04 with Linux kernel 6.14+, bringing improved security and compatibility.
+
+  - **Faster file uploads with octet-stream encoding** -- File uploads now use `application/octet-stream` encoding by default, improving upload performance and reliability.
+
+  - **Volume file upload timeout increased to 1 hour** -- Large file uploads to volumes now have a 1-hour timeout, up from the previous default. This helps when uploading large datasets or model weights to persistent storage.
+
+  - **Volumes remounted on sandbox resume** -- Volumes are now automatically remounted when a sandbox resumes from a paused state, so your persistent storage stays available across pause/resume cycles.
+
+  ## Bug fixes
+
+  - Fixed an issue where the CLI's `sandbox create` command could inadvertently delete snapshots on exit.
+  - Fixed a bug where default connection config was not properly propagated when connecting to sandboxes.
+  - Improved error messages to better distinguish between sandbox not found and file not found errors.
+  - Fixed a race condition in sandbox pause that could prevent clean shutdowns.
+</Update>
