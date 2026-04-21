@@ -212,7 +212,7 @@ sandbox.kill()
 
 ## Resume a session
 
-Claude Code persists conversations that can be resumed with follow-up tasks using `--session-id`.
+Claude Code persists conversations that can be resumed with follow-up tasks using `--resume`.
 
 <CodeGroup>
 ```typescript JavaScript & TypeScript
@@ -234,7 +234,7 @@ const sessionId = response.session_id
 
 // Continue with a follow-up task
 const followUp = await sandbox.commands.run(
-  `cd /home/user/repo && claude --dangerously-skip-permissions --session-id ${sessionId} -p "Now implement step 1 of the plan"`,
+  `cd /home/user/repo && claude --dangerously-skip-permissions --resume ${sessionId} -p "Now implement step 1 of the plan"`,
   { onStdout: (data) => process.stdout.write(data) }
 )
 
@@ -263,7 +263,7 @@ session_id = response["session_id"]
 
 # Continue with a follow-up task
 follow_up = sandbox.commands.run(
-    f'cd /home/user/repo && claude --dangerously-skip-permissions --session-id {session_id} -p "Now implement step 1 of the plan"',
+    f'cd /home/user/repo && claude --dangerously-skip-permissions --resume {session_id} -p "Now implement step 1 of the plan"',
     on_stdout=lambda data: print(data, end=""),
 )
 

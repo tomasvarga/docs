@@ -11,7 +11,7 @@ To connect to a running sandbox, you first need to retrieve its ID. You can do t
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 
@@ -30,7 +30,7 @@ const sandboxId = runningSandboxes[0].sandboxId
 ```
 
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 
@@ -53,7 +53,7 @@ Now that you have the sandbox ID, you can connect to the sandbox using the `Sand
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={3}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.connect(sandboxId)
 
@@ -64,7 +64,7 @@ console.log(`Running in sandbox ${sandbox.sandboxId} as "${result.stdout.trim()}
 ```
 
 ```python Python highlight={3}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.connect(sandbox_id)
 

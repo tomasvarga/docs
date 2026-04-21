@@ -12,7 +12,7 @@ It's recommended not to collect or close watcher immediately after making a chan
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={7-12}
-import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+import { Sandbox, FilesystemEventType } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const dirname = '/home/user'
@@ -29,7 +29,7 @@ const handle = await sandbox.files.watchDir(dirname, async (event) => {
 await sandbox.files.write(`${dirname}/my-file`, 'hello')
 ```
 ```python Python highlight={7,12-16}
-from e2b_code_interpreter import Sandbox, FilesystemEventType
+from e2b import Sandbox, FilesystemEventType
 
 sandbox = Sandbox.create()
 dirname = '/home/user'
@@ -59,7 +59,7 @@ When rapidly creating new folders (e.g., deeply nested path of folders), events 
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={13,17}
-import { Sandbox, FilesystemEventType } from '@e2b/code-interpreter'
+import { Sandbox, FilesystemEventType } from 'e2b'
 
 const sandbox = await Sandbox.create()
 const dirname = '/home/user'
@@ -78,7 +78,7 @@ const handle = await sandbox.files.watchDir(dirname, async (event) => {
 await sandbox.files.write(`${dirname}/my-folder/my-file`, 'hello')
 ```
 ```python Python highlight={7,9}
-from e2b_code_interpreter import Sandbox, FilesystemEventType
+from e2b import Sandbox, FilesystemEventType
 
 sandbox = Sandbox.create()
 dirname = '/home/user'

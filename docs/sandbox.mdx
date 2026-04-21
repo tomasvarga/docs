@@ -11,7 +11,7 @@ Sandboxes can run continuously for up to 24 hours (Pro) or 1 hour (Base). For lo
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={6}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create sandbox with and keep it running for 60 seconds.
 // 🚨 Note: The units are milliseconds.
@@ -20,7 +20,7 @@ const sandbox = await Sandbox.create({
 })
 ```
 ```python Python highlight={6}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
 # 🚨 Note: The units are seconds.
@@ -42,7 +42,7 @@ You can for example start with a sandbox with 1 minute timeout and then periodic
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create sandbox with and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
@@ -52,7 +52,7 @@ const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 await sandbox.setTimeout(30_000)
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
@@ -69,7 +69,7 @@ You can retrieve sandbox information like sandbox ID, template, metadata, starte
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create sandbox with and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
@@ -90,7 +90,7 @@ console.log(info)
 ```
 
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)
@@ -116,7 +116,7 @@ You can shutdown the sandbox any time even before the timeout is up by calling t
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create sandbox with and keep it running for 60 seconds.
 const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
@@ -125,7 +125,7 @@ const sandbox = await Sandbox.create({ timeoutMs: 60_000 })
 await sandbox.kill()
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create sandbox with and keep it running for 60 seconds.
 sandbox = Sandbox.create(timeout=60)

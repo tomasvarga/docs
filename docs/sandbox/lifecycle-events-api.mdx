@@ -10,10 +10,11 @@ Query Parameters:
 - `offset` (optional): Number of events to skip (default: 0, min: 0)
 - `limit` (optional): Number of events to return (default: 10, min: 1, max: 100)
 - `orderAsc` (optional): Sort order - true for ascending, false for descending (default: false)
+- `types` (optional): Filter by event type. Can be specified multiple times to match any of the given types.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sbx = await Sandbox.create()
 
@@ -40,6 +41,18 @@ const resp2 = await fetch(
   }
 )
 const teamSandboxEvents = await resp2.json()
+
+// Filter events by type
+const resp3 = await fetch(
+  'https://api.e2b.app/events/sandboxes?types=sandbox.lifecycle.created&types=sandbox.lifecycle.killed',
+  {
+    method: 'GET',
+    headers: {
+      'X-API-Key': E2B_API_KEY,
+    },
+  }
+)
+const filteredEvents = await resp3.json()
 
 console.log(teamSandboxEvents)
 
@@ -87,7 +100,7 @@ console.log(teamSandboxEvents)
 ```
 ```python Python
 import requests
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sbx = Sandbox.create()
 
@@ -108,6 +121,16 @@ resp2 = requests.get(
     }
 )
 team_sandbox_events = resp2.json()
+
+# Filter events by type
+resp3 = requests.get(
+    "https://api.e2b.app/events/sandboxes",
+    params={"types": ["sandbox.lifecycle.created", "sandbox.lifecycle.killed"]},
+    headers={
+        "X-API-Key": E2B_API_KEY,
+    }
+)
+filtered_events = resp3.json()
 
 print(team_sandbox_events)
 

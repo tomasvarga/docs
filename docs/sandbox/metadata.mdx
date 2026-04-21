@@ -14,7 +14,7 @@ You specify metadata when creating a sandbox and can access it later through lis
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={6}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Create sandbox with metadata.
 const sandbox = await Sandbox.create({
@@ -33,7 +33,7 @@ const runningSandboxes = await paginator.nextItems()
 console.log(runningSandboxes[0].metadata)
 ```
 ```python Python highlight={6}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 # Create sandbox with metadata.
 sandbox = Sandbox.create(

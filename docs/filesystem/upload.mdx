@@ -10,7 +10,7 @@ You can upload data to the sandbox using the `files.write()` method.
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -20,7 +20,7 @@ const content = fs.readFileSync('/local/path')
 await sandbox.files.write('/path/in/sandbox', content)
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -40,7 +40,7 @@ All you need to do is create a sandbox with the `secure: true` option. An upload
 You can optionally set an expiration time for the URL so that it will be valid only for a limited time.
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Start a secured sandbox (all operations must be authorized by default)
 const sandbox = await Sandbox.create(template, { secure: true })
@@ -83,7 +83,7 @@ content = sandbox.files.read('/path/in/sandbox')
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -125,7 +125,7 @@ await sandbox.files.write(files)
 ```
 ```python Python
 import os
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 

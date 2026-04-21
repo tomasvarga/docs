@@ -1,0 +1,583 @@
+---
+title: "OpenAI Agents SDK"
+description: "Use E2B sandboxes with the OpenAI Agents SDK."
+icon: "/images/icons/openai-agents-sdk.svg"
+---
+
+The [OpenAI Agents SDK](https://github.com/openai/openai-agents-python) is a framework for building agentic workflows. E2B provides a native integration that lets you run `SandboxAgent` instances inside isolated E2B sandboxes — giving your agents full filesystem, terminal, and network access in a secure environment.
+
+To use E2B as the sandbox backend:
+
+1. Create a sandbox session with `E2BSandboxClient`.
+2. Build a `SandboxAgent` with your instructions and model.
+3. Run the agent and pass the sandbox session through `RunConfig`.
+
+## Install the dependencies
+
+Install the [OpenAI Agents SDK](https://pypi.org/project/openai-agents/) with the E2B extra to pull in the sandbox integration.
+
+```bash
+pip install openai-agents[e2b]
+```
+
+You will also need API keys for OpenAI and E2B.
+
+```bash
+export OPENAI_API_KEY="..."
+export E2B_API_KEY="..."
+```
+
+## Basic example
+
+Create an `E2BSandboxClient`, start a session, and run a `SandboxAgent` inside it. The agent gets full access to the sandbox environment — it can run commands, read and write files, and inspect the workspace.
+
+### Create a session
+
+Initialize the `E2BSandboxClient` and create a sandbox session. The `pause_on_exit` option keeps the sandbox available after the script finishes so you can inspect its state.
+
+```python
+from agents.extensions.sandbox import (
+    E2BSandboxClient,
+    E2BSandboxClientOptions,
+    E2BSandboxType,
+)
+
+client = E2BSandboxClient()
+session = await client.create(
+    options=E2BSandboxClientOptions(
+        sandbox_type=E2BSandboxType.E2B,
+        timeout=900,
+        pause_on_exit=True,
+    )
+)
+```
+
+### Build and run the agent
+
+Define a `SandboxAgent` with a name, model, and instructions, then run it against the sandbox session using `Runner.run`. The result contains the agent's final output.
+
+```python
+from agents import ModelSettings, Runner
+from agents.run import RunConfig
+from agents.sandbox import SandboxAgent, SandboxRunConfig
+
+agent = SandboxAgent(
+    name="Workspace Inspector",
+    model="gpt-5.4",
+    instructions=(
+        "Inspect the workspace, explain what files exist, and summarize the project."
+    ),
+    model_settings=ModelSettings(tool_choice="required"),
+)
+
+result = await Runner.run(
+    agent,
+    "Look around the workspace and summarize what you find.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
+)
+print(result.final_output)
+```
+
+### Shut down
+
+Always shut down the session when you're done to release sandbox resources.
+
+```python
+await session.shutdown()
+```
+
+### Full example
+
+The complete script that ties the steps above together.
+
+```python expandable
+import asyncio
+
+from agents import ModelSettings, Runner
+from agents.run import RunConfig
+from agents.sandbox import SandboxAgent, SandboxRunConfig
+from agents.extensions.sandbox import (
+    E2BSandboxClient,
+    E2BSandboxClientOptions,
+    E2BSandboxType,
+)
+
+
+async def main() -> None:
+    client = E2BSandboxClient()
+    session = await client.create(
+        options=E2BSandboxClientOptions(
+            sandbox_type=E2BSandboxType.E2B,
+            timeout=900,
+            pause_on_exit=True,
+        )
+    )
+
+    try:
+        agent = SandboxAgent(
+            name="Workspace Inspector",
+            model="gpt-5.4",
+            instructions=(
+                "Inspect the workspace, explain what files exist, and summarize the project."
+            ),
+            model_settings=ModelSettings(tool_choice="required"),
+        )
+
+        result = await Runner.run(
+            agent,
+            "Look around the workspace and summarize what you find.",
+            run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
+        )
+        print(result.final_output)
+    finally:
+        await session.shutdown()
+
+
+asyncio.run(main())
+```
+
+---
+
+## Build an app with multiple versions
+
+A common pattern is to start from the same starter app and create multiple versions in separate sandboxes — useful when comparing a first pass with a polished revision, or generating live preview URLs for each version.
+
+Based on the [`homepage_vite_basic_updated.ipynb`](https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/homepage_vite_basic_updated.ipynb) notebook from the Agents SDK repo.
+
+### Define a manifest
+
+A `Manifest` describes the starter files your agent will work with. Each entry is a `File` with its content encoded as bytes. This lets you seed multiple sandboxes from the same baseline — useful when comparing different versions of an app.
+
+```python
+from agents.sandbox import Manifest
+from agents.sandbox.entries import File
+
+def build_manifest() -> Manifest:
+    return Manifest(
+        entries={
+            "package.json": File(content=PACKAGE_JSON.encode()),
+            "index.html": File(content=INDEX_HTML.encode()),
+            "vite.config.js": File(content=VITE_CONFIG_JS.encode()),
+            "src/main.tsx": File(content=MAIN_TSX.encode()),
+            "src/App.tsx": File(content=APP_TSX.encode()),
+        }
+    )
+```
+
+### Create a sandbox session
+
+Create a sandbox session with the manifest, exposed ports for live previews, and internet access so the agent can install npm packages.
+
+```python
+from agents.extensions.sandbox import (
+    E2BSandboxClient,
+    E2BSandboxClientOptions,
+    E2BSandboxType,
+)
+
+session = await E2BSandboxClient().create(
+    manifest=build_manifest(),
+    options=E2BSandboxClientOptions(
+        sandbox_type=E2BSandboxType.E2B,
+        timeout=1800,
+        exposed_ports=(4173,),
+        allow_internet_access=True,
+        pause_on_exit=True,
+    ),
+)
+await session.start()
+```
+
+### Run the agent
+
+Build a `SandboxAgent` with capabilities like `ApplyPatch` and `Shell`, then run it against the sandbox session.
+
+```python
+from agents import ModelSettings, Runner
+from agents.run import RunConfig
+from agents.sandbox import SandboxAgent, SandboxRunConfig
+from agents.sandbox.capabilities import ApplyPatch, Shell
+
+agent = SandboxAgent(
+    name="E2B Vite Builder",
+    model="gpt-5.4-mini",
+    instructions="Update the Vite app in the sandbox workspace and return a concise summary.",
+    default_manifest=build_manifest(),
+    capabilities=[ApplyPatch(), Shell()],
+    model_settings=ModelSettings(tool_choice="required"),
+)
+
+result = await Runner.run(
+    agent,
+    "Make the basic version now.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
+)
+```
+
+### Start a preview server
+
+After the agent finishes, install dependencies, start the Vite dev server, and resolve the exposed port to get a live preview URL.
+
+```python
+await session.exec(
+    "sh", "-lc",
+    (
+        "npm install >/tmp/e2b-demo-npm-install.log 2>&1 && "
+        "nohup npm run dev -- --host 0.0.0.0 --port 4173 "
+        ">/tmp/e2b-demo-vite.log 2>&1 &"
+    ),
+    shell=False,
+    timeout=120,
+)
+preview_url = (await session.resolve_exposed_port(4173)).url_for("http")
+```
+
+### Full example
+
+The complete `run_version()` helper ties all the steps above together. Call it once per version to get isolated sandboxes with their own preview URLs. Based on the [`homepage_vite_basic_updated.ipynb`](https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/homepage_vite_basic_updated.ipynb) notebook from the Agents SDK repo.
+
+```python expandable
+from agents import ModelSettings, Runner
+from agents.run import RunConfig
+from agents.sandbox import Manifest, SandboxAgent, SandboxRunConfig
+from agents.sandbox.capabilities import ApplyPatch, Shell
+from agents.sandbox.entries import File
+from agents.extensions.sandbox import (
+    E2BSandboxClient,
+    E2BSandboxClientOptions,
+    E2BSandboxType,
+)
+
+
+def build_manifest() -> Manifest:
+    return Manifest(
+        entries={
+            "package.json": File(content=PACKAGE_JSON.encode()),
+            "index.html": File(content=INDEX_HTML.encode()),
+            "vite.config.js": File(content=VITE_CONFIG_JS.encode()),
+            "src/main.tsx": File(content=MAIN_TSX.encode()),
+            "src/App.tsx": File(content=APP_TSX.encode()),
+        }
+    )
+
+
+async def run_version(version_name: str, version_prompt: str) -> dict[str, str]:
+    session = await E2BSandboxClient().create(
+        manifest=build_manifest(),
+        options=E2BSandboxClientOptions(
+            sandbox_type=E2BSandboxType.E2B,
+            timeout=1800,
+            exposed_ports=(4173,),
+            allow_internet_access=True,
+            pause_on_exit=True,
+        ),
+    )
+    await session.start()
+
+    agent = SandboxAgent(
+        name=f"E2B Vite {version_name.title()} Builder",
+        model="gpt-5.4-mini",
+        instructions=(
+            "Update the Vite app in the sandbox workspace and return a concise summary."
+        ),
+        developer_instructions=(
+            f"Version goal: {version_prompt}\n"
+            "Start from the tiny Vite starter. You may create src/styles.css if you want."
+        ),
+        default_manifest=build_manifest(),
+        capabilities=[ApplyPatch(), Shell()],
+        model_settings=ModelSettings(tool_choice="required"),
+    )
+
+    result = await Runner.run(
+        agent,
+        f"Make the {version_name} version now.",
+        run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
+    )
+
+    await session.exec(
+        "sh", "-lc",
+        (
+            "npm install >/tmp/e2b-demo-npm-install.log 2>&1 && "
+            "nohup npm run dev -- --host 0.0.0.0 --port 4173 "
+            ">/tmp/e2b-demo-vite.log 2>&1 &"
+        ),
+        shell=False,
+        timeout=120,
+    )
+    preview_url = (await session.resolve_exposed_port(4173)).url_for("http")
+
+    return {
+        "summary": str(result.final_output),
+        "preview_url": preview_url,
+    }
+```
+
+---
+
+## MCP-powered research agents
+
+You can create sandboxes with [MCP](https://modelcontextprotocol.io/) servers enabled, then connect the Agents SDK to the sandbox's MCP gateway. This gives you an agent that can discover sources with search-oriented MCP servers, verify pages in a browser, and keep all of that execution inside the sandbox.
+
+The Agents SDK repo includes a concrete example in [`deep_research_mcp.py`](https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/deep_research_mcp.py).
+
+### Configure MCP servers
+
+Pass MCP server configurations when creating the sandbox session. This example enables [Browserbase](https://www.browserbase.com/) for browser automation and [Exa](https://exa.ai/) for search.
+
+```python
+session = await client.create(
+    options=E2BSandboxClientOptions(
+        sandbox_type=E2BSandboxType.E2B,
+        timeout=900,
+        pause_on_exit=True,
+        mcp={
+            "browserbase": {
+                "apiKey": os.environ["BROWSERBASE_API_KEY"],
+                "geminiApiKey": os.environ["GEMINI_API_KEY"],
+                "projectId": os.environ["BROWSERBASE_PROJECT_ID"],
+            },
+            "exa": {
+                "apiKey": os.environ["EXA_API_KEY"],
+            },
+        },
+    ),
+)
+```
+
+### Connect to the MCP gateway
+
+Use `MCPServerStreamableHttp` to connect to the sandbox's MCP gateway. This gives the agent access to all the MCP servers you configured above.
+
+```python
+from agents.mcp import MCPServerStreamableHttp
+
+async with MCPServerStreamableHttp(
+    name="E2B MCP Gateway",
+    params={
+        "url": mcp_url,
+        "headers": {"Authorization": f"Bearer {mcp_token}"},
+        "timeout": 30,
+        "sse_read_timeout": 300,
+    },
+) as server:
+    ...
+```
+
+### Run the agent
+
+Pass the MCP server to the `SandboxAgent` via `mcp_servers`. The agent can now discover and call tools from all configured MCP servers.
+
+```python
+from agents import ModelSettings, Runner
+from agents.run import RunConfig
+from agents.sandbox import SandboxAgent, SandboxRunConfig
+
+agent = SandboxAgent(
+    name="Deep Research Assistant",
+    model="gpt-5.4",
+    instructions=(
+        "Use Exa to discover strong sources and Browserbase to verify important claims."
+    ),
+    mcp_servers=[server],
+    model_settings=ModelSettings(tool_choice="required"),
+)
+
+result = await Runner.run(
+    agent,
+    "Research browser automation infrastructure for AI agents.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
+)
+```
+
+### Full example
+
+The complete script combining session creation, MCP gateway connection, and agent execution.
+
+```python expandable
+from agents import ModelSettings, Runner
+from agents.mcp import MCPServerStreamableHttp
+from agents.run import RunConfig
+from agents.sandbox import SandboxAgent, SandboxRunConfig
+
+session = await client.create(
+    options=E2BSandboxClientOptions(
+        sandbox_type=E2BSandboxType.E2B,
+        timeout=900,
+        pause_on_exit=True,
+        mcp={
+            "browserbase": {
+                "apiKey": os.environ["BROWSERBASE_API_KEY"],
+                "geminiApiKey": os.environ["GEMINI_API_KEY"],
+                "projectId": os.environ["BROWSERBASE_PROJECT_ID"],
+            },
+            "exa": {
+                "apiKey": os.environ["EXA_API_KEY"],
+            },
+        },
+    ),
+)
+
+async with MCPServerStreamableHttp(
+    name="E2B MCP Gateway",
+    params={
+        "url": mcp_url,
+        "headers": {"Authorization": f"Bearer {mcp_token}"},
+        "timeout": 30,
+        "sse_read_timeout": 300,
+    },
+) as server:
+    agent = SandboxAgent(
+        name="Deep Research Assistant",
+        model="gpt-5.4",
+        instructions=(
+            "Use Exa to discover strong sources and Browserbase to verify important claims."
+        ),
+        mcp_servers=[server],
+        model_settings=ModelSettings(tool_choice="required"),
+    )
+
+    result = await Runner.run(
+        agent,
+        "Research browser automation infrastructure for AI agents.",
+        run_config=RunConfig(sandbox=SandboxRunConfig(session=session)),
+    )
+```
+
+---
+
+## Parallel sandbox workers
+
+Use one coordinator agent to launch multiple specialized review or analysis lanes across separate sandboxes. Each lane runs in its own isolated environment, and the coordinator synthesizes the results into a single summary.
+
+The Agents SDK repo includes a concrete example in [`fullstack_code_review_parallel.py`](https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/fullstack_code_review_parallel.py). That example uses separate E2B-backed lanes for frontend review, backend review, and git tree review.
+
+### Define the agents
+
+Create specialized `SandboxAgent` instances for each review lane, plus a regular `Agent` as the coordinator that will synthesize the results.
+
+```python
+from agents import Agent
+from agents.sandbox import SandboxAgent
+
+frontend_agent = SandboxAgent(
+    name="Frontend Reviewer",
+    model="gpt-5.4",
+    instructions="Review the rendered frontend and identify UX and code risks.",
+)
+
+backend_agent = SandboxAgent(
+    name="Backend Reviewer",
+    model="gpt-5.4",
+    instructions="Review the API implementation and identify validation and auth risks.",
+)
+
+coordinator = Agent(
+    name="Review Coordinator",
+    model="gpt-5.4",
+    instructions=(
+        "Run the available review lanes, compare their evidence, and produce a single summary."
+    ),
+)
+```
+
+### Run the lanes
+
+Run each review agent against its own sandbox session. The lanes are independent and can run concurrently.
+
+```python
+from agents import Runner
+from agents.run import RunConfig
+from agents.sandbox import SandboxRunConfig
+
+frontend_result = await Runner.run(
+    frontend_agent,
+    "Review the frontend workspace.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=frontend_session)),
+)
+
+backend_result = await Runner.run(
+    backend_agent,
+    "Review the backend workspace.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=backend_session)),
+)
+```
+
+### Synthesize the results
+
+Feed the findings from each lane into the coordinator agent to produce a single summary.
+
+```python
+final_result = await Runner.run(
+    coordinator,
+    f"Frontend findings: {frontend_result.final_output}\n\n"
+    f"Backend findings: {backend_result.final_output}",
+)
+```
+
+### Full example
+
+The complete script defining agents, running parallel review lanes, and synthesizing results.
+
+```python expandable
+from agents import Agent, Runner
+from agents.run import RunConfig
+from agents.sandbox import SandboxAgent, SandboxRunConfig
+
+frontend_agent = SandboxAgent(
+    name="Frontend Reviewer",
+    model="gpt-5.4",
+    instructions="Review the rendered frontend and identify UX and code risks.",
+)
+
+backend_agent = SandboxAgent(
+    name="Backend Reviewer",
+    model="gpt-5.4",
+    instructions="Review the API implementation and identify validation and auth risks.",
+)
+
+coordinator = Agent(
+    name="Review Coordinator",
+    model="gpt-5.4",
+    instructions=(
+        "Run the available review lanes, compare their evidence, and produce a single summary."
+    ),
+)
+
+frontend_result = await Runner.run(
+    frontend_agent,
+    "Review the frontend workspace.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=frontend_session)),
+)
+
+backend_result = await Runner.run(
+    backend_agent,
+    "Review the backend workspace.",
+    run_config=RunConfig(sandbox=SandboxRunConfig(session=backend_session)),
+)
+
+final_result = await Runner.run(
+    coordinator,
+    f"Frontend findings: {frontend_result.final_output}\n\n"
+    f"Backend findings: {backend_result.final_output}",
+)
+```
+
+## Reference examples
+
+The OpenAI Agents SDK repository includes several complete examples demonstrating E2B sandbox integration.
+
+<CardGroup cols={2}>
+  <Card title="Basic and updated app" icon="code" href="https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/homepage_vite_basic_updated.ipynb">
+    Build and iterate on a Vite app across isolated sandboxes
+  </Card>
+  <Card title="MCP deep research" icon="magnifying-glass" href="https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/deep_research_mcp.py">
+    Research agent with Browserbase and Exa via MCP
+  </Card>
+  <Card title="Parallel code review" icon="code-branch" href="https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/fullstack_code_review_parallel.py">
+    Multi-lane code review with a coordinator agent
+  </Card>
+  <Card title="E2B agents setup" icon="gear" href="https://github.com/openai/openai-agents-python/blob/main/examples/sandbox/e2b_demos/e2b_agents_setup.ipynb">
+    Getting started notebook for E2B sandbox integration
+  </Card>
+</CardGroup>

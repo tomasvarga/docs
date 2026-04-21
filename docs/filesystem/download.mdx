@@ -8,7 +8,7 @@ You can download data from the sandbox using the `files.read()` method.
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -18,7 +18,7 @@ const content = await sandbox.files.read('/path/in/sandbox')
 fs.writeFileSync('/local/path', content)
 ```
 ```python Python
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -41,7 +41,7 @@ You can optionally set an expiration time for the URL so that it will be valid o
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 // Start a secured sandbox (all operations must be authorized by default)
 const sandbox = await Sandbox.create(template, { secure: true })

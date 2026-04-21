@@ -36,6 +36,7 @@ const sdks = {
         "src/template/index.ts",
         "src/template/readycmd.ts",
         "src/template/logger.ts",
+        "src/volume/index.ts",
       ],
     },
 
@@ -57,6 +58,19 @@ const sdks = {
           "src/sandbox/process/index.ts",
           "src/sandbox/commands/index.ts",
           "src/errors.ts",
+        ],
+      },
+
+      ">=2.3.0 <2.18.0": {
+        entryPoints: [
+          "src/sandbox/index.ts",
+          "src/sandbox/filesystem/index.ts",
+          "src/sandbox/process/index.ts",
+          "src/sandbox/commands/index.ts",
+          "src/errors.ts",
+          "src/template/index.ts",
+          "src/template/readycmd.ts",
+          "src/template/logger.ts",
         ],
       },
     },
@@ -84,6 +98,8 @@ const sdks = {
         "e2b.template_async",
         "e2b.template.logger",
         "e2b.template.readycmd",
+        "e2b.volume.volume_sync",
+        "e2b.volume.volume_async",
       ],
     },
 
@@ -93,6 +109,19 @@ const sdks = {
           "e2b.sandbox_sync",
           "e2b.sandbox_async",
           "e2b.exceptions",
+        ],
+      },
+
+      ">=2.1.0 <2.19.0": {
+        allowedPackages: [
+          "e2b.sandbox_sync",
+          "e2b.sandbox_async",
+          "e2b.exceptions",
+          "e2b.template",
+          "e2b.template_sync",
+          "e2b.template_async",
+          "e2b.template.logger",
+          "e2b.template.readycmd",
         ],
       },
     },

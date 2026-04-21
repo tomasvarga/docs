@@ -56,6 +56,7 @@
               "docs/agents/amp",
               "docs/agents/claude-code",
               "docs/agents/codex",
+              "docs/agents/openai-agents-sdk",
               {
                 "group": "OpenClaw",
                 "icon": "https://mintlify.s3.us-west-1.amazonaws.com/e2b-openclaw-icon/images/icons/openclaw.svg",
@@ -119,7 +120,6 @@
               "docs/sandbox/pty",
               "docs/sandbox/ssh-access",
               "docs/sandbox/connect-bucket",
-              "docs/sandbox/rate-limits",
               "docs/sandbox/secured-access",
               "docs/sandbox/ip-tunneling",
               "docs/sandbox/custom-domain"
@@ -164,6 +164,18 @@
               "docs/filesystem/watch",
               "docs/filesystem/upload",
               "docs/filesystem/download"
+            ]
+          },
+          {
+            "group": "Volumes",
+            "pages": [
+              "docs/volumes",
+              "docs/volumes/manage",
+              "docs/volumes/mount",
+              "docs/volumes/read-write",
+              "docs/volumes/info",
+              "docs/volumes/upload",
+              "docs/volumes/download"
             ]
           },
           {
@@ -3620,6 +3632,14 @@
             ]
           }
         ]
+      },
+      {
+        "anchor": "API reference",
+        "icon": "code",
+        "openapi": {
+          "source": "openapi-public.yml",
+          "directory": "docs/api-reference"
+        }
       }
     ],
     "global": {}
@@ -3692,6 +3712,11 @@
     }
   },
   "redirects": [
+    {
+      "source": "/docs/sandbox/rate-limits",
+      "destination": "/docs/billing",
+      "permanent": true
+    },
     {
       "source": "/docs/template/aliases",
       "destination": "/docs/template/names",

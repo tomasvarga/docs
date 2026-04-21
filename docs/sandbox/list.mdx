@@ -14,7 +14,7 @@ The `Sandbox.list()` method supports pagination. In the [advanced pagination](/d
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={6,11,14,24}
-    import { Sandbox, SandboxInfo } from '@e2b/code-interpreter'
+    import { Sandbox, SandboxInfo } from 'e2b'
 
     const sandbox = await Sandbox.create(
       {
@@ -40,7 +40,7 @@ The `Sandbox.list()` method supports pagination. In the [advanced pagination](/d
     const nextPage = await paginator.nextItems()
     ```
     ```python Python highlight={5,9,12,22}
-    from e2b_code_interpreter import Sandbox, SandboxInfo
+    from e2b import Sandbox, SandboxInfo
 
     sandbox = Sandbox.create(
         metadata={
@@ -87,7 +87,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={9,13}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     // Create a sandbox.
     const sandbox = await Sandbox.create()
@@ -102,7 +102,7 @@ Filter sandboxes by their current state. The state parameter can contain either 
     const sandboxes = await paginator.nextItems()
     ```
     ```python Python highlight={9,14}
-    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+    from e2b import Sandbox, SandboxQuery, SandboxState
 
     # Create a sandbox with metadata.
     sandbox = Sandbox.create()
@@ -123,7 +123,7 @@ Filter sandboxes by the metadata key value pairs specified during Sandbox creati
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={6-8,15,18}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     // Create sandbox with metadata.
     const sandbox = await Sandbox.create({
@@ -144,7 +144,7 @@ Filter sandboxes by the metadata key value pairs specified during Sandbox creati
     const sandboxes = await paginator.nextItems()
     ```
     ```python Python highlight={6-8,16-17}
-    from e2b_code_interpreter import Sandbox, SandboxQuery, SandboxState
+    from e2b import Sandbox, SandboxQuery, SandboxState
 
     # Create sandbox with metadata.
     sandbox = Sandbox.create(
@@ -176,7 +176,7 @@ For more granular pagination, you can set custom per-page item limit (default an
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={4-5,16}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     const paginator = Sandbox.list({
       limit: 100,
@@ -194,7 +194,7 @@ For more granular pagination, you can set custom per-page item limit (default an
     await paginator.nextItems()
     ```
     ```python Python  highlight={5-6,13}
-    from e2b_code_interpreter import Sandbox
+    from e2b import Sandbox
 
     # List running sandboxes that has `userId` key with value `123` and `env` key with value `dev`.
     paginator = Sandbox.list(
@@ -214,7 +214,7 @@ You can fetch all pages by looping through the paginator while checking if there
 
 <CodeGroup>
     ```js JavaScript & TypeScript  highlight={7}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     const paginator = Sandbox.list()
 
@@ -226,7 +226,7 @@ You can fetch all pages by looping through the paginator while checking if there
     }
     ```
     ```python Python highlight={7}
-    from e2b_code_interpreter import Sandbox, SandboxQuery
+    from e2b import Sandbox, SandboxQuery
 
     paginator = Sandbox.list()
 
@@ -247,7 +247,7 @@ You can fetch all pages by looping through the paginator while checking if there
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={11}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     // Create a sandbox.
     const sandbox = await Sandbox.create({
@@ -266,7 +266,7 @@ You can fetch all pages by looping through the paginator while checking if there
     console.log('Running sandbox template id:', runningSandbox.templateId)
     ```
     ```python Python highlight={11}
-    from e2b_code_interpreter import Sandbox
+    from e2b import Sandbox
 
     # Create a sandbox.
     sandbox = Sandbox.create(
@@ -295,7 +295,7 @@ This can be useful when you have a large number of sandboxes and want to find on
 
 <CodeGroup>
     ```js JavaScript & TypeScript highlight={6-8,15}
-    import { Sandbox } from '@e2b/code-interpreter'
+    import { Sandbox } from 'e2b'
 
     // Create sandbox with metadata.
     const sandbox = await Sandbox.create({
@@ -314,7 +314,7 @@ This can be useful when you have a large number of sandboxes and want to find on
     })
     ```
     ```python Python highlight={7-9,17-18}
-    from e2b_code_interpreter import Sandbox
+    from e2b import Sandbox
     from e2b.sandbox.sandbox_api import SandboxQuery
 
     # Create sandbox with metadata.

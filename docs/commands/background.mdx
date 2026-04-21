@@ -8,7 +8,7 @@ You can then later kill the command using the `commands.kill()` method.
 
 <CodeGroup>
 ```js JavaScript & TypeScript highlight={7}
-import { Sandbox } from '@e2b/code-interpreter'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -24,7 +24,7 @@ const command = await sandbox.commands.run('echo hello; sleep 10; echo world', {
 await command.kill()
 ```
 ```python Python highlight={6}
-from e2b_code_interpreter import Sandbox
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
