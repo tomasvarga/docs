@@ -1,0 +1,26 @@
+---
+title: Changelog
+description: Recent updates, new features, and fixes shipped in E2B.
+---
+
+<Update label="2026-04-26" description="Week of April 19 – April 26" tags={["Sandbox", "Templates", "API"]}>
+
+## New features
+
+- **Update internet access on running sandboxes.** The sandbox network endpoint now accepts `allow_internet_access`. Toggling it on a running sandbox blocks (or restores) all egress without recreating it. See [internet access](/docs/sandbox/internet-access).
+- **FUSE in sandboxes for non-root users.** Templates can now mount FUSE filesystems from non-root accounts. `user_allow_other` is enabled by default and `/dev/fuse` is accessible without `sudo`. See [building templates](/docs/template/quickstart).
+- **Manual template builds.** You can now trigger a template build manually after creating it, decoupling build-time from create-time. See [build templates](/docs/template/build).
+
+## Updates
+
+- **Clearer template-not-found errors.** When you create a sandbox or build from a base template, the API now distinguishes between a missing alias, an unbuilt tag, and access errors — and shows the name and tag you actually requested instead of an opaque internal ID. See [template names](/docs/template/names) and [tags](/docs/template/tags).
+- **Finer-grained sandbox memory metrics.** Sandbox metrics now report per-sample peak memory instead of a lifetime maximum, so memory spikes show up immediately. See [sandbox metrics](/docs/sandbox/metrics).
+
+## Fixes
+
+- **Killing a sandbox during pause no longer errors.** If a kill request lands while the sandbox is being paused, it now waits for the pause to complete and returns success once the sandbox is gone, instead of failing with a not-found error.
+- **Restored sandboxes stay reachable after envd restarts.** A transient envd crash inside the sandbox no longer leaves the service in a failed state across pause/resume — it now restarts indefinitely so the sandbox keeps responding. See [auto-resume](/docs/sandbox/auto-resume).
+- **Bun-based templates no longer leak `.env.local` during install.** Template installs using Bun now ignore `.env.local` so unintended environment variables don't make it into the build.
+- **Stability fix in the network pool.** Resolved a rare race that could panic the orchestrator's network pool during shutdown, reducing dropped sandboxes under load.
+
+</Update>
