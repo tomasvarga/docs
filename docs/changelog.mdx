@@ -1,0 +1,19 @@
+---
+title: Changelog
+description: Latest updates and changes to E2B.
+---
+
+<Update label="May 4, 2026" description="Week of April 27 – May 4" tags={["Feature", "Update", "Fix"]}>
+  ## New features
+
+  - **Auto-resume for BYOC clusters.** Self-hosted [BYOC](/docs/byoc) deployments now support [auto-resume](/docs/sandbox/auto-resume). Paused sandboxes resume automatically on the next request, just like on E2B Cloud.
+
+  ## Updates
+
+  - **Opt-in `useOctetStream` for file uploads.** Sandbox [file uploads](/docs/filesystem/upload) default back to `multipart/form-data`. Set `useOctetStream: true` (JS) or `use_octet_stream=True` (Python) when uploading to use `application/octet-stream` instead.
+
+  ## Bug fixes
+
+  - **Clearer team-blocked errors.** Requests from blocked teams now include a `BlockedReason` field in the API error response, so you can surface a useful message to your users.
+  - **Security updates.** Resolved Dependabot alerts across the JavaScript and Python SDKs. Update to the latest SDK versions to pick up the fixes.
+</Update>
