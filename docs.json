@@ -17,7 +17,7 @@
   },
   "favicon": "/favicon.png",
   "banner": {
-    "content": "Maintenance May 12, 8–9 PM PDT (May 13, 03:00–04:00 UTC). ~1 min disruption to sandbox management may occur. Already running sandboxes will not be affected. Questions? [Contact us](https://e2b.dev/dashboard?support=true)",
+    "content": "[Maintenance May 12, 8–9 PM PDT (May 13, 03:00–04:00 UTC)](https://status.e2b.dev/incidents/01KQWN0996TKCSDPZ4BN05RPHY \"We will be performing a scheduled upgrade of critical infrastructure to improve reliability and scalability.\nDuring this maintenance window, sandbox management operations may experience intermittent failures, including:\n• Creating sandboxes\n• Pausing or stopping sandboxes\n• Listing sandboxes\n• Template builds\nA brief disruption of approximately 1 minute is expected during the upgrade, during which database-backed management operations may fail.\nSandboxes already running at the time of the maintenance will continue operating normally and will not be affected.\"). ~1 min disruption to sandbox management may occur. Already running sandboxes will not be affected. Questions? [Contact us](https://e2b.dev/dashboard?support=true)",
     "type": "warning",
     "dismissible": true
   },
