@@ -487,8 +487,8 @@ paths:
   /sandboxes/{sandboxID}/network:
     put:
       description: Update the network configuration for a running sandbox. Replaces
-        the current egress rules with the provided configuration. Omitting both fields
-        clears all egress rules.
+        the current egress rules with the provided configuration. Omitting field clears
+        it.
       security:
       - ApiKeyAuth: []
       tags:
@@ -514,6 +514,19 @@ paths:
                     traffic. Domain names are not supported for deny rules.
                   items:
                     type: string
+                rules:
+                  type: object
+                  description: Per-domain transform rules. Replaces all existing rules
+                    when provided.
+                  additionalProperties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SandboxNetworkRule'
+                allow_internet_access:
+                  type: boolean
+                  description: Allow sandbox to access the internet. When set to false,
+                    it behaves the same as specifying denyOut to 0.0.0.0/0 in the
+                    network config.
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -3430,6 +3443,37 @@ components:
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
+        rules:
+          type: object
+          description: 'Per-domain transform rules applied to matching egress HTTP/HTTPS
+            requests. Keys are domains (e.g. "api.example.com", "example.com"). A
+            domain listed here is not automatically allowed - use allowOut to permit
+            the traffic.
+
+            '
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+    SandboxNetworkRule:
+      type: object
+      description: Transform rule applied to egress requests matching a domain pattern.
+      properties:
+        transform:
+          $ref: '#/components/schemas/SandboxNetworkTransform'
+    SandboxNetworkTransform:
+      type: object
+      description: Transformations applied to matching egress requests before forwarding.
+      properties:
+        headers:
+          type: object
+          description: 'HTTP headers to inject or override in matching requests. An
+            existing header with the same name is replaced. Values are plain strings;
+            secret resolution happens client-side before sending to the API.
+
+            '
+          additionalProperties:
+            type: string
     SandboxAutoResumeEnabled:
       type: boolean
       description: Auto-resume enabled flag for paused sandboxes. Default false.
