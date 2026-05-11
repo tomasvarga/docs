@@ -1,0 +1,38 @@
+---
+title: Changelog
+description: New features, improvements, and fixes shipped to E2B.
+mode: center
+---
+
+<Update label="May 11, 2026" tags={["sandbox", "sdk"]}>
+
+## New features
+
+- **Snapshot compression.** Memory and root filesystem snapshots are now compressed with zstd, reducing storage size and pause/resume bandwidth. Older snapshots stay compatible — the read path auto-detects the format. Rolling out gradually behind per-team/cluster/template flags.
+- **Custom domain header transforms.** Sandboxes can now be configured with header injection rules at creation time, and the configuration persists across [pause and resume](/docs/sandbox/persistence). See the [custom domain](/docs/sandbox/custom-domain) docs.
+- **Stable per-sandbox hostname routing.** SDKs can now reach sandboxes through a stable `sandbox.<domain>` host using header-based routing instead of per-sandbox hostnames, simplifying egress, DNS, and TLS setup.
+- **HTTP/2 in the Python SDK.** The [Python SDK](/docs/sdk-reference) now talks to the E2B control plane and `envd` over HTTP/2, reducing connection overhead under concurrent calls.
+- **HTTP/2 in the JavaScript SDK.** The [JavaScript SDK](/docs/sdk-reference) now uses HTTP/2 for sandbox traffic on Node ≥ 20.18.1. Non-Node JS runtimes are unaffected.
+
+## Updates
+
+- **Faster pause/resume on snapshot storage.** Redundant snapshot-header fetches dropped from thousands to a couple per operation, lowering tail latency and storage cost during [pause, resume](/docs/sandbox/persistence), and [template builds](/docs/template/build).
+- **Lower latency on `connect` under contention.** The sandbox connect endpoint now uses pub/sub wake-ups with jittered backoff instead of constant polling, reducing tail latency when many requests target the same sandbox.
+- **Smaller snapshot diffs.** Writes that zero or discard disk blocks are now omitted from snapshot diffs and reclaimed from the underlying cache, shrinking snapshots and freeing host space sooner. Existing snapshots remain compatible.
+- **Smaller diffs for small-file workloads.** New [template](/docs/template/quickstart) builds enable ext4 inline data, so files under ~160 bytes live inside their inode. Shrinks snapshot diffs for workloads that churn many small files. Applies to newly built templates.
+- **Lower snapshot growth from guest memory compaction.** Newly built base templates disable proactive in-guest memory compaction, avoiding spurious dirty pages in the next snapshot. Existing templates pick this up on rebuild.
+- **Opt-in pre-pause memory and disk reclaim.** Before pausing, sandboxes can optionally run `sync`, drop caches, compact memory, and `fstrim` to shrink the resulting snapshot. Disabled by default; rolling out gradually with per-step time limits.
+- **Free-page reporting on supported VMs.** Sandboxes on newer Firecracker builds can release freed guest memory back to the host (rolling out behind a flag), reducing host memory pressure and snapshot size.
+- **Controllable kernel version for new template builds.** The kernel used for new template builds can now be rolled forward at the platform level without a code change. Existing templates and snapshots keep their pinned kernel.
+
+## Bug fixes
+
+- **SDK connectivity over IP hosts.** Fixed a regression where the proxy returned HTTP 400 when the SDK connected via a raw IP host (for example on-prem or `e2b-local`). Header-based routing now works correctly for IP hosts again.
+- **Dropped command output on disconnect.** Fixed a deadlock in the in-sandbox process service that could freeze [command](/docs/commands) output for all subscribers and hang new `connect` calls when one client went away. Shipped in `envd` 0.5.16.
+- **Crash on client disconnect during streaming.** Fixed a nil-pointer crash that could occur when a client disconnected mid-stream from a [streaming command](/docs/commands/streaming).
+- **Reads after resume on compressed snapshots.** Fixed an issue where post-resume reads could resolve to a non-existent uncompressed path with the new compression rollout. The base path is now resolved per call from live snapshot metadata.
+- **Leaked sandbox VMs.** Fixed a case where stale VM processes could survive sandbox shutdown after rapid checkpoint bursts. The orchestrator now force-kills the cgroup as a backstop.
+- **Snapshot-upload race across orchestrators.** Fixed a race that could surface stale snapshot data across hosts during pause/resume. Peers now always read the canonical finalized header from storage.
+- **NBD connection drop on trim/sync writes.** Fixed a parsing bug that killed the NBD connection any time the guest kernel set request flags (for example `FUA` on a sync write). Production was unaffected because those flags weren't advertised, but enabling them is now safe.
+
+</Update>
