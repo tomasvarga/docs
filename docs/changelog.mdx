@@ -1,0 +1,26 @@
+---
+title: "Changelog"
+sidebarTitle: Changelog
+description: "Recent updates to the E2B platform, SDKs, and CLI."
+icon: "newspaper"
+mode: "center"
+---
+
+<Update label="May 18, 2026" tags={["sandbox", "sdk"]}>
+
+## New features
+
+- **Name your snapshots.** The [JavaScript SDK](https://www.npmjs.com/package/e2b) (`e2b@2.20.1`) and [Python SDK](https://pypi.org/project/e2b/) (`@e2b/python-sdk@2.21.1`) now accept an optional `name` parameter when creating snapshots, and return the snapshot's name in the response. See [persistence & snapshots](/docs/sandbox/persistence) for usage.
+- **More memory-efficient templates.** Template builds now coordinate guest free-page reporting per team, reducing memory usage for paused sandboxes built from the same template.
+
+## Updates
+
+- **Cleaner sandbox logs.** Sandbox runtime logs are quieter and more reliable: repeat metadata-poll failures are deduplicated, debug events no longer flood the in-VM journal, and the log exporter now buffers safely when the collector is briefly unreachable so log lines aren't lost during transient network blips.
+
+## Bug fixes
+
+- **More reliable sandbox startup.** Initialization no longer piles up retries when many requests hit a sandbox at the same time — pending calls now cancel cleanly when your client disconnects instead of queueing behind a stuck lock. The same fix is applied to the in-sandbox trusted CA installer.
+- **More reliable sandbox resume.** Sandboxes that resume while still holding file descriptors against an NFS mount now fall back to a lazy unmount instead of failing, so resumes succeed in more cases.
+- **Trustworthy log identity.** Sandbox log lines now always carry the correct template, sandbox, and team IDs as recorded by the orchestrator, even when the in-sandbox agent is unhealthy.
+
+</Update>
