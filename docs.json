@@ -73,6 +73,7 @@
           {
             "group": "Storage",
             "pages": [
+              "docs/storage/volumes",
               "docs/storage/archil",
               "docs/storage/cloud-buckets"
             ]
@@ -173,18 +174,6 @@
               "docs/filesystem/watch",
               "docs/filesystem/upload",
               "docs/filesystem/download"
-            ]
-          },
-          {
-            "group": "Volumes",
-            "pages": [
-              "docs/volumes",
-              "docs/volumes/manage",
-              "docs/volumes/mount",
-              "docs/volumes/read-write",
-              "docs/volumes/info",
-              "docs/volumes/upload",
-              "docs/volumes/download"
             ]
           },
           {
@@ -3721,6 +3710,41 @@
     }
   },
   "redirects": [
+    {
+      "source": "/docs/volumes",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/manage",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/mount",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/read-write",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/info",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/upload",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/volumes/download",
+      "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
     {
       "source": "/docs/sandbox/connect-bucket",
       "destination": "/docs/storage/cloud-buckets",
