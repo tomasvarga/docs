@@ -16,6 +16,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - name: metadata
         in: query
@@ -48,6 +50,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -78,6 +82,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - name: metadata
         in: query
@@ -125,6 +131,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - name: sandbox_ids
         in: query
@@ -162,6 +170,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       - in: query
@@ -203,6 +213,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       - in: query
@@ -261,6 +273,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -284,6 +298,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -306,6 +322,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       - in: query
@@ -352,6 +370,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -377,6 +397,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       requestBody:
@@ -412,6 +434,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       requestBody:
@@ -453,6 +477,8 @@ paths:
         the timeout duration.
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       tags:
       - Sandboxes
       requestBody:
@@ -487,10 +513,12 @@ paths:
   /sandboxes/{sandboxID}/network:
     put:
       description: Update the network configuration for a running sandbox. Replaces
-        the current egress rules with the provided configuration. Omitting both fields
-        clears all egress rules.
+        the current egress rules with the provided configuration. Omitting field clears
+        it.
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       tags:
       - Sandboxes
       requestBody:
@@ -498,22 +526,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                allowOut:
-                  type: array
-                  description: List of allowed destinations for egress traffic. Each
-                    entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address
-                    (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com").
-                    Allowed entries always take precedence over denied entries.
-                  items:
-                    type: string
-                denyOut:
-                  type: array
-                  description: List of denied CIDR blocks or IP addresses for egress
-                    traffic. Domain names are not supported for deny rules.
-                  items:
-                    type: string
+              $ref: '#/components/schemas/SandboxNetworkUpdateConfig'
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -535,6 +548,8 @@ paths:
       description: Refresh the sandbox extending its time to live
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       tags:
       - Sandboxes
       requestBody:
@@ -573,6 +588,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       requestBody:
@@ -612,6 +629,8 @@ paths:
       - Sandboxes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - name: sandboxID
         in: query
@@ -644,6 +663,8 @@ paths:
       - Templates
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -675,6 +696,8 @@ paths:
       - Templates
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -706,6 +729,8 @@ paths:
       security:
       - AccessTokenAuth: []
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       - in: path
@@ -741,6 +766,8 @@ paths:
       security:
       - ApiKeyAuth: []
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - in: query
         required: false
@@ -771,6 +798,8 @@ paths:
       - Templates
       security:
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -801,6 +830,8 @@ paths:
       - Templates
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       - $ref: '#/components/parameters/paginationNextToken'
@@ -825,6 +856,8 @@ paths:
       - Templates
       security:
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       requestBody:
@@ -853,6 +886,8 @@ paths:
       security:
       - ApiKeyAuth: []
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       responses:
@@ -872,6 +907,8 @@ paths:
       security:
       - ApiKeyAuth: []
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       requestBody:
@@ -905,6 +942,8 @@ paths:
       - Templates
       security:
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       - $ref: '#/components/parameters/buildID'
@@ -931,6 +970,8 @@ paths:
       - Templates
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       - $ref: '#/components/parameters/buildID'
@@ -960,6 +1001,8 @@ paths:
       security:
       - ApiKeyAuth: []
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       requestBody:
@@ -993,6 +1036,8 @@ paths:
       security:
       - AccessTokenAuth: []
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       - $ref: '#/components/parameters/buildID'
@@ -1043,6 +1088,8 @@ paths:
       security:
       - AccessTokenAuth: []
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       - $ref: '#/components/parameters/buildID'
@@ -1099,6 +1146,8 @@ paths:
       - Templates
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - name: alias
         in: path
@@ -1132,6 +1181,8 @@ paths:
       - Tags
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -1161,6 +1212,8 @@ paths:
       - Tags
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -1189,6 +1242,8 @@ paths:
       - Tags
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/templateID'
       responses:
@@ -1219,6 +1274,8 @@ paths:
       - Volumes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       responses:
         '200':
           description: Successfully listed all team volumes
@@ -1239,6 +1296,8 @@ paths:
       - Volumes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       requestBody:
         required: true
         content:
@@ -1268,6 +1327,8 @@ paths:
       - Volumes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/volumeID'
       responses:
@@ -1290,6 +1351,8 @@ paths:
       - Volumes
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/volumeID'
       responses:
@@ -2136,6 +2199,7 @@ paths:
       - Teams
       security:
       - AccessTokenAuth: []
+      - AuthProviderBearerAuth: []
       responses:
         '200':
           description: Successfully returned all teams
@@ -2161,6 +2225,8 @@ paths:
       - Teams
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/teamID'
       - in: query
@@ -2207,6 +2273,8 @@ paths:
       - Teams
       security:
       - ApiKeyAuth: []
+      - AuthProviderBearerAuth: []
+        AuthProviderTeamAuth: []
       parameters:
       - $ref: '#/components/parameters/teamID'
       - in: query
@@ -2262,6 +2330,14 @@ components:
       type: apiKey
       in: header
       name: X-API-Key
+    AuthProviderBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: access_token
+    AuthProviderTeamAuth:
+      type: apiKey
+      in: header
+      name: X-Team-ID
     SandboxAccessTokenAuth:
       type: apiKey
       in: header
@@ -2624,310 +2700,6 @@ components:
       type: number
       title: Connect-Timeout-Ms
       description: Define the timeout, in ms
-    filesystem.CreateWatcherRequest:
-      type: object
-      properties:
-        path:
-          type: string
-          title: path
-        recursive:
-          type: boolean
-          title: recursive
-      title: CreateWatcherRequest
-      additionalProperties: false
-    filesystem.CreateWatcherResponse:
-      type: object
-      properties:
-        watcherId:
-          type: string
-          title: watcher_id
-      title: CreateWatcherResponse
-      additionalProperties: false
-    filesystem.EntryInfo:
-      type: object
-      properties:
-        name:
-          type: string
-          title: name
-        type:
-          title: type
-          $ref: '#/components/schemas/filesystem.FileType'
-        path:
-          type: string
-          title: path
-        size:
-          type:
-          - integer
-          - string
-          title: size
-          format: int64
-          description: File size in bytes. Encoded as string for values exceeding
-            JSON number precision (int64).
-        mode:
-          type: integer
-          title: mode
-        permissions:
-          type: string
-          title: permissions
-        owner:
-          type: string
-          title: owner
-        group:
-          type: string
-          title: group
-        modifiedTime:
-          title: modified_time
-          $ref: '#/components/schemas/google.protobuf.Timestamp'
-        symlinkTarget:
-          type:
-          - string
-          - 'null'
-          title: symlink_target
-          description: If the entry is a symlink, this field contains the target of
-            the symlink.
-      title: EntryInfo
-      additionalProperties: false
-    filesystem.EventType:
-      type: string
-      title: EventType
-      enum:
-      - EVENT_TYPE_UNSPECIFIED
-      - EVENT_TYPE_CREATE
-      - EVENT_TYPE_WRITE
-      - EVENT_TYPE_REMOVE
-      - EVENT_TYPE_RENAME
-      - EVENT_TYPE_CHMOD
-    filesystem.FileType:
-      type: string
-      title: FileType
-      enum:
-      - FILE_TYPE_UNSPECIFIED
-      - FILE_TYPE_FILE
-      - FILE_TYPE_DIRECTORY
-      - FILE_TYPE_SYMLINK
-    filesystem.FilesystemEvent:
-      type: object
-      properties:
-        name:
-          type: string
-          title: name
-        type:
-          title: type
-          $ref: '#/components/schemas/filesystem.EventType'
-      title: FilesystemEvent
-      additionalProperties: false
-    filesystem.GetWatcherEventsRequest:
-      type: object
-      properties:
-        watcherId:
-          type: string
-          title: watcher_id
-      title: GetWatcherEventsRequest
-      additionalProperties: false
-    filesystem.GetWatcherEventsResponse:
-      type: object
-      properties:
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/filesystem.FilesystemEvent'
-          title: events
-      title: GetWatcherEventsResponse
-      additionalProperties: false
-    filesystem.ListDirRequest:
-      type: object
-      properties:
-        path:
-          type: string
-          title: path
-        depth:
-          type: integer
-          title: depth
-      title: ListDirRequest
-      additionalProperties: false
-    filesystem.ListDirResponse:
-      type: object
-      properties:
-        entries:
-          type: array
-          items:
-            $ref: '#/components/schemas/filesystem.EntryInfo'
-          title: entries
-      title: ListDirResponse
-      additionalProperties: false
-    filesystem.MakeDirRequest:
-      type: object
-      properties:
-        path:
-          type: string
-          title: path
-      title: MakeDirRequest
-      additionalProperties: false
-    filesystem.MakeDirResponse:
-      type: object
-      properties:
-        entry:
-          title: entry
-          $ref: '#/components/schemas/filesystem.EntryInfo'
-      title: MakeDirResponse
-      additionalProperties: false
-    filesystem.MoveRequest:
-      type: object
-      properties:
-        source:
-          type: string
-          title: source
-        destination:
-          type: string
-          title: destination
-      title: MoveRequest
-      additionalProperties: false
-    filesystem.MoveResponse:
-      type: object
-      properties:
-        entry:
-          title: entry
-          $ref: '#/components/schemas/filesystem.EntryInfo'
-      title: MoveResponse
-      additionalProperties: false
-    filesystem.RemoveRequest:
-      type: object
-      properties:
-        path:
-          type: string
-          title: path
-      title: RemoveRequest
-      additionalProperties: false
-    filesystem.RemoveResponse:
-      type: object
-      title: RemoveResponse
-      additionalProperties: false
-    filesystem.RemoveWatcherRequest:
-      type: object
-      properties:
-        watcherId:
-          type: string
-          title: watcher_id
-      title: RemoveWatcherRequest
-      additionalProperties: false
-    filesystem.RemoveWatcherResponse:
-      type: object
-      title: RemoveWatcherResponse
-      additionalProperties: false
-    filesystem.StatRequest:
-      type: object
-      properties:
-        path:
-          type: string
-          title: path
-      title: StatRequest
-      additionalProperties: false
-    filesystem.StatResponse:
-      type: object
-      properties:
-        entry:
-          title: entry
-          $ref: '#/components/schemas/filesystem.EntryInfo'
-      title: StatResponse
-      additionalProperties: false
-    filesystem.WatchDirRequest:
-      type: object
-      properties:
-        path:
-          type: string
-          title: path
-        recursive:
-          type: boolean
-          title: recursive
-      title: WatchDirRequest
-      additionalProperties: false
-    filesystem.WatchDirResponse:
-      type: object
-      oneOf:
-      - properties:
-          filesystem:
-            title: filesystem
-            $ref: '#/components/schemas/filesystem.FilesystemEvent'
-        title: filesystem
-        required:
-        - filesystem
-      - properties:
-          keepalive:
-            title: keepalive
-            $ref: '#/components/schemas/filesystem.WatchDirResponse.KeepAlive'
-        title: keepalive
-        required:
-        - keepalive
-      - properties:
-          start:
-            title: start
-            $ref: '#/components/schemas/filesystem.WatchDirResponse.StartEvent'
-        title: start
-        required:
-        - start
-      title: WatchDirResponse
-      additionalProperties: false
-    filesystem.WatchDirResponse.KeepAlive:
-      type: object
-      title: KeepAlive
-      additionalProperties: false
-    filesystem.WatchDirResponse.StartEvent:
-      type: object
-      title: StartEvent
-      additionalProperties: false
-    google.protobuf.Timestamp:
-      type: string
-      examples:
-      - '2023-01-15T01:30:15.01Z'
-      - '2024-12-25T12:00:00Z'
-      format: date-time
-      description: "A Timestamp represents a point in time independent of any time\
-        \ zone or local\n calendar, encoded as a count of seconds and fractions of\
-        \ seconds at\n nanosecond resolution. The count is relative to an epoch at\
-        \ UTC midnight on\n January 1, 1970, in the proleptic Gregorian calendar which\
-        \ extends the\n Gregorian calendar backwards to year one.\n\n All minutes\
-        \ are 60 seconds long. Leap seconds are \"smeared\" so that no leap\n second\
-        \ table is needed for interpretation, using a [24-hour linear\n smear](https://developers.google.com/time/smear).\n\
-        \n The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z.\
-        \ By\n restricting to that range, we ensure that we can convert to and from\
-        \ [RFC\n 3339](https://www.ietf.org/rfc/rfc3339.txt) date strings.\n\n # Examples\n\
-        \n Example 1: Compute Timestamp from POSIX `time()`.\n\n     Timestamp timestamp;\n\
-        \     timestamp.set_seconds(time(NULL));\n     timestamp.set_nanos(0);\n\n\
-        \ Example 2: Compute Timestamp from POSIX `gettimeofday()`.\n\n     struct\
-        \ timeval tv;\n     gettimeofday(&tv, NULL);\n\n     Timestamp timestamp;\n\
-        \     timestamp.set_seconds(tv.tv_sec);\n     timestamp.set_nanos(tv.tv_usec\
-        \ * 1000);\n\n Example 3: Compute Timestamp from Win32 `GetSystemTimeAsFileTime()`.\n\
-        \n     FILETIME ft;\n     GetSystemTimeAsFileTime(&ft);\n     UINT64 ticks\
-        \ = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;\n\n     // A Windows\
-        \ tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z\n     // is\
-        \ 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.\n     Timestamp\
-        \ timestamp;\n     timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));\n\
-        \     timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));\n\n Example\
-        \ 4: Compute Timestamp from Java `System.currentTimeMillis()`.\n\n     long\
-        \ millis = System.currentTimeMillis();\n\n     Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis\
-        \ / 1000)\n         .setNanos((int) ((millis % 1000) * 1000000)).build();\n\
-        \n Example 5: Compute Timestamp from Java `Instant.now()`.\n\n     Instant\
-        \ now = Instant.now();\n\n     Timestamp timestamp =\n         Timestamp.newBuilder().setSeconds(now.getEpochSecond())\n\
-        \             .setNanos(now.getNano()).build();\n\n Example 6: Compute Timestamp\
-        \ from current time in Python.\n\n     timestamp = Timestamp()\n     timestamp.GetCurrentTime()\n\
-        \n # JSON Mapping\n\n In JSON format, the Timestamp type is encoded as a string\
-        \ in the\n [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is,\
-        \ the\n format is \"{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z\"\
-        \n where {year} is always expressed using four digits while {month}, {day},\n\
-        \ {hour}, {min}, and {sec} are zero-padded to two digits each. The fractional\n\
-        \ seconds, which can go up to 9 digits (i.e. up to 1 nanosecond resolution),\n\
-        \ are optional. The \"Z\" suffix indicates the timezone (\"UTC\"); the timezone\n\
-        \ is required. A proto3 JSON serializer should always use UTC (as indicated\
-        \ by\n \"Z\") when printing the Timestamp type and a proto3 JSON parser should\
-        \ be\n able to accept both UTC and other timezones (as indicated by an offset).\n\
-        \n For example, \"2017-01-15T01:30:15.01Z\" encodes 15.01 seconds past\n 01:30\
-        \ UTC on January 15, 2017.\n\n In JavaScript, one can convert a Date object\
-        \ to this format using the\n standard\n [toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)\n\
-        \ method. In Python, a standard `datetime.datetime` object can be converted\n\
-        \ to this format using\n [`strftime`](https://docs.python.org/2/library/time.html#time.strftime)\
-        \ with\n the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java,\
-        \ one can use\n the Joda Time's [`ISODateTimeFormat.dateTime()`](\n http://joda-time.sourceforge.net/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime()\n\
-        \ ) to obtain a formatter capable of generating timestamps in this format."
     process.CloseStdinRequest:
       type: object
       properties:
@@ -3305,6 +3077,310 @@ components:
       type: object
       title: UpdateResponse
       additionalProperties: false
+    filesystem.CreateWatcherRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+        recursive:
+          type: boolean
+          title: recursive
+      title: CreateWatcherRequest
+      additionalProperties: false
+    filesystem.CreateWatcherResponse:
+      type: object
+      properties:
+        watcherId:
+          type: string
+          title: watcher_id
+      title: CreateWatcherResponse
+      additionalProperties: false
+    filesystem.EntryInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+        type:
+          title: type
+          $ref: '#/components/schemas/filesystem.FileType'
+        path:
+          type: string
+          title: path
+        size:
+          type:
+          - integer
+          - string
+          title: size
+          format: int64
+          description: File size in bytes. Encoded as string for values exceeding
+            JSON number precision (int64).
+        mode:
+          type: integer
+          title: mode
+        permissions:
+          type: string
+          title: permissions
+        owner:
+          type: string
+          title: owner
+        group:
+          type: string
+          title: group
+        modifiedTime:
+          title: modified_time
+          $ref: '#/components/schemas/google.protobuf.Timestamp'
+        symlinkTarget:
+          type:
+          - string
+          - 'null'
+          title: symlink_target
+          description: If the entry is a symlink, this field contains the target of
+            the symlink.
+      title: EntryInfo
+      additionalProperties: false
+    filesystem.EventType:
+      type: string
+      title: EventType
+      enum:
+      - EVENT_TYPE_UNSPECIFIED
+      - EVENT_TYPE_CREATE
+      - EVENT_TYPE_WRITE
+      - EVENT_TYPE_REMOVE
+      - EVENT_TYPE_RENAME
+      - EVENT_TYPE_CHMOD
+    filesystem.FileType:
+      type: string
+      title: FileType
+      enum:
+      - FILE_TYPE_UNSPECIFIED
+      - FILE_TYPE_FILE
+      - FILE_TYPE_DIRECTORY
+      - FILE_TYPE_SYMLINK
+    filesystem.FilesystemEvent:
+      type: object
+      properties:
+        name:
+          type: string
+          title: name
+        type:
+          title: type
+          $ref: '#/components/schemas/filesystem.EventType'
+      title: FilesystemEvent
+      additionalProperties: false
+    filesystem.GetWatcherEventsRequest:
+      type: object
+      properties:
+        watcherId:
+          type: string
+          title: watcher_id
+      title: GetWatcherEventsRequest
+      additionalProperties: false
+    filesystem.GetWatcherEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/filesystem.FilesystemEvent'
+          title: events
+      title: GetWatcherEventsResponse
+      additionalProperties: false
+    filesystem.ListDirRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+        depth:
+          type: integer
+          title: depth
+      title: ListDirRequest
+      additionalProperties: false
+    filesystem.ListDirResponse:
+      type: object
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/filesystem.EntryInfo'
+          title: entries
+      title: ListDirResponse
+      additionalProperties: false
+    filesystem.MakeDirRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: MakeDirRequest
+      additionalProperties: false
+    filesystem.MakeDirResponse:
+      type: object
+      properties:
+        entry:
+          title: entry
+          $ref: '#/components/schemas/filesystem.EntryInfo'
+      title: MakeDirResponse
+      additionalProperties: false
+    filesystem.MoveRequest:
+      type: object
+      properties:
+        source:
+          type: string
+          title: source
+        destination:
+          type: string
+          title: destination
+      title: MoveRequest
+      additionalProperties: false
+    filesystem.MoveResponse:
+      type: object
+      properties:
+        entry:
+          title: entry
+          $ref: '#/components/schemas/filesystem.EntryInfo'
+      title: MoveResponse
+      additionalProperties: false
+    filesystem.RemoveRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: RemoveRequest
+      additionalProperties: false
+    filesystem.RemoveResponse:
+      type: object
+      title: RemoveResponse
+      additionalProperties: false
+    filesystem.RemoveWatcherRequest:
+      type: object
+      properties:
+        watcherId:
+          type: string
+          title: watcher_id
+      title: RemoveWatcherRequest
+      additionalProperties: false
+    filesystem.RemoveWatcherResponse:
+      type: object
+      title: RemoveWatcherResponse
+      additionalProperties: false
+    filesystem.StatRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+      title: StatRequest
+      additionalProperties: false
+    filesystem.StatResponse:
+      type: object
+      properties:
+        entry:
+          title: entry
+          $ref: '#/components/schemas/filesystem.EntryInfo'
+      title: StatResponse
+      additionalProperties: false
+    filesystem.WatchDirRequest:
+      type: object
+      properties:
+        path:
+          type: string
+          title: path
+        recursive:
+          type: boolean
+          title: recursive
+      title: WatchDirRequest
+      additionalProperties: false
+    filesystem.WatchDirResponse:
+      type: object
+      oneOf:
+      - properties:
+          filesystem:
+            title: filesystem
+            $ref: '#/components/schemas/filesystem.FilesystemEvent'
+        title: filesystem
+        required:
+        - filesystem
+      - properties:
+          keepalive:
+            title: keepalive
+            $ref: '#/components/schemas/filesystem.WatchDirResponse.KeepAlive'
+        title: keepalive
+        required:
+        - keepalive
+      - properties:
+          start:
+            title: start
+            $ref: '#/components/schemas/filesystem.WatchDirResponse.StartEvent'
+        title: start
+        required:
+        - start
+      title: WatchDirResponse
+      additionalProperties: false
+    filesystem.WatchDirResponse.KeepAlive:
+      type: object
+      title: KeepAlive
+      additionalProperties: false
+    filesystem.WatchDirResponse.StartEvent:
+      type: object
+      title: StartEvent
+      additionalProperties: false
+    google.protobuf.Timestamp:
+      type: string
+      examples:
+      - '2023-01-15T01:30:15.01Z'
+      - '2024-12-25T12:00:00Z'
+      format: date-time
+      description: "A Timestamp represents a point in time independent of any time\
+        \ zone or local\n calendar, encoded as a count of seconds and fractions of\
+        \ seconds at\n nanosecond resolution. The count is relative to an epoch at\
+        \ UTC midnight on\n January 1, 1970, in the proleptic Gregorian calendar which\
+        \ extends the\n Gregorian calendar backwards to year one.\n\n All minutes\
+        \ are 60 seconds long. Leap seconds are \"smeared\" so that no leap\n second\
+        \ table is needed for interpretation, using a [24-hour linear\n smear](https://developers.google.com/time/smear).\n\
+        \n The range is from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59.999999999Z.\
+        \ By\n restricting to that range, we ensure that we can convert to and from\
+        \ [RFC\n 3339](https://www.ietf.org/rfc/rfc3339.txt) date strings.\n\n # Examples\n\
+        \n Example 1: Compute Timestamp from POSIX `time()`.\n\n     Timestamp timestamp;\n\
+        \     timestamp.set_seconds(time(NULL));\n     timestamp.set_nanos(0);\n\n\
+        \ Example 2: Compute Timestamp from POSIX `gettimeofday()`.\n\n     struct\
+        \ timeval tv;\n     gettimeofday(&tv, NULL);\n\n     Timestamp timestamp;\n\
+        \     timestamp.set_seconds(tv.tv_sec);\n     timestamp.set_nanos(tv.tv_usec\
+        \ * 1000);\n\n Example 3: Compute Timestamp from Win32 `GetSystemTimeAsFileTime()`.\n\
+        \n     FILETIME ft;\n     GetSystemTimeAsFileTime(&ft);\n     UINT64 ticks\
+        \ = (((UINT64)ft.dwHighDateTime) << 32) | ft.dwLowDateTime;\n\n     // A Windows\
+        \ tick is 100 nanoseconds. Windows epoch 1601-01-01T00:00:00Z\n     // is\
+        \ 11644473600 seconds before Unix epoch 1970-01-01T00:00:00Z.\n     Timestamp\
+        \ timestamp;\n     timestamp.set_seconds((INT64) ((ticks / 10000000) - 11644473600LL));\n\
+        \     timestamp.set_nanos((INT32) ((ticks % 10000000) * 100));\n\n Example\
+        \ 4: Compute Timestamp from Java `System.currentTimeMillis()`.\n\n     long\
+        \ millis = System.currentTimeMillis();\n\n     Timestamp timestamp = Timestamp.newBuilder().setSeconds(millis\
+        \ / 1000)\n         .setNanos((int) ((millis % 1000) * 1000000)).build();\n\
+        \n Example 5: Compute Timestamp from Java `Instant.now()`.\n\n     Instant\
+        \ now = Instant.now();\n\n     Timestamp timestamp =\n         Timestamp.newBuilder().setSeconds(now.getEpochSecond())\n\
+        \             .setNanos(now.getNano()).build();\n\n Example 6: Compute Timestamp\
+        \ from current time in Python.\n\n     timestamp = Timestamp()\n     timestamp.GetCurrentTime()\n\
+        \n # JSON Mapping\n\n In JSON format, the Timestamp type is encoded as a string\
+        \ in the\n [RFC 3339](https://www.ietf.org/rfc/rfc3339.txt) format. That is,\
+        \ the\n format is \"{year}-{month}-{day}T{hour}:{min}:{sec}[.{frac_sec}]Z\"\
+        \n where {year} is always expressed using four digits while {month}, {day},\n\
+        \ {hour}, {min}, and {sec} are zero-padded to two digits each. The fractional\n\
+        \ seconds, which can go up to 9 digits (i.e. up to 1 nanosecond resolution),\n\
+        \ are optional. The \"Z\" suffix indicates the timezone (\"UTC\"); the timezone\n\
+        \ is required. A proto3 JSON serializer should always use UTC (as indicated\
+        \ by\n \"Z\") when printing the Timestamp type and a proto3 JSON parser should\
+        \ be\n able to accept both UTC and other timezones (as indicated by an offset).\n\
+        \n For example, \"2017-01-15T01:30:15.01Z\" encodes 15.01 seconds past\n 01:30\
+        \ UTC on January 15, 2017.\n\n In JavaScript, one can convert a Date object\
+        \ to this format using the\n standard\n [toISOString()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString)\n\
+        \ method. In Python, a standard `datetime.datetime` object can be converted\n\
+        \ to this format using\n [`strftime`](https://docs.python.org/2/library/time.html#time.strftime)\
+        \ with\n the time format spec '%Y-%m-%dT%H:%M:%S.%fZ'. Likewise, in Java,\
+        \ one can use\n the Joda Time's [`ISODateTimeFormat.dateTime()`](\n http://joda-time.sourceforge.net/apidocs/org/joda/time/format/ISODateTimeFormat.html#dateTime()\n\
+        \ ) to obtain a formatter capable of generating timestamps in this format."
     Team:
       required:
       - teamID
@@ -3335,7 +3411,11 @@ components:
           format: uuid
           description: Identifier of the user
         email:
-          type: string
+          type:
+          - string
+          - 'null'
+          deprecated: true
+          default: null
           description: Email of the user
       type: object
     TemplateUpdateRequest:
@@ -3430,6 +3510,69 @@ components:
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
+        rules:
+          type: object
+          description: 'Per-domain transform rules applied to matching egress HTTP/HTTPS
+            requests. Keys are domains (e.g. "api.example.com", "example.com"). A
+            domain listed here is not automatically allowed - use allowOut to permit
+            the traffic.
+
+            '
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+    SandboxNetworkUpdateConfig:
+      type: object
+      description: Network configuration update for a running sandbox. Replaces the
+        current egress rules with the provided configuration. Omitting a field clears
+        it.
+      properties:
+        allowOut:
+          type: array
+          description: List of allowed destinations for egress traffic. Each entry
+            can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"),
+            or a domain name (e.g. "example.com", "*.example.com"). Allowed entries
+            always take precedence over denied entries.
+          items:
+            type: string
+        denyOut:
+          type: array
+          description: List of denied CIDR blocks or IP addresses for egress traffic.
+            Domain names are not supported for deny rules.
+          items:
+            type: string
+        rules:
+          type: object
+          description: Per-domain transform rules. Replaces all existing rules when
+            provided.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+        allow_internet_access:
+          type: boolean
+          description: Allow sandbox to access the internet. When set to false, it
+            behaves the same as specifying denyOut to 0.0.0.0/0 in the network config.
+    SandboxNetworkRule:
+      type: object
+      description: Transform rule applied to egress requests matching a domain pattern.
+      properties:
+        transform:
+          $ref: '#/components/schemas/SandboxNetworkTransform'
+    SandboxNetworkTransform:
+      type: object
+      description: Transformations applied to matching egress requests before forwarding.
+      properties:
+        headers:
+          type: object
+          description: 'HTTP headers to inject or override in matching requests. An
+            existing header with the same name is replaced. Values are plain strings;
+            secret resolution happens client-side before sending to the API.
+
+            '
+          additionalProperties:
+            type: string
     SandboxAutoResumeEnabled:
       type: boolean
       description: Auto-resume enabled flag for paused sandboxes. Default false.
