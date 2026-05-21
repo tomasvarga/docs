@@ -1,0 +1,73 @@
+---
+title: "Why does my template build fail with a Docker push authentication error?"
+sidebarTitle: Docker push authentication error
+---
+
+When the CLI pushes a Docker image to the build registry, you may hit an authentication error because Docker doesn't send any credentials to the registry. The fix is to mark E2B's local registry proxy as an insecure registry so Docker routes through it.
+
+## macOS
+
+1. Open Docker Desktop.
+2. Go to **Settings**.
+3. Go to **Docker Engine**.
+4. Add the following line to the JSON configuration:
+
+```json
+{
+  "insecure-registries": ["host.docker.internal:49984"]
+}
+```
+
+A full configuration may look like this:
+
+```json
+{
+  "builder": {
+    "gc": {
+      "defaultKeepStorage": "20GB",
+      "enabled": true
+    }
+  },
+  "features": {
+    "buildkit": true
+  },
+  "insecure-registries": [
+    "host.docker.internal:49984"
+  ]
+}
+```
+
+This allows Docker to send requests to the local proxy, which handles the authentication.
+
+5. Click **Apply & Restart**.
+
+## Linux
+
+1. Edit the Docker configuration file (usually `/etc/docker/daemon.json`). Create it if it doesn't exist, and add:
+
+```json
+{
+  "insecure-registries": ["localhost:49984"]
+}
+```
+
+2. Restart Docker:
+
+```bash
+sudo systemctl restart docker
+```
+
+## Windows
+
+1. Open Docker Desktop.
+2. Go to **Settings**.
+3. Go to **Docker Engine**.
+4. Add the following line to the JSON configuration:
+
+```json
+{
+  "insecure-registries": ["host.docker.internal:49984"]
+}
+```
+
+5. Click **Apply & Restart**.

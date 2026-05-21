@@ -1,11 +1,9 @@
 ---
-title: "The sandbox is running but port is not open - 49999"
-sidebarTitle: The sandbox is running but port is not open - 49999
+title: "Why does my custom template fail with 'port 49999 not open'?"
+sidebarTitle: Port 49999 not open
 ---
 
-When trying to create a custom sandbox template, you might encounter the issue when trying to call `.runCode` / `.run_code` method using the E2B Code Interpreter SDK.
-
-The reason for this is that either the default start command is not specified on the template or that the base image is other than the Code Interpreter image thus the Code Interpreter inside the sandbox cannot be started.
+If you call `.runCode` / `.run_code` from the E2B Code Interpreter SDK against a custom template and see this error, the Code Interpreter service inside the sandbox didn't start. This usually happens because the template was built without the Code Interpreter base image, or because the start command was not set.
 
 **Example error**
 
@@ -15,9 +13,7 @@ The reason for this is that either the default start command is not specified on
 
 ## Solution
 
-### Current build system (V2)
-
-With the current build system, you need to use the `code-interpreter` as a base template in your template definition.
+The simplest fix is to base your template on the official `code-interpreter-v1` template, which already includes the start command and the Code Interpreter service.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -33,7 +29,7 @@ template = Template().from_template("code-interpreter-v1")
 </CodeGroup>
 
 <Note>
-We strongly recommend building custom template via the previous example. However, if you choose to build from docker image, do as follows.
+We strongly recommend the approach above. If you need to build from the Docker image directly instead, you must also set the start command yourself:
 </Note>
 
 <CodeGroup>

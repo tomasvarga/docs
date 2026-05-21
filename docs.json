@@ -220,11 +220,16 @@
             ]
           },
           {
-            "group": "Troubleshooting",
+            "group": "FAQ",
             "pages": [
-              "docs/troubleshooting/templates/build-authentication-error",
-              "docs/troubleshooting/templates/49999-port-not-open",
-              "docs/troubleshooting/pip-install-error"
+              "docs/faq/paused-sandboxes-concurrency",
+              "docs/faq/template-limit",
+              "docs/faq/public-templates",
+              "docs/faq/eu-region",
+              "docs/faq/iptables-xt-owner",
+              "docs/faq/pip-install-error",
+              "docs/faq/port-49999-not-open",
+              "docs/faq/docker-push-authentication-error"
             ]
           }
         ]
@@ -3743,6 +3748,21 @@
     {
       "source": "/docs/volumes/download",
       "destination": "/docs/storage/volumes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/troubleshooting/pip-install-error",
+      "destination": "/docs/faq/pip-install-error",
+      "permanent": true
+    },
+    {
+      "source": "/docs/troubleshooting/templates/49999-port-not-open",
+      "destination": "/docs/faq/port-49999-not-open",
+      "permanent": true
+    },
+    {
+      "source": "/docs/troubleshooting/templates/build-authentication-error",
+      "destination": "/docs/faq/docker-push-authentication-error",
       "permanent": true
     },
     {
