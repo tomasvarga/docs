@@ -54,6 +54,7 @@
           {
             "group": "Agents in sandbox",
             "pages": [
+              "docs/agents/anthropic-managed-agents",
               "docs/agents/amp",
               "docs/agents/claude-code",
               "docs/agents/codex",
