@@ -22,7 +22,7 @@ Build a template with the `archil` CLI preinstalled. The Archil package depends 
 
 ```ts JavaScript & TypeScript
 const template = Template()
-  .fromTemplate("code-interpreter-v1")
+  .fromBaseImage()
   .aptInstall(["libfuse2", "ca-certificates"])
   .runCmd("curl -fsSL https://archil.com/install | sh")
 ```
@@ -31,7 +31,7 @@ const template = Template()
 ```python Python
 template = (
     Template()
-    .from_template("code-interpreter-v1")
+    .from_base_image()
     .apt_install(["libfuse2", "ca-certificates"])
     .run_cmd("curl -fsSL https://archil.com/install | sh")
 )
