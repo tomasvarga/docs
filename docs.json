@@ -247,6 +247,13 @@
         ]
       },
       {
+        "anchor": "Changelog",
+        "icon": "rss",
+        "pages": [
+          "docs/changelog"
+        ]
+      },
+      {
         "anchor": "SDK Reference",
         "icon": "brackets-curly",
         "dropdowns": [

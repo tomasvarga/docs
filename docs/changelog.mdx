@@ -1,0 +1,30 @@
+---
+title: "Changelog"
+sidebarTitle: "Changelog"
+icon: "rss"
+description: "Product updates and releases."
+mode: "center"
+---
+
+<Update label="2026-05-25" description="Week of May 18 – 25" tags={["SDK", "CLI", "Platform"]}>
+
+## New features
+
+- **Opt out of HTTP/2 in the Python SDK.** You can now disable HTTP/2 when constructing the SDK's HTTP transport, which is useful for environments where HTTP/2 causes connection issues with proxies or load balancers. HTTP/2 remains the default. See the [SDK reference](/docs/sdk-reference/python-sdk) for transport configuration.
+
+## Updates
+
+- **Clearer lifecycle precedence in the SDKs.** When creating a sandbox, `lifecycle.onTimeout` / `lifecycle.on_timeout` now consistently takes precedence over the older `autoPause` / `auto_pause` argument across both JS and Python SDKs. Passing a partial `lifecycle` object no longer throws or silently misbehaves. See [Sandbox lifecycle](/docs/sandbox).
+- **`autoPause` / `auto_pause` is deprecated.** Use `lifecycle.onTimeout: "pause"` instead. Calls that pass `autoPause` will continue to work but emit a deprecation warning.
+- **Stricter validation for `autoResume`.** Setting `autoResume: true` together with an effective timeout action of `kill` now raises `InvalidArgumentError` (JS) / `InvalidArgumentException` (Python) at sandbox creation time, surfacing a misconfiguration that previously failed silently.
+- **Faster sandbox creation under load.** Reservation waiting on the API now wakes via pub/sub instead of polling, reducing latency when many sandboxes are created at once.
+- **Better error responses for invalid template tags.** The API now returns `400 Bad Request` (instead of a generic server error) when a template tag is invalid. See [Template tags & versioning](/docs/template/tags).
+- **Removed experimental `Sandbox.betaCreate` / `Sandbox.beta_create`.** The beta surface has been removed now that its options are available on the stable `Sandbox.create` API. Migrate any remaining usage to `Sandbox.create` with the equivalent `lifecycle` options.
+
+## Bug fixes
+
+- **JS SDK:** Improved HTTP/2 dispatcher behavior for envd RPC and API traffic, reducing connection-reuse issues under concurrency.
+- **Python SDK:** gRPC streams used by file watchers and command execution are now properly closed on teardown, preventing leaked connections and goroutines.
+- **CLI:** `e2b auth login` no longer fails on headless machines that don't have `xdg-open`. The CLI now falls back to printing the login URL for you to open manually. See [CLI authentication](/docs/cli/auth).
+
+</Update>
