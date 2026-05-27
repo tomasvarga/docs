@@ -229,6 +229,55 @@ sandbox = Sandbox.create(
 ```
 </CodeGroup>
 
+### Updating network settings on a running sandbox
+
+You can update the network configuration of an already running sandbox using `updateNetwork` (JavaScript) or `update_network` (Python). This replaces the current egress rules with the provided configuration without restarting the sandbox.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox, ALL_TRAFFIC } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+// Tighten egress on the running sandbox: block 8.8.8.8
+await sandbox.updateNetwork({
+  denyOut: ['8.8.8.8'],
+})
+
+// Replace with an allow-list only
+await sandbox.updateNetwork({
+  denyOut: [ALL_TRAFFIC],
+  allowOut: ['api.example.com'],
+})
+
+// Toggle internet access without recreating the sandbox
+await sandbox.updateNetwork({ allowInternetAccess: false })
+```
+```python Python
+from e2b import Sandbox, ALL_TRAFFIC
+
+sandbox = Sandbox.create()
+
+# Tighten egress on the running sandbox: block 8.8.8.8
+sandbox.update_network({"deny_out": ["8.8.8.8"]})
+
+# Replace with an allow-list only
+sandbox.update_network({
+    "deny_out": [ALL_TRAFFIC],
+    "allow_out": ["api.example.com"],
+})
+
+# Toggle internet access without recreating the sandbox
+sandbox.update_network({"allow_internet_access": False})
+```
+</CodeGroup>
+
+<Note>
+`updateNetwork` / `update_network` **replaces** the current egress configuration — it does not merge with the existing rules. Calling it with an empty object (`updateNetwork({})` / `update_network({})`) clears all `allowOut` / `denyOut` / per-host rules set at create time.
+</Note>
+
+The create-only options `allowPublicTraffic` and `maskRequestHost` cannot be changed after the sandbox is created.
+
 ## Sandbox public URL
 Every sandbox has a public URL that can be used to access running services inside the sandbox.
 
