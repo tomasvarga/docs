@@ -229,6 +229,99 @@ sandbox = Sandbox.create(
 ```
 </CodeGroup>
 
+### Per-host request transforms
+
+You can register per-host rules under `network.rules` to apply transforms (for example, inject HTTP headers) on outbound requests matching a host. Rules are keyed by host and registering one does **not** grant egress on its own — the host must still be referenced via `allowOut`.
+
+The `transform.headers` object is sent on the wire as-is and injected by the egress proxy on matching HTTP/HTTPS requests.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+await Sandbox.create({
+  network: {
+    // Only allow egress to hosts that have rules registered.
+    allowOut: ({ rules }) => [...rules.keys()],
+    rules: {
+      'api.example.com': [
+        {
+          transform: {
+            headers: { 'X-Header': 'Content' },
+          },
+        },
+      ],
+    },
+  },
+})
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create(
+    network={
+        "allow_out": lambda ctx: list(ctx.rules.keys()),
+        "rules": {
+            "api.example.com": [
+                {
+                    "transform": {
+                        "headers": {"X-Header": "Content"},
+                    },
+                },
+            ],
+        },
+    },
+)
+```
+</CodeGroup>
+
+In JavaScript, `network.rules` accepts either a plain object or a `Map`:
+
+```js JavaScript & TypeScript
+const rules = new Map([
+  ['api.example.com', [{ transform: { headers: { 'X-Trace': 'on' } } }]],
+])
+
+await Sandbox.create({
+  network: { allowOut: ({ rules }) => [...rules.keys()], rules },
+})
+```
+
+### Selector callbacks for `allowOut` and `denyOut`
+
+`allowOut` and `denyOut` accept either a static list (as shown above) or a **selector callback** that receives a context object — `{ allTraffic, rules }` in JavaScript and `ctx.all_traffic` / `ctx.rules` in Python. This lets you derive policies from the registered rule hosts without duplicating them, and provides a typed alternative to importing `ALL_TRAFFIC`.
+
+- `allTraffic` (JS) / `ctx.all_traffic` (Python) is the literal `'0.0.0.0/0'`.
+- `rules` is a `Map` (Python `Mapping`) view of `network.rules`.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+// Block all egress except an explicit allowlist
+await Sandbox.create({
+  network: {
+    denyOut: ({ allTraffic }) => [allTraffic],   // allTraffic === '0.0.0.0/0'
+    allowOut: ['1.1.1.1', '8.8.8.0/24'],
+  },
+})
+```
+```python Python
+from e2b import Sandbox
+
+Sandbox.create(
+    network={
+        "deny_out": lambda ctx: [ctx.all_traffic],
+        "allow_out": ["1.1.1.1", "8.8.8.0/24"],
+    },
+)
+```
+</CodeGroup>
+
+<Note>
+The selector form (`({ allTraffic }) => [allTraffic]` / `lambda ctx: [ctx.all_traffic]`) is the recommended way to express "everything". The `ALL_TRAFFIC` constant is still exported for backward compatibility.
+</Note>
+
 ### Updating network settings on a running sandbox
 
 You can update the network configuration of an already running sandbox using `updateNetwork` (JavaScript) or `update_network` (Python). This replaces the current egress rules with the provided configuration without restarting the sandbox.
