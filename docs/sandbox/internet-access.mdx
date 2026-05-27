@@ -231,6 +231,11 @@ sandbox = Sandbox.create(
 
 ### Per-host request transforms
 
+<Note>
+Per-host request transforms are currently in private beta.
+If you'd like access, please reach out to us at [support@e2b.dev](mailto:support@e2b.dev).
+</Note>
+
 You can register per-host rules under `network.rules` to apply transforms (for example, inject HTTP headers) on outbound requests matching a host. Rules are keyed by host and registering one does **not** grant egress on its own — the host must still be referenced via `allowOut`.
 
 The `transform.headers` object is sent on the wire as-is and injected by the egress proxy on matching HTTP/HTTPS requests.
