@@ -13,11 +13,11 @@ E2B uses [usage-based pricing](#usage-based-pricing) - you pay only for what you
 | Feature | Hobby | Pro | Enterprise |
 |---------|-------|-----|------------|
 | **Base price** | $0/month | $150/month | Custom |
-| **Free credits** | $100 (one-time) | $100 (one-time) | Custom |
+| **Free credits** | $100 (one-time) | No additional credits | Custom |
 | **Max vCPUs** | 8 | <Tooltip tip="Contact support@e2b.dev if you need more vCPUs.">8+</Tooltip> | Custom |
 | **Max memory** | 8 GB | <Tooltip tip="Contact support@e2b.dev if you need more memory.">8+ GB</Tooltip> | Custom |
 | **Disk size** | 10 GB | <Tooltip tip="Contact support@e2b.dev if you need more disk space.">20+ GB</Tooltip> | Custom |
-| **<Tooltip tip="Time a sandbox can run without being paused.">Max session length</Tooltip>** | 1 hour | 24 hours | Custom |
+| **<Tooltip tip="Time a sandbox can run without being paused.">Max continuous runtime</Tooltip>** | 1 hour | 24 hours | Custom |
 | **<Tooltip tip="Number of sandboxes running at the same time.">Concurrent sandboxes</Tooltip>** | 20 | <Tooltip tip="Includes 100 concurrent sandboxes. Higher concurrency up to 1,100 is available as an add-on for $500/month.">100 - 1,100</Tooltip> | 1,100+ |
 | **<Tooltip tip="Number of template builds running at the same time.">Concurrent builds</Tooltip>** | 20 | 20 | Custom |
 | **<Tooltip tip="How quickly you can create new sandboxes.">Sandbox creation rate</Tooltip>** | 1 / sec | 5 / sec | Custom |
@@ -29,6 +29,8 @@ To upgrade your plan or purchase add-ons, visit the [dashboard billing tab](http
 ## Usage-based pricing
 
 You pay per second for compute resources while your sandbox is running.
+
+Upgrading to the Pro tier does not grant additional credits. It only increases the limits available to your team (such as concurrent sandboxes, continuous runtime, and resource ceilings).
 
 ### Compute costs
 
