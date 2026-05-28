@@ -1,0 +1,364 @@
+---
+title: "Grok"
+description: "Run Grok in a secure E2B sandbox with full filesystem, terminal, and git access."
+icon: "/images/icons/grok.svg"
+---
+
+[Grok](https://x.ai/news/grok-build-cli) is xAI's terminal coding agent. Its standout feature is parallel subagents: Grok automatically fans large tasks out to specialized agents that run concurrently, each in its own git worktree. E2B provides a pre-built `grok` template with the Grok CLI already installed.
+
+<Info>
+Grok is in early beta and access is limited to SuperGrok and X Premium Plus subscribers. Get an API key from [console.x.ai](https://console.x.ai).
+</Info>
+
+## CLI
+
+Create a sandbox with the [E2B CLI](/docs/cli).
+
+```bash
+e2b sbx create grok
+```
+
+Once inside the sandbox, start Grok.
+
+```bash
+grok
+```
+
+## Run headless
+
+Use `-p` for non-interactive mode and `--always-approve` to auto-approve all tool calls (safe inside E2B sandboxes). Pass `XAI_API_KEY` as an environment variable so Grok can authenticate without the interactive browser flow.
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('grok', {
+  envs: { XAI_API_KEY: process.env.XAI_API_KEY },
+})
+
+const result = await sandbox.commands.run(
+  `grok --always-approve -p "Create a hello world HTTP server in Go"`
+)
+
+console.log(result.stdout)
+await sandbox.kill()
+```
+```python Python
+import os
+from e2b import Sandbox
+
+sandbox = Sandbox.create("grok", envs={
+    "XAI_API_KEY": os.environ["XAI_API_KEY"],
+})
+
+result = sandbox.commands.run(
+    'grok --always-approve -p "Create a hello world HTTP server in Go"',
+)
+
+print(result.stdout)
+sandbox.kill()
+```
+</CodeGroup>
+
+### Example: work on a cloned repository
+
+Clone a repo into the sandbox, then run Grok against it. The sandbox keeps a full git environment, so you can inspect the diff afterwards.
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('grok', {
+  envs: { XAI_API_KEY: process.env.XAI_API_KEY },
+  timeoutMs: 600_000,
+})
+
+await sandbox.git.clone('https://github.com/your-org/your-repo.git', {
+  path: '/home/user/repo',
+  username: 'x-access-token',
+  password: process.env.GITHUB_TOKEN,
+  depth: 1,
+})
+
+const result = await sandbox.commands.run(
+  `cd /home/user/repo && grok --always-approve -p "Add error handling to all API endpoints"`,
+  { onStdout: (data) => process.stdout.write(data) }
+)
+
+const diff = await sandbox.commands.run('cd /home/user/repo && git diff')
+console.log(diff.stdout)
+
+await sandbox.kill()
+```
+```python Python
+import os
+from e2b import Sandbox
+
+sandbox = Sandbox.create("grok", envs={
+    "XAI_API_KEY": os.environ["XAI_API_KEY"],
+}, timeout=600)
+
+sandbox.git.clone("https://github.com/your-org/your-repo.git",
+    path="/home/user/repo",
+    username="x-access-token",
+    password=os.environ["GITHUB_TOKEN"],
+    depth=1,
+)
+
+result = sandbox.commands.run(
+    'cd /home/user/repo && grok --always-approve -p "Add error handling to all API endpoints"',
+    on_stdout=lambda data: print(data, end=""),
+)
+
+diff = sandbox.commands.run("cd /home/user/repo && git diff")
+print(diff.stdout)
+
+sandbox.kill()
+```
+</CodeGroup>
+
+## Parallel subagents
+
+Grok's biggest differentiator is that it fans out large tasks to specialized subagents that run in parallel, each optionally in its own git worktree. The fan-out is automatic and decided by Grok based on task scope, so the SDK call shape is the same as a regular headless run. You just hand it a multi-part task and let it parallelize.
+
+This is where E2B sandboxes pair especially well with Grok: every subagent gets its own isolated filesystem and process tree inside the sandbox, and parallel worktrees never collide with your local checkout.
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('grok', {
+  envs: { XAI_API_KEY: process.env.XAI_API_KEY },
+  timeoutMs: 1_800_000,
+})
+
+await sandbox.git.clone('https://github.com/your-org/your-repo.git', {
+  path: '/home/user/repo',
+  username: 'x-access-token',
+  password: process.env.GITHUB_TOKEN,
+  depth: 1,
+})
+
+// A multi-part task encourages Grok to dispatch parallel subagents
+const task = `
+  1. Migrate the auth module from JWT to PASETO
+  2. Add OpenAPI annotations to every handler in pkg/api
+  3. Write integration tests covering the new auth flow
+`
+
+const result = await sandbox.commands.run(
+  `cd /home/user/repo && grok --always-approve -p "${task}"`,
+  { onStdout: (data) => process.stdout.write(data) }
+)
+
+const diff = await sandbox.commands.run('cd /home/user/repo && git diff')
+console.log(diff.stdout)
+
+await sandbox.kill()
+```
+```python Python
+import os
+from e2b import Sandbox
+
+sandbox = Sandbox.create("grok", envs={
+    "XAI_API_KEY": os.environ["XAI_API_KEY"],
+}, timeout=1800)
+
+sandbox.git.clone("https://github.com/your-org/your-repo.git",
+    path="/home/user/repo",
+    username="x-access-token",
+    password=os.environ["GITHUB_TOKEN"],
+    depth=1,
+)
+
+# A multi-part task encourages Grok to dispatch parallel subagents
+task = """
+  1. Migrate the auth module from JWT to PASETO
+  2. Add OpenAPI annotations to every handler in pkg/api
+  3. Write integration tests covering the new auth flow
+"""
+
+result = sandbox.commands.run(
+    f'cd /home/user/repo && grok --always-approve -p "{task}"',
+    on_stdout=lambda data: print(data, end=""),
+)
+
+diff = sandbox.commands.run("cd /home/user/repo && git diff")
+print(diff.stdout)
+
+sandbox.kill()
+```
+</CodeGroup>
+
+To watch the subagents work in real time, pair this with `--output-format streaming-json` (next section) and inspect subagent events as they arrive.
+
+## Streaming output
+
+Use `--output-format streaming-json` to get a real-time JSONL event stream. Each line is a JSON event covering tool calls, subagent activity, and final results, which makes it suitable for piping into a CI pipeline or building a custom UI on top.
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('grok', {
+  envs: { XAI_API_KEY: process.env.XAI_API_KEY },
+})
+
+const result = await sandbox.commands.run(
+  `cd /home/user/repo && grok --always-approve --output-format streaming-json -p "Find and fix all TODO comments"`,
+  {
+    onStdout: (data) => {
+      for (const line of data.split('\n').filter(Boolean)) {
+        const event = JSON.parse(line)
+        console.log(`[${event.type}]`, event)
+      }
+    },
+  }
+)
+
+await sandbox.kill()
+```
+```python Python
+import os
+import json
+from e2b import Sandbox
+
+sandbox = Sandbox.create("grok", envs={
+    "XAI_API_KEY": os.environ["XAI_API_KEY"],
+})
+
+def handle_event(data):
+    for line in data.strip().split("\n"):
+        if line:
+            event = json.loads(line)
+            print(f"[{event['type']}]", event)
+
+result = sandbox.commands.run(
+    'cd /home/user/repo && grok --always-approve --output-format streaming-json -p "Find and fix all TODO comments"',
+    on_stdout=handle_event,
+)
+
+sandbox.kill()
+```
+</CodeGroup>
+
+## Project context with AGENTS.md
+
+Grok reads an `AGENTS.md` file from the working directory and uses it as project context. Write one into the sandbox before running Grok to give it conventions, architecture notes, or task-specific instructions.
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create('grok', {
+  envs: { XAI_API_KEY: process.env.XAI_API_KEY },
+})
+
+await sandbox.files.write('/home/user/repo/AGENTS.md', `
+You are working on a Go microservice.
+Always use structured logging with slog.
+Follow the project's error handling conventions in pkg/errors.
+`)
+
+const result = await sandbox.commands.run(
+  `cd /home/user/repo && grok --always-approve -p "Add a /healthz endpoint"`
+)
+
+console.log(result.stdout)
+await sandbox.kill()
+```
+```python Python
+import os
+from e2b import Sandbox
+
+sandbox = Sandbox.create("grok", envs={
+    "XAI_API_KEY": os.environ["XAI_API_KEY"],
+})
+
+sandbox.files.write("/home/user/repo/AGENTS.md", """
+You are working on a Go microservice.
+Always use structured logging with slog.
+Follow the project's error handling conventions in pkg/errors.
+""")
+
+result = sandbox.commands.run(
+    'cd /home/user/repo && grok --always-approve -p "Add a /healthz endpoint"',
+)
+
+print(result.stdout)
+sandbox.kill()
+```
+</CodeGroup>
+
+## Build a custom template
+
+If you need to customize the environment (e.g. pre-install dependencies, add config files), build your own template on top of the pre-built `grok` template.
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+// template.ts
+import { Template } from 'e2b'
+
+export const template = Template()
+  .fromTemplate('grok')
+```
+```python Python
+# template.py
+from e2b import Template
+
+template = (
+    Template()
+    .from_template("grok")
+)
+```
+</CodeGroup>
+
+<CodeGroup>
+```typescript JavaScript & TypeScript
+// build.ts
+import { Template, defaultBuildLogger } from 'e2b'
+import { template as grokTemplate } from './template'
+
+await Template.build(grokTemplate, 'my-grok', {
+  cpuCount: 2,
+  memoryMB: 2048,
+  onBuildLogs: defaultBuildLogger(),
+})
+```
+```python Python
+# build.py
+from e2b import Template, default_build_logger
+from template import template as grok_template
+
+Template.build(grok_template, "my-grok",
+    cpu_count=2,
+    memory_mb=2048,
+    on_build_logs=default_build_logger(),
+)
+```
+</CodeGroup>
+
+Run the build script to create the template.
+
+<CodeGroup>
+```bash JavaScript & TypeScript
+npx tsx build.ts
+```
+```bash Python
+python build.py
+```
+</CodeGroup>
+
+## Related guides
+
+<CardGroup cols={3}>
+  <Card title="Sandbox persistence" icon="clock" href="/docs/sandbox/persistence">
+    Auto-pause, resume, and manage sandbox lifecycle
+  </Card>
+  <Card title="Git integration" icon="code-branch" href="/docs/sandbox/git-integration">
+    Clone repos, manage branches, and push changes
+  </Card>
+  <Card title="SSH access" icon="terminal" href="/docs/sandbox/ssh-access">
+    Connect to the sandbox via SSH for interactive sessions
+  </Card>
+</CardGroup>
