@@ -16,14 +16,13 @@ Key properties:
 
 ## Build a template
 
-Build a template with the `archil` CLI preinstalled. The Archil package depends on `libfuse2`, so we apt-install it before running the installer.
+Build a template with the `archil` CLI preinstalled. The Archil package depends on `libfuse2`, which is already preinstalled in the base image.
 
 <CodeGroup>
 
 ```ts JavaScript & TypeScript
 const template = Template()
   .fromBaseImage()
-  .aptInstall(["libfuse2", "ca-certificates"])
   .runCmd("curl -fsSL https://archil.com/install | sh")
 ```
 
@@ -32,7 +31,6 @@ const template = Template()
 template = (
     Template()
     .from_base_image()
-    .apt_install(["libfuse2", "ca-certificates"])
     .run_cmd("curl -fsSL https://archil.com/install | sh")
 )
 ```
@@ -48,22 +46,25 @@ At sandbox runtime, mount the disk with a [disk-scoped mount token](https://docs
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create('<your template id>')
-await sandbox.commands.run('sudo mkdir -p /home/user/archil')
+await sandbox.commands.run('mkdir -p /home/user/archil', { user: 'root' })
 await sandbox.commands.run(
-  'sudo ARCHIL_MOUNT_TOKEN=<disk-token> archil mount <disk-name-or-id> /home/user/archil --region <region>'
+  'archil mount <disk-name-or-id> /home/user/archil --region <region>',
+  { user: 'root', envs: { ARCHIL_MOUNT_TOKEN: '<disk-token>' } }
 )
-await sandbox.commands.run('sudo chown user:user /home/user/archil')
+await sandbox.commands.run('chown user:user /home/user/archil', { user: 'root' })
 ```
 
 ```python Python
 from e2b import Sandbox
 
 sandbox = Sandbox.create("<your template id>")
-sandbox.commands.run("sudo mkdir -p /home/user/archil")
+sandbox.commands.run("mkdir -p /home/user/archil", user="root")
 sandbox.commands.run(
-    "sudo ARCHIL_MOUNT_TOKEN=<disk-token> archil mount <disk-name-or-id> /home/user/archil --region <region>"
+    "archil mount <disk-name-or-id> /home/user/archil --region <region>",
+    user="root",
+    envs={"ARCHIL_MOUNT_TOKEN": "<disk-token>"},
 )
-sandbox.commands.run("sudo chown user:user /home/user/archil")
+sandbox.commands.run("chown user:user /home/user/archil", user="root")
 ```
 </CodeGroup>
 
@@ -75,12 +76,12 @@ Call `archil unmount` before tearing down the sandbox. It's best practice to rel
 
 <CodeGroup isRunnable={false}>
 ```js JavaScript & TypeScript
-await sandbox.commands.run('sudo archil unmount /home/user/archil')
+await sandbox.commands.run('archil unmount /home/user/archil', { user: 'root' })
 await sandbox.kill()
 ```
 
 ```python Python
-sandbox.commands.run("sudo archil unmount /home/user/archil")
+sandbox.commands.run("archil unmount /home/user/archil", user="root")
 sandbox.kill()
 ```
 </CodeGroup>
