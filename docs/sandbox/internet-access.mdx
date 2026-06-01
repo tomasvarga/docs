@@ -173,6 +173,16 @@ sandbox = Sandbox.create(
 Domain-based filtering only works for HTTP traffic on port 80 (via Host header inspection) and TLS traffic on port 443 (via SNI inspection). Traffic on other ports uses CIDR-based filtering only. UDP-based protocols like QUIC/HTTP3 are not supported for domain filtering.
 </Note>
 
+### Behavior of blocked TCP connections
+
+Due to firewall design, blocked connections may appear successful from inside the sandbox.
+
+The firewall has to accept the connection first before it can decide whether the destination is allowed. This means that, from inside the sandbox, a TCP connection can succeed and report the socket as open even when the destination is denied - no packets actually reach the destination.
+
+To verify that traffic is reaching its destination, check for an application-level response (e.g. an HTTP status code, a TLS handshake, or expected protocol bytes) rather than relying on the TCP connection succeeding.
+
+This is a limitation of how outbound traffic is currently routed from the sandbox to our firewall and may change in the future.
+
 ### Priority rules
 
 When both `allow out` and `deny out` are specified, **allow rules always take precedence** over deny rules. This means if an IP address is in both lists, it will be allowed.
