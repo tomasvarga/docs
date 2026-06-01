@@ -1,0 +1,33 @@
+---
+title: "Changelog"
+description: "Latest updates and improvements to E2B."
+---
+
+<Update label="May 25 – May 31, 2026">
+
+## New features
+
+- **Update sandbox network rules at runtime.** Call `sandbox.updateNetwork()` (JS) / `sandbox.update_network()` (Python) to change a running sandbox's network configuration without restarting it. See [Internet access](/docs/sandbox/internet-access).
+- **Structured network rules with per-host transforms.** Define network rules as structured objects and apply per-host transforms (for example, header injection or URL rewrites) when sandboxes call out to the internet. See [Internet access](/docs/sandbox/internet-access).
+- **`AbortSignal` support for template operations.** Cancel template builds and other long-running template calls from the JS SDK using a standard `AbortSignal`. See the [JS SDK reference](/docs/sdk-reference/js-sdk/v2.9.1/template).
+- **Client-side API key validation.** Both SDKs now validate the format of your `E2B_API_KEY` before making any request, so misconfigured keys fail fast with a clear error.
+
+## Updates
+
+- **JS SDK uses HTTP/2 with a stable sandbox host URL.** Sandbox traffic now goes through a stable host with HTTP/2 by default, reducing connection overhead and improving latency for high-throughput agents.
+- **Configurable HTTP/2 in the Python SDK.** You can now opt out of HTTP/2 when constructing the transport if your environment requires HTTP/1.1.
+- **Higher concurrency limits in the JS SDK.** Default max-concurrency settings have been increased so large agent workloads need less manual tuning.
+- **Faster sandbox builds.** Template builds now parallelize fragmented backing reads and stream compressed templates directly to storage on upload, cutting build and upload times for large templates.
+- **Lower memory pressure on long-running sandboxes.** Page-fault handling and storage upload paths have been reworked to reduce copying and free buffers sooner, improving stability for memory-heavy workloads.
+
+## Bug fixes
+
+- Fixed `fromDockerfile` / `from_dockerfile` to correctly handle multi-source `COPY` and `ADD` instructions when building [custom templates](/docs/template).
+- Fixed gRPC streams not closing cleanly on watcher and command teardown in the Python SDK, which could leak connections on sandbox shutdown.
+- Fixed `lifecycle.on_timeout` and `auto_pause` precedence so they now behave consistently across both SDKs. See [Sandbox lifecycle](/docs/sandbox).
+- Fixed the CLI `e2b auth login` flow on headless machines where `xdg-open` is unavailable — the CLI now prints the login URL instead of failing. See [CLI](/docs/cli).
+- Fixed Python envd transport stability issues that could cause intermittent disconnects under load.
+- Improved sandbox cluster reliability: nodes are no longer evicted from the local view during routine sync, reducing transient sandbox unavailability.
+- Removed the deprecated `Sandbox.betaCreate` / `beta_create` methods. Use `Sandbox.create` / `Sandbox.create` instead.
+
+</Update>
