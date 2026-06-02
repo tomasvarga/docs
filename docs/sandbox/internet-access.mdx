@@ -6,7 +6,7 @@ Every sandbox has access to the internet and can be reached by a public URL.
 
 ## Controlling internet access
 
-You can control whether a sandbox has access to the internet by using the `allowInternetAccess` parameter when creating a sandbox. By default, internet access is enabled (`true`), but you can disable it for security-sensitive workloads.
+You can control whether a sandbox has access to the internet by using the `allowInternetAccess` / `allow_internet_access` parameter when creating a sandbox. By default, internet access is enabled, but you can disable it for security-sensitive workloads.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -32,12 +32,12 @@ isolated_sandbox = Sandbox.create(allow_internet_access=False)
 When internet access is disabled, the sandbox cannot make outbound network connections, which provides an additional layer of security for sensitive code execution.
 
 <Note>
-Setting `allowInternetAccess` to `false` is equivalent to setting `network.denyOut` to `['0.0.0.0/0']` (denying all traffic).
+Setting `allowInternetAccess` / `allow_internet_access` to a falsy value is equivalent to setting `network.denyOut` / `network.deny_out` to `['0.0.0.0/0']` (denying all traffic).
 </Note>
 
 ## Fine-grained network control
 
-For more granular control over network access, you can use the `network` configuration option to specify allow and deny lists for outbound traffic.
+For more granular control over network access, you can use the network configuration option to specify allow and deny lists for outbound traffic.
 
 ### Allow and deny lists
 
@@ -45,12 +45,12 @@ You can specify IP addresses, CIDR blocks, or domain names that the sandbox is a
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
+import { Sandbox } from 'e2b'
 
 // Deny all traffic except specific IPs
 const sandbox = await Sandbox.create({
   network: {
-    denyOut: [ALL_TRAFFIC],
+    denyOut: ({ allTraffic }) => [allTraffic], // allTraffic === '0.0.0.0/0'
     allowOut: ['1.1.1.1', '8.8.8.0/24']
   }
 })
@@ -63,12 +63,12 @@ const restrictedSandbox = await Sandbox.create({
 })
 ```
 ```python Python
-from e2b import Sandbox, ALL_TRAFFIC
+from e2b import Sandbox
 
 # Deny all traffic except specific IPs
 sandbox = Sandbox.create(
     network={
-        "deny_out": [ALL_TRAFFIC],
+        "deny_out": lambda ctx: [ctx.all_traffic],  # ctx.all_traffic == "0.0.0.0/0"
         "allow_out": ["1.1.1.1", "8.8.8.0/24"]
     }
 )
@@ -82,30 +82,34 @@ restricted_sandbox = Sandbox.create(
 ```
 </CodeGroup>
 
+<Note>
+The selector callback (`({ allTraffic }) => [allTraffic]` / `lambda ctx: [ctx.all_traffic]`) is the recommended way to express "all traffic" (`0.0.0.0/0`). The `ALL_TRAFFIC` constant remains exported for backward compatibility.
+</Note>
+
 ### Domain-based filtering
 
-You can allow traffic to specific domains by specifying hostnames in `allow out`. When using domain-based filtering, you must include `ALL_TRAFFIC` in `deny out` to block all other traffic. Domains are not supported in the `deny out` list.
+You can allow traffic to specific domains by specifying hostnames in `allowOut` / `allow_out`. When using domain-based filtering, you must deny all other traffic in `denyOut` / `deny_out`. Domains are not supported in the deny lists.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
+import { Sandbox } from 'e2b'
 
 // Allow only traffic to google.com
 const sandbox = await Sandbox.create({
   network: {
     allowOut: ['google.com'],
-    denyOut: [ALL_TRAFFIC]
+    denyOut: ({ allTraffic }) => [allTraffic]
   }
 })
 ```
 ```python Python
-from e2b import Sandbox, ALL_TRAFFIC
+from e2b import Sandbox
 
 # Allow only traffic to google.com
 sandbox = Sandbox.create(
     network={
         "allow_out": ["google.com"],
-        "deny_out": [ALL_TRAFFIC]
+        "deny_out": lambda ctx: [ctx.all_traffic]
     }
 )
 ```
@@ -119,24 +123,24 @@ You can also use wildcards to allow all subdomains of a domain:
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
+import { Sandbox } from 'e2b'
 
 // Allow traffic to any subdomain of mydomain.com
 const sandbox = await Sandbox.create({
   network: {
     allowOut: ['*.mydomain.com'],
-    denyOut: [ALL_TRAFFIC]
+    denyOut: ({ allTraffic }) => [allTraffic]
   }
 })
 ```
 ```python Python
-from e2b import Sandbox, ALL_TRAFFIC
+from e2b import Sandbox
 
 # Allow traffic to any subdomain of mydomain.com
 sandbox = Sandbox.create(
     network={
         "allow_out": ["*.mydomain.com"],
-        "deny_out": [ALL_TRAFFIC]
+        "deny_out": lambda ctx: [ctx.all_traffic]
     }
 )
 ```
@@ -146,24 +150,24 @@ You can combine domain names with IP addresses and CIDR blocks:
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
+import { Sandbox } from 'e2b'
 
 // Allow traffic to specific domains and IPs
 const sandbox = await Sandbox.create({
   network: {
     allowOut: ['api.example.com', '*.github.com', '8.8.8.8'],
-    denyOut: [ALL_TRAFFIC]
+    denyOut: ({ allTraffic }) => [allTraffic]
   }
 })
 ```
 ```python Python
-from e2b import Sandbox, ALL_TRAFFIC
+from e2b import Sandbox
 
 # Allow traffic to specific domains and IPs
 sandbox = Sandbox.create(
     network={
         "allow_out": ["api.example.com", "*.github.com", "8.8.8.8"],
-        "deny_out": [ALL_TRAFFIC]
+        "deny_out": lambda ctx: [ctx.all_traffic]
     }
 )
 ```
@@ -185,55 +189,28 @@ This is a limitation of how outbound traffic is currently routed from the sandbo
 
 ### Priority rules
 
-When both `allow out` and `deny out` are specified, **allow rules always take precedence** over deny rules. This means if an IP address is in both lists, it will be allowed.
+When both allow and deny rules are specified, **allow rules always take precedence** over deny rules. This means if an IP address is in both lists, it will be allowed.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
+import { Sandbox } from 'e2b'
 
-// Even though ALL_TRAFFIC is denied, 1.1.1.1 and 8.8.8.8 are explicitly allowed
+// Even though all traffic is denied, 1.1.1.1 and 8.8.8.8 are explicitly allowed
 const sandbox = await Sandbox.create({
   network: {
-    denyOut: [ALL_TRAFFIC],
+    denyOut: ({ allTraffic }) => [allTraffic],
     allowOut: ['1.1.1.1', '8.8.8.8']
   }
 })
 ```
 ```python Python
-from e2b import Sandbox, ALL_TRAFFIC
+from e2b import Sandbox
 
-# Even though ALL_TRAFFIC is denied, 1.1.1.1 and 8.8.8.8 are explicitly allowed
+# Even though all traffic is denied, 1.1.1.1 and 8.8.8.8 are explicitly allowed
 sandbox = Sandbox.create(
     network={
-        "deny_out": [ALL_TRAFFIC],
+        "deny_out": lambda ctx: [ctx.all_traffic],
         "allow_out": ["1.1.1.1", "8.8.8.8"]
-    }
-)
-```
-</CodeGroup>
-
-### ALL_TRAFFIC helper
-
-The `ALL_TRAFFIC` constant represents the CIDR range `0.0.0.0/0`, which matches all IP addresses. Use it to easily deny or allow all network traffic:
-
-<CodeGroup>
-```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
-
-// Deny all outbound traffic
-const sandbox = await Sandbox.create({
-  network: {
-    denyOut: [ALL_TRAFFIC]
-  }
-})
-```
-```python Python
-from e2b import Sandbox, ALL_TRAFFIC
-
-# Deny all outbound traffic
-sandbox = Sandbox.create(
-    network={
-        "deny_out": [ALL_TRAFFIC]
     }
 )
 ```
@@ -246,7 +223,7 @@ Per-host request transforms are currently in private beta.
 If you'd like access, please reach out to us at [support@e2b.dev](mailto:support@e2b.dev).
 </Note>
 
-You can register per-host rules under `network.rules` to apply transforms (for example, inject HTTP headers) on outbound requests matching a host. Rules are keyed by host and registering one does **not** grant egress on its own — the host must still be referenced via `allowOut`.
+You can register per-host rules under `network.rules` to apply transforms (for example, inject HTTP headers) on outbound requests matching a host. Rules are keyed by host and registering one does **not** grant egress on its own — the host must still be referenced via `allowOut` / `allow_out`.
 
 The `transform.headers` object is sent on the wire as-is and injected by the egress proxy on matching HTTP/HTTPS requests.
 
@@ -258,6 +235,9 @@ await Sandbox.create({
   network: {
     // Only allow egress to hosts that have rules registered.
     allowOut: ({ rules }) => [...rules.keys()],
+    // Deny all other traffic
+    denyOut: ({ allTraffic }) => [allTraffic],
+    // Register per-host rules
     rules: {
       'api.example.com': [
         {
@@ -275,7 +255,11 @@ from e2b import Sandbox
 
 sandbox = Sandbox.create(
     network={
+        # Only allow egress to hosts that have rules registered.
         "allow_out": lambda ctx: list(ctx.rules.keys()),
+        # Deny all other traffic
+        "deny_out": lambda ctx: [ctx.all_traffic],
+        # Register per-host rules
         "rules": {
             "api.example.com": [
                 {
@@ -302,48 +286,13 @@ await Sandbox.create({
 })
 ```
 
-### Selector callbacks for `allowOut` and `denyOut`
-
-`allowOut` and `denyOut` accept either a static list (as shown above) or a **selector callback** that receives a context object — `{ allTraffic, rules }` in JavaScript and `ctx.all_traffic` / `ctx.rules` in Python. This lets you derive policies from the registered rule hosts without duplicating them, and provides a typed alternative to importing `ALL_TRAFFIC`.
-
-- `allTraffic` (JS) / `ctx.all_traffic` (Python) is the literal `'0.0.0.0/0'`.
-- `rules` is a `Map` (Python `Mapping`) view of `network.rules`.
-
-<CodeGroup>
-```js JavaScript & TypeScript
-import { Sandbox } from 'e2b'
-
-// Block all egress except an explicit allowlist
-await Sandbox.create({
-  network: {
-    denyOut: ({ allTraffic }) => [allTraffic],   // allTraffic === '0.0.0.0/0'
-    allowOut: ['1.1.1.1', '8.8.8.0/24'],
-  },
-})
-```
-```python Python
-from e2b import Sandbox
-
-Sandbox.create(
-    network={
-        "deny_out": lambda ctx: [ctx.all_traffic],
-        "allow_out": ["1.1.1.1", "8.8.8.0/24"],
-    },
-)
-```
-</CodeGroup>
-
-<Note>
-The selector form (`({ allTraffic }) => [allTraffic]` / `lambda ctx: [ctx.all_traffic]`) is the recommended way to express "everything". The `ALL_TRAFFIC` constant is still exported for backward compatibility.
-</Note>
-
 ### Updating network settings on a running sandbox
 
 You can update the network configuration of an already running sandbox using `updateNetwork` (JavaScript) or `update_network` (Python). This replaces the current egress rules with the provided configuration without restarting the sandbox.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
-import { Sandbox, ALL_TRAFFIC } from 'e2b'
+import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
 
@@ -354,7 +303,7 @@ await sandbox.updateNetwork({
 
 // Replace with an allow-list only
 await sandbox.updateNetwork({
-  denyOut: [ALL_TRAFFIC],
+  denyOut: ({ allTraffic }) => [allTraffic],
   allowOut: ['api.example.com'],
 })
 
@@ -362,7 +311,7 @@ await sandbox.updateNetwork({
 await sandbox.updateNetwork({ allowInternetAccess: false })
 ```
 ```python Python
-from e2b import Sandbox, ALL_TRAFFIC
+from e2b import Sandbox
 
 sandbox = Sandbox.create()
 
@@ -371,7 +320,7 @@ sandbox.update_network({"deny_out": ["8.8.8.8"]})
 
 # Replace with an allow-list only
 sandbox.update_network({
-    "deny_out": [ALL_TRAFFIC],
+    "deny_out": lambda ctx: [ctx.all_traffic],
     "allow_out": ["api.example.com"],
 })
 
@@ -381,10 +330,10 @@ sandbox.update_network({"allow_internet_access": False})
 </CodeGroup>
 
 <Note>
-`updateNetwork` / `update_network` **replaces** the current egress configuration — it does not merge with the existing rules. Calling it with an empty object (`updateNetwork({})` / `update_network({})`) clears all `allowOut` / `denyOut` / per-host rules set at create time.
+`updateNetwork` / `update_network` **replaces** the current egress configuration — it does not merge with the existing rules. Calling it with an empty object (`updateNetwork({})` / `update_network({})`) clears all allow and deny rules set at create time.
 </Note>
 
-The create-only options `allowPublicTraffic` and `maskRequestHost` cannot be changed after the sandbox is created.
+Create-only options such as `allowPublicTraffic` / `allow_public_traffic`, `maskRequestHost` / `mask_request_host` and network rules in `network.rules` cannot be changed after the sandbox is created.
 
 ## Sandbox public URL
 Every sandbox has a public URL that can be used to access running services inside the sandbox.
@@ -425,7 +374,7 @@ The first leftmost part of the host is the port number we passed to the method.
 
 ## Restricting public access to sandbox URLs
 
-By default, sandbox URLs are publicly accessible. You can restrict access to require authentication using the `allowPublicTraffic` option:
+By default, sandbox URLs are publicly accessible. You can restrict access to require authentication using the `allowPublicTraffic` / `allow_public_traffic` option:
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -491,7 +440,7 @@ print(response2.status_code)  # 200
 ```
 </CodeGroup>
 
-When `allowPublicTraffic` is set to `false`, all requests to the sandbox's public URLs must include the `e2b-traffic-access-token` header with the value from `sandbox.trafficAccessToken`.
+When `allowPublicTraffic` / `allow_public_traffic` is set to a falsy value, all requests to the sandbox's public URLs must include the `e2b-traffic-access-token` header with the value from `sandbox.trafficAccessToken` / `sandbox.traffic_access_token`.
 
 ## Connecting to a server running inside the sandbox
 You can start a server inside the sandbox and connect to it using the approach above.
@@ -587,7 +536,7 @@ Response from server inside sandbox: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0
 
 ## Masking request host headers
 
-You can customize the `Host` header that gets sent to services running inside the sandbox using the `maskRequestHost` option. This is useful when your application expects a specific host format.
+You can customize the `Host` header that gets sent to services running inside the sandbox using the `maskRequestHost` / `mask_request_host` option. This is useful when your application expects a specific host format.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
