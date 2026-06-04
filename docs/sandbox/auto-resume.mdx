@@ -129,7 +129,7 @@ print(f"State after read: {sandbox.get_info().state}")
 
 Auto-resume is especially useful for web servers and preview environments. When an HTTP request arrives at a paused sandbox, the sandbox wakes up automatically to handle it.
 
-The following example starts a simple HTTP server and retrieves its public URL. Use [`getHost()`](/docs/sandbox/internet-access#sandbox-public-url) (JavaScript) / [`get_host()`](/docs/sandbox/internet-access#sandbox-public-url) (Python) to get the sandbox's publicly accessible hostname for a given port.
+The following example starts a simple HTTP server and retrieves its public URL. Use [`getHost()`](/docs/network/public-url#sandbox-public-url) (JavaScript) / [`get_host()`](/docs/network/public-url#sandbox-public-url) (Python) to get the sandbox's publicly accessible hostname for a given port.
 
 <CodeGroup>
 ```js JavaScript & TypeScript

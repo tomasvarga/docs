@@ -127,12 +127,9 @@
               "docs/sandbox/environment-variables",
               "docs/sandbox/list",
               "docs/sandbox/connect",
-              "docs/sandbox/internet-access",
               "docs/sandbox/pty",
               "docs/sandbox/ssh-access",
-              "docs/sandbox/secured-access",
-              "docs/sandbox/ip-tunneling",
-              "docs/sandbox/custom-domain"
+              "docs/sandbox/secured-access"
             ]
           },
           {
@@ -163,6 +160,16 @@
                 ]
               },
               "docs/template/migration-v2"
+            ]
+          },
+          {
+            "group": "Network",
+            "pages": [
+              "docs/network/internet-access",
+              "docs/network/public-url",
+              "docs/network/restrict-public-access",
+              "docs/network/ip-tunneling",
+              "docs/network/custom-domain"
             ]
           },
           {
@@ -3884,7 +3891,22 @@
     },
     {
       "source": "/docs/legacy/sandbox/api/url",
-      "destination": "/docs/sandbox/internet-access",
+      "destination": "/docs/network/public-url",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/internet-access",
+      "destination": "/docs/network/internet-access",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/ip-tunneling",
+      "destination": "/docs/network/ip-tunneling",
+      "permanent": true
+    },
+    {
+      "source": "/docs/sandbox/custom-domain",
+      "destination": "/docs/network/custom-domain",
       "permanent": true
     },
     {
