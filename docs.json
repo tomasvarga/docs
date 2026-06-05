@@ -98,6 +98,7 @@
               },
               "docs/code-interpreting/streaming",
               "docs/code-interpreting/contexts",
+              "docs/code-interpreting/customize-template",
               {
                 "group": "Supported languages",
                 "pages": [
