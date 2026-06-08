@@ -100,3 +100,14 @@ code {
 #sidebar a .overflow-x-hidden::-webkit-scrollbar {
     display: none !important;
 }
+
+/* Force left-alignment on table first column cells and their contents */
+table th:first-child,
+table td:first-child {
+    text-align: left !important;
+}
+
+table td button {
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
