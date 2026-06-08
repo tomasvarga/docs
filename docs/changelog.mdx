@@ -1,0 +1,33 @@
+---
+title: "Changelog"
+description: "Recent updates and improvements to E2B."
+---
+
+<Update label="June 8, 2026" description="Weekly release">
+
+## New features
+
+- **Stdin streaming for commands.** `CommandHandle` now exposes `sendStdin` and `closeStdin` so you can write to a running process's standard input and close it when you're done. Useful for interactive CLIs and programs that read from stdin. See [Commands](/docs/commands).
+- **Allocated resource metrics.** The orchestrator now exports per-sandbox CPU and memory allocation metrics, giving better visibility into resource usage across your fleet.
+- **Paginated templates list.** The dashboard API's templates list endpoint now supports pagination, making it easier to work with large template catalogs.
+- **Cross-generation CPU compatibility.** Sandboxes can now be scheduled across mixed CPU generations (N2 → N4), improving capacity and reducing scheduling failures.
+- **API-only header options on the SDK.** Pass custom headers to the API client without affecting envd requests, useful for proxy and observability setups.
+
+## Updates
+
+- **CLI `template build` deprecation.** The v1 `template build` command is now fully deprecated in favor of the v2 build flow. See the [v2 migration guide](/docs/migration/v2) and [template quickstart](/docs/template/quickstart).
+- **Client-side API key validation.** The SDKs now validate the format of your E2B API key before making requests, surfacing configuration errors earlier.
+- **Memory oversubscription enabled.** Nomad memory oversubscription is now on, improving sandbox packing density and capacity headroom.
+
+## Bug fixes
+
+- **Security:** Restricted `~/.e2b/config.json` permissions to owner-only on the CLI to prevent credentials from being readable by other local users.
+- **Security:** Bumped `ws` to `>=8.20.1` to address [CVE-2026-45736](https://github.com/advisories) in the JavaScript SDK.
+- **Python SDK:** Switched to thread-local API transports so the SDK behaves correctly under multi-threaded workloads.
+- **Python SDK:** `CommandHandle.wait()` now correctly awaits async callbacks.
+- **SDK rate limits:** envd 429 responses now surface as a consistent `RateLimitError` across both SDKs.
+- **Dockerfile builds:** `fromDockerfile` now handles multi-source `COPY`/`ADD` instructions correctly.
+- **Template aliases:** The template `exists` endpoint now checks alias tags, fixing false negatives when looking up templates by alias.
+- **Scheduling:** Base build IDs are now split per artifact, fixing rare scheduling conflicts during template builds.
+
+</Update>
