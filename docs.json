@@ -179,6 +179,7 @@
               "docs/filesystem",
               "docs/filesystem/read-write",
               "docs/filesystem/info",
+              "docs/filesystem/metadata",
               "docs/filesystem/watch",
               "docs/filesystem/upload",
               "docs/filesystem/download"

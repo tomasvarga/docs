@@ -96,3 +96,48 @@ for event in events:
     print(f"wrote to file {event.name}")
 ```
 </CodeGroup>
+
+## Including entry information
+
+You can include information about the affected file or directory in each event using the parameter `includeEntry` in JavaScript and `include_entry` in Python.
+When enabled, each event carries the entry's information — such as its path, type, and size — in the `entry` field.
+
+<Note>
+Entry information may be unset for remove events since the path no longer exists.
+Including entry information requires templates with envd version `v0.6.3` or above — using the `includeEntry` / `include_entry` option on older sandboxes will throw an error.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={8,10}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+const dirname = '/home/user'
+
+// Start watching directory for changes
+const handle = await sandbox.files.watchDir(dirname, async (event) => {
+  console.log(event.type, event.name, event.entry?.path, event.entry?.type)
+}, {
+  includeEntry: true
+})
+
+// Trigger file write event
+await sandbox.files.write(`${dirname}/my-file`, 'hello')
+```
+```python Python highlight={7,14}
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+dirname = '/home/user'
+
+# Watch directory for changes
+handle = sandbox.files.watch_dir(dirname, include_entry=True)
+# Trigger file write event
+sandbox.files.write(f"{dirname}/my-file", "hello")
+
+# Retrieve the latest new events since the last `get_new_events()` call
+events = handle.get_new_events()
+for event in events:
+  print(event.type, event.name, event.entry.path if event.entry else None)
+```
+</CodeGroup>

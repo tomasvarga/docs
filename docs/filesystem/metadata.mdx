@@ -1,0 +1,104 @@
+---
+title: "Attach custom metadata to files"
+sidebarTitle: Custom metadata
+description: "Attach custom key-value metadata to files when writing them to the sandbox and read it back with file info methods."
+---
+
+You can attach custom key-value metadata to files when writing them to the sandbox using the `metadata` option.
+The metadata is persisted with the file and returned by `files.getInfo()` / `files.get_info()`, `files.list()`, and `files.rename()`.
+
+## Prerequisites
+
+Custom file metadata requires templates with envd version `v0.6.2` or above. If you are using a custom template created before envd `v0.6.2`, you need to rebuild it.
+
+You can check the template envd version using the `e2b template list` command or by viewing the templates list on the dashboard.
+
+## Writing a file with metadata
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+const info = await sandbox.files.write('report.txt', 'hello', {
+  metadata: { author: 'alice', purpose: 'demo' },
+})
+console.log(info.metadata) // { author: 'alice', purpose: 'demo' }
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+info = sandbox.files.write("report.txt", "hello", metadata={"author": "alice", "purpose": "demo"})
+print(info.metadata)  # {"author": "alice", "purpose": "demo"}
+```
+</CodeGroup>
+
+## Writing multiple files with metadata
+
+When writing multiple files, the same metadata is applied to every file in the upload.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+await sandbox.files.writeFiles(
+  [
+    { path: 'a.txt', data: 'A' },
+    { path: 'b.txt', data: 'B' },
+  ],
+  { metadata: { source: 'import' } }
+)
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+sandbox.files.write_files(
+    [
+        { "path": "a.txt", "data": "A" },
+        { "path": "b.txt", "data": "B" },
+    ],
+    metadata={"source": "import"},
+)
+```
+</CodeGroup>
+
+## Reading metadata back
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+
+await sandbox.files.write('report.txt', 'hello', {
+  metadata: { author: 'alice' },
+})
+
+const info = await sandbox.files.getInfo('report.txt')
+console.log(info.metadata) // { author: 'alice' }
+```
+```python Python
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+
+sandbox.files.write("report.txt", "hello", metadata={"author": "alice"})
+
+info = sandbox.files.get_info("report.txt")
+print(info.metadata)  # {"author": "alice"}
+```
+</CodeGroup>
+
+## Limitations
+
+- Metadata keys and values must be printable US-ASCII characters.
+- Keys are lowercased by the sandbox, so they may differ in case when read back.
+- Overwriting a file replaces its metadata — metadata from the previous write is not preserved.
+- Metadata is stored as `user.e2b.*` extended attributes on the file inside the sandbox, so you can also read or set it from within the sandbox using standard tools like `getfattr` and `setfattr`.
