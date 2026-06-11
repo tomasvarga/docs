@@ -31,10 +31,10 @@ importers:
         version: 3.32.3
       typedoc:
         specifier: ~0.27.6
-        version: 0.27.9(typescript@5.9.3)
+        version: 0.27.9(typescript@5.8.3)
       typedoc-plugin-markdown:
         specifier: ~4.4.1
-        version: 4.4.2(typedoc@0.27.9(typescript@5.9.3))
+        version: 4.4.2(typedoc@0.27.9(typescript@5.8.3))
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -52,8 +52,8 @@ importers:
         specifier: ^4.19.2
         version: 4.21.0
       typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
+        specifier: ~5.8.3
+        version: 5.8.3
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.3)
@@ -927,8 +927,8 @@ packages:
     peerDependencies:
       typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x
 
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+  typescript@5.8.3:
+    resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -1744,20 +1744,20 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
-  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.9.3)):
+  typedoc-plugin-markdown@4.4.2(typedoc@0.27.9(typescript@5.8.3)):
     dependencies:
-      typedoc: 0.27.9(typescript@5.9.3)
+      typedoc: 0.27.9(typescript@5.8.3)
 
-  typedoc@0.27.9(typescript@5.9.3):
+  typedoc@0.27.9(typescript@5.8.3):
     dependencies:
       '@gerrit0/mini-shiki': 1.27.2
       lunr: 2.3.9
       markdown-it: 14.1.1
       minimatch: 9.0.9
-      typescript: 5.9.3
+      typescript: 5.8.3
       yaml: 2.8.3
 
-  typescript@5.9.3: {}
+  typescript@5.8.3: {}
 
   uc.micro@2.1.0: {}
 
