@@ -1,0 +1,292 @@
+---
+sidebarTitle: "Template"
+"og:image": "/images/og/sdk-reference.png"
+"twitter:image": "/images/og/sdk-reference.png"
+---
+
+
+
+
+
+
+### BASE\_STEP\_NAME
+
+Depths explained:
+1. TemplateClass
+2. Caller method (eg. copy(), fromImage(), etc.)
+
+
+
+
+
+
+## BuildException
+
+```python
+class BuildException(Exception)
+```
+
+Raised when a build fails.
+
+
+
+## FileUploadException
+
+```python
+class FileUploadException(BuildException)
+```
+
+Raised when a file upload fails.
+
+
+
+
+
+
+### strip\_ansi\_escape\_codes
+
+```python
+def strip_ansi_escape_codes(text: str) -> str
+```
+
+Strip ANSI escape codes from a string. Source: https://github.com/chalk/ansi-regex/blob/main/index.js
+
+
+
+### get\_caller\_frame
+
+```python
+def get_caller_frame(depth: int) -> Optional[FrameType]
+```
+
+Get the caller frame. Skip this function (first frame).
+
+
+
+### get\_caller\_directory
+
+```python
+def get_caller_directory(depth: int) -> Optional[str]
+```
+
+Get the directory of the file that called this function.
+
+
+
+
+
+
+## DockerfFileFinalParserInterface
+
+```python
+class DockerfFileFinalParserInterface(Protocol)
+```
+
+Protocol defining the final interface for Dockerfile parsing callbacks.
+
+
+
+## DockerfileParserInterface
+
+```python
+class DockerfileParserInterface(Protocol)
+```
+
+Protocol defining the interface for Dockerfile parsing callbacks.
+
+
+
+### run\_cmd
+
+```python
+def run_cmd(command: Union[str, List[str]],
+            user: Optional[str] = None) -> "DockerfileParserInterface"
+```
+
+Handle RUN instruction.
+
+
+
+### copy
+
+```python
+def copy(src: Union[str, List[CopyItem]],
+         dest: Optional[str] = None,
+         force_upload: Optional[bool] = None,
+         user: Optional[str] = None,
+         mode: Optional[int] = None) -> "DockerfileParserInterface"
+```
+
+Handle COPY instruction.
+
+
+
+### set\_workdir
+
+```python
+def set_workdir(workdir: str) -> "DockerfileParserInterface"
+```
+
+Handle WORKDIR instruction.
+
+
+
+### set\_user
+
+```python
+def set_user(user: str) -> "DockerfileParserInterface"
+```
+
+Handle USER instruction.
+
+
+
+### set\_envs
+
+```python
+def set_envs(envs: Dict[str, str]) -> "DockerfileParserInterface"
+```
+
+Handle ENV instruction.
+
+
+
+### set\_start\_cmd
+
+```python
+def set_start_cmd(start_cmd: str,
+                  ready_cmd: str) -> "DockerfFileFinalParserInterface"
+```
+
+Handle CMD/ENTRYPOINT instruction.
+
+
+
+### parse\_dockerfile
+
+```python
+def parse_dockerfile(dockerfile_content_or_path: str,
+                     template_builder: DockerfileParserInterface) -> str
+```
+
+Parse a Dockerfile and convert it to Template SDK format.
+
+**Arguments**:
+
+- `dockerfile_content_or_path` - Either the Dockerfile content as a string,
+  or a path to a Dockerfile file
+- `template_builder` - Interface providing template builder methods
+  
+
+**Returns**:
+
+  The base image from the Dockerfile
+  
+
+**Raises**:
+
+- `ValueError` - If the Dockerfile is invalid or unsupported
+
+
+
+
+
+
+### wait\_for\_port
+
+```python
+def wait_for_port(port: int)
+```
+
+Generate a command to wait for a port to be available.
+
+
+
+### wait\_for\_url
+
+```python
+def wait_for_url(url: str, status_code: int = 200)
+```
+
+Generate a command to wait for a URL to return a specific status code.
+
+
+
+### wait\_for\_process
+
+```python
+def wait_for_process(process_name: str)
+```
+
+Generate a command to wait for a process to be running.
+
+
+
+### wait\_for\_file
+
+```python
+def wait_for_file(filename: str)
+```
+
+Generate a command to wait for a file to exist.
+
+
+
+### wait\_for\_timeout
+
+```python
+def wait_for_timeout(timeout: int)
+```
+
+Generate a command to wait for a specified duration.
+
+
+
+
+
+
+## TemplateBase
+
+```python
+class TemplateBase()
+```
+
+
+
+### skip\_cache
+
+```python
+def skip_cache() -> "TemplateBase"
+```
+
+Skip cache for the next instruction (before from instruction)
+
+
+
+### from\_image
+
+```python
+def from_image(
+        base_image: str,
+        registry_config: Optional[RegistryConfig] = None) -> TemplateBuilder
+```
+
+Private method to set base image without adding stack trace
+
+
+
+### from\_dockerfile
+
+```python
+def from_dockerfile(dockerfile_content_or_path: str) -> TemplateBuilder
+```
+
+Parse a Dockerfile and convert it to Template SDK format
+
+**Arguments**:
+
+- `dockerfile_content_or_path` - Either the Dockerfile content as a string,
+  or a path to a Dockerfile file
+
+
+
