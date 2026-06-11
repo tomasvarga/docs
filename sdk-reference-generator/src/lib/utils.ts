@@ -27,6 +27,8 @@ export function sortVersionsDescending(versions: string[]): string[] {
 export function createFrontmatter(title: string): string {
   return `---
 sidebarTitle: "${title}"
+"og:image": "/images/og/sdk-reference.png"
+"twitter:image": "/images/og/sdk-reference.png"
 ---
 
 `;

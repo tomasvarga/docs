@@ -128,6 +128,8 @@ describe("createFrontmatter", () => {
     const result = createFrontmatter("My Title");
     expect(result).toBe(`---
 sidebarTitle: "My Title"
+"og:image": "/images/og/sdk-reference.png"
+"twitter:image": "/images/og/sdk-reference.png"
 ---
 
 `);
@@ -137,6 +139,8 @@ sidebarTitle: "My Title"
     const result = createFrontmatter("");
     expect(result).toBe(`---
 sidebarTitle: ""
+"og:image": "/images/og/sdk-reference.png"
+"twitter:image": "/images/og/sdk-reference.png"
 ---
 
 `);

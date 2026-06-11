@@ -3720,10 +3720,10 @@
       "canonical": "https://e2b.dev",
       "twitter:title": "Documentation - E2B",
       "twitter:description": "E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.",
-      "twitter:image": "twitter-image.png",
+      "twitter:image": "/images/og/opengraph-image.png",
       "og:title": "Documentation - E2B",
       "og:description": "E2B Gives AI Agents Secure Computers with Real-World Tools. E2B is Used by 88% of Fortune 100 Companies for Frontier Agentic Workflows.",
-      "og:image": "opengraph-image.png"
+      "og:image": "/images/og/opengraph-image.png"
     }
   },
   "integrations": {
