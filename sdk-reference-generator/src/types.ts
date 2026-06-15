@@ -80,3 +80,9 @@ export interface NavigationDropdown {
 export interface NavigationDropdownWithOrder extends NavigationDropdown {
   _order: number;
 }
+
+export interface RedirectEntry {
+  source: string;
+  destination: string;
+  permanent: boolean;
+}

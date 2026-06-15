@@ -11,6 +11,7 @@ import { log } from "./lib/log.js";
 import type {
   NavigationDropdown,
   NavigationDropdownWithOrder,
+  RedirectEntry,
 } from "./types.js";
 
 async function getVersions(sdkDir: string): Promise<string[]> {
@@ -97,6 +98,52 @@ export async function buildNavigation(
     .map(({ _order, ...rest }) => rest);
 }
 
+/**
+ * Build version-agnostic "latest" redirects from the navigation.
+ *
+ * For each SDK, emits a single wildcard redirect that points a stable
+ * `.../latest/...` path at the newest (default) version, e.g.
+ *   /docs/sdk-reference/js-sdk/latest/:slug*  ->  /docs/sdk-reference/js-sdk/v2.29.1/:slug*
+ *
+ * These are regenerated on every sync so they always track the current
+ * release. They are non-permanent because the destination moves over time.
+ */
+export function buildLatestRedirects(
+  navigation: NavigationDropdown[]
+): RedirectEntry[] {
+  const redirects: RedirectEntry[] = [];
+
+  for (const dropdown of navigation) {
+    const latestVersion = dropdown.versions.find((v) => v.default);
+    const firstPage = latestVersion?.pages[0];
+    if (!latestVersion || !firstPage) continue;
+
+    // pages look like: docs/sdk-reference/{sdkKey}/{version}/{module}
+    const parts = firstPage.split("/");
+    const sdkKey = parts[2];
+    const version = parts[3];
+    if (!sdkKey || !version) continue;
+
+    const base = `/${CONSTANTS.DOCS_SDK_REF_PATH}/${sdkKey}`;
+    redirects.push({
+      source: `${base}/latest/:slug*`,
+      destination: `${base}/${version}/:slug*`,
+      permanent: false,
+    });
+  }
+
+  return redirects;
+}
+
+function isLatestSdkRedirect(source: unknown): boolean {
+  return (
+    typeof source === "string" &&
+    new RegExp(
+      `^/${CONSTANTS.DOCS_SDK_REF_PATH}/[^/]+/latest/`
+    ).test(source)
+  );
+}
+
 export async function mergeNavigation(
   navigation: NavigationDropdown[],
   docsDir: string
@@ -139,6 +186,19 @@ export async function mergeNavigation(
   } else {
     anchors[sdkRefIndex] = sdkRefAnchor;
   }
+
+  // Refresh the "latest" redirects so they track the newest version. Existing
+  // manual redirects are preserved; only the generated SDK latest ones are
+  // replaced.
+  const latestRedirects = buildLatestRedirects(validDropdowns);
+  const existingRedirects: RedirectEntry[] = Array.isArray(docsJson.redirects)
+    ? docsJson.redirects
+    : [];
+  docsJson.redirects = [
+    ...existingRedirects.filter((r) => !isLatestSdkRedirect(r?.source)),
+    ...latestRedirects,
+  ];
+  log.info(`Refreshed ${latestRedirects.length} SDK "latest" redirects`, 1);
 
   await fs.writeJSON(docsJsonPath, docsJson, { spaces: 2 });
   const content = await fs.readFile(docsJsonPath, "utf-8");

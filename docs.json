@@ -5015,6 +5015,41 @@
       "source": "/docs/git",
       "destination": "/docs/sandbox/git-integration",
       "permanent": true
+    },
+    {
+      "source": "/docs/sdk-reference/js-sdk/latest/:slug*",
+      "destination": "/docs/sdk-reference/js-sdk/v2.29.1/:slug*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/sdk-reference/python-sdk/latest/:slug*",
+      "destination": "/docs/sdk-reference/python-sdk/v2.28.2/:slug*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/sdk-reference/code-interpreter-js-sdk/latest/:slug*",
+      "destination": "/docs/sdk-reference/code-interpreter-js-sdk/v2.6.0/:slug*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/sdk-reference/code-interpreter-python-sdk/latest/:slug*",
+      "destination": "/docs/sdk-reference/code-interpreter-python-sdk/v2.8.0/:slug*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/sdk-reference/desktop-js-sdk/latest/:slug*",
+      "destination": "/docs/sdk-reference/desktop-js-sdk/v2.3.1/:slug*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/sdk-reference/desktop-python-sdk/latest/:slug*",
+      "destination": "/docs/sdk-reference/desktop-python-sdk/v2.4.1/:slug*",
+      "permanent": false
+    },
+    {
+      "source": "/docs/sdk-reference/cli/latest/:slug*",
+      "destination": "/docs/sdk-reference/cli/v2.11.1/:slug*",
+      "permanent": false
     }
   ]
 }

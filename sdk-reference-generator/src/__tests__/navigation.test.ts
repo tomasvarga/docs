@@ -31,7 +31,9 @@ vi.mock("../../sdks.config.js", () => ({
 }));
 
 // import after mocking
-const { buildNavigation, mergeNavigation } = await import("../navigation.js");
+const { buildNavigation, mergeNavigation, buildLatestRedirects } = await import(
+  "../navigation.js"
+);
 
 describe("buildNavigation", () => {
   let tempDir: string;
@@ -203,6 +205,100 @@ describe("buildNavigation", () => {
 
     expect(result[0].versions).toHaveLength(1);
     expect(result[0].versions[0].version).toBe("v1.0.0");
+  });
+});
+
+describe("buildLatestRedirects", () => {
+  it("returns no redirects for empty navigation", () => {
+    expect(buildLatestRedirects([])).toEqual([]);
+  });
+
+  it("builds a wildcard redirect pointing latest at the default version", () => {
+    const navigation = [
+      {
+        dropdown: "Test SDK",
+        icon: "square-js",
+        versions: [
+          {
+            version: "v2.0.0",
+            default: true,
+            pages: ["docs/sdk-reference/test-js-sdk/v2.0.0/sandbox"],
+          },
+          {
+            version: "v1.0.0",
+            default: false,
+            pages: ["docs/sdk-reference/test-js-sdk/v1.0.0/sandbox"],
+          },
+        ],
+      },
+    ];
+
+    const redirects = buildLatestRedirects(navigation);
+
+    expect(redirects).toEqual([
+      {
+        source: "/docs/sdk-reference/test-js-sdk/latest/:slug*",
+        destination: "/docs/sdk-reference/test-js-sdk/v2.0.0/:slug*",
+        permanent: false,
+      },
+    ]);
+  });
+
+  it("emits one redirect per SDK dropdown", () => {
+    const navigation = [
+      {
+        dropdown: "JS",
+        icon: "square-js",
+        versions: [
+          {
+            version: "v2.0.0",
+            default: true,
+            pages: ["docs/sdk-reference/js-sdk/v2.0.0/sandbox"],
+          },
+        ],
+      },
+      {
+        dropdown: "Py",
+        icon: "python",
+        versions: [
+          {
+            version: "v3.0.0",
+            default: true,
+            pages: ["docs/sdk-reference/python-sdk/v3.0.0/sandbox_sync"],
+          },
+        ],
+      },
+    ];
+
+    const redirects = buildLatestRedirects(navigation);
+
+    expect(redirects.map((r) => r.source)).toEqual([
+      "/docs/sdk-reference/js-sdk/latest/:slug*",
+      "/docs/sdk-reference/python-sdk/latest/:slug*",
+    ]);
+  });
+
+  it("skips dropdowns without a default version or pages", () => {
+    const navigation = [
+      {
+        dropdown: "No default",
+        icon: "square-js",
+        versions: [
+          {
+            version: "v1.0.0",
+            default: false,
+            pages: ["docs/sdk-reference/test-js-sdk/v1.0.0/sandbox"],
+          },
+        ],
+      },
+      {
+        dropdown: "No pages",
+        icon: "python",
+        versions: [{ version: "v1.0.0", default: true, pages: [] }],
+      },
+    ];
+
+    expect(buildLatestRedirects(navigation)).toEqual([]);
   });
 });
 
@@ -389,6 +485,48 @@ describe("mergeNavigation", () => {
     const content = await fs.readFile(docsJsonPath, "utf-8");
     // check for 2-space indentation
     expect(content).toContain('  "navigation"');
+  });
+
+  it("refreshes latest redirects while preserving manual ones", async () => {
+    await fs.writeJSON(docsJsonPath, {
+      navigation: { anchors: [] },
+      redirects: [
+        // a manual redirect that must survive
+        { source: "/docs/old", destination: "/docs/new", permanent: true },
+        // a stale latest redirect pointing at an old version
+        {
+          source: "/docs/sdk-reference/test-js-sdk/latest/:slug*",
+          destination: "/docs/sdk-reference/test-js-sdk/v1.0.0/:slug*",
+          permanent: false,
+        },
+      ],
+    });
+
+    const navigation = [
+      {
+        dropdown: "Test SDK",
+        icon: "square-js",
+        versions: [
+          {
+            version: "v2.0.0",
+            default: true,
+            pages: ["docs/sdk-reference/test-js-sdk/v2.0.0/sandbox"],
+          },
+        ],
+      },
+    ];
+
+    await mergeNavigation(navigation, tempDir);
+
+    const result = await fs.readJSON(docsJsonPath);
+    expect(result.redirects).toEqual([
+      { source: "/docs/old", destination: "/docs/new", permanent: true },
+      {
+        source: "/docs/sdk-reference/test-js-sdk/latest/:slug*",
+        destination: "/docs/sdk-reference/test-js-sdk/v2.0.0/:slug*",
+        permanent: false,
+      },
+    ]);
   });
 
   it("ensures newline at end of file", async () => {
