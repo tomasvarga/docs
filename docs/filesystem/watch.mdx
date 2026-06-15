@@ -108,7 +108,7 @@ Including entry information requires templates with envd version `v0.6.3` or abo
 </Note>
 
 <CodeGroup>
-```js JavaScript & TypeScript highlight={8,10}
+```js JavaScript & TypeScript highlight={10}
 import { Sandbox } from 'e2b'
 
 const sandbox = await Sandbox.create()
@@ -139,5 +139,54 @@ sandbox.files.write(f"{dirname}/my-file", "hello")
 events = handle.get_new_events()
 for event in events:
   print(event.type, event.name, event.entry.path if event.entry else None)
+```
+</CodeGroup>
+
+## Watching network filesystem mounts
+
+By default, watching paths on network filesystem mounts (NFS, CIFS, SMB, FUSE) is rejected. You can explicitly opt in using the parameter `allowNetworkMounts` in JavaScript and `allow_network_mounts` in Python.
+
+<Note>
+Events on network mounts may be unreliable or not delivered at all, which is why the explicit opt-in is required.
+
+Changes made by another client outside of the sandbox (for example, a different machine writing to the same network share) are **not** propagated to the watcher — only changes made from within the sandbox are detected.
+</Note>
+
+<Note>
+Watching network mounts requires templates with envd version `v0.6.4` or above — using the `allowNetworkMounts` / `allow_network_mounts` option on older sandboxes will throw an error.
+</Note>
+
+<CodeGroup>
+```js JavaScript & TypeScript highlight={10}
+import { Sandbox } from 'e2b'
+
+const sandbox = await Sandbox.create()
+const dirname = '/mnt/nfs-share/my-dir'
+
+// Start watching a directory on a network mount for changes
+const handle = await sandbox.files.watchDir(dirname, async (event) => {
+  console.log(event.type, event.name)
+}, {
+  allowNetworkMounts: true
+})
+
+// Trigger file write event
+await sandbox.files.write(`${dirname}/my-file`, 'hello')
+```
+```python Python highlight={7,14}
+from e2b import Sandbox
+
+sandbox = Sandbox.create()
+dirname = '/mnt/nfs-share/my-dir'
+
+# Watch a directory on a network mount for changes
+handle = sandbox.files.watch_dir(dirname, allow_network_mounts=True)
+# Trigger file write event
+sandbox.files.write(f"{dirname}/my-file", "hello")
+
+# Retrieve the latest new events since the last `get_new_events()` call
+events = handle.get_new_events()
+for event in events:
+  print(event.type, event.name)
 ```
 </CodeGroup>
