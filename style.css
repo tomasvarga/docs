@@ -101,6 +101,14 @@ code {
     display: none !important;
 }
 
+/* Constrain navbar logo to 18px height */
+#navbar img,
+#header img,
+img[alt$="logo" i] {
+    height: 18px !important;
+    width: auto !important;
+}
+
 /* Force left-alignment on table first column cells and their contents */
 table th:first-child,
 table td:first-child {

@@ -15,7 +15,10 @@
       }
     }
   },
-  "favicon": "/favicon.svg",
+  "favicon": {
+    "light": "/favicon.svg",
+    "dark": "/favicon-dark.svg"
+  },
   "navigation": {
     "anchors": [
       {
