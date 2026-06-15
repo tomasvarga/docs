@@ -1,0 +1,35 @@
+---
+title: "Changelog"
+sidebarTitle: "Overview"
+description: "Latest updates and improvements to E2B."
+---
+
+<Update label="June 15, 2026">
+
+## New features
+
+**Sandbox lifecycle flags in the CLI.** `e2b sandbox create` now accepts `--lifecycle.autoresume` and `--lifecycle.ontimeout`, plus a `--timeout` option. Configure auto-resume and pause-on-timeout behavior directly from the CLI without writing a script. See [Auto-resume](/docs/sandbox/auto-resume).
+
+**Send and close stdin from a command handle.** Background commands now expose `sendStdin()` and `closeStdin()` directly on the returned handle (JS) and `send_stdin()` / `close_stdin()` (Python, sync and async). You no longer need to pass the PID back to `commands.sendStdin()`. The command must be started with `stdin: true`. See [Background commands](/docs/commands/background).
+
+**Opt in to watching network mounts.** `envd` adds an `allow_network_mounts` option on filesystem watch requests so you can explicitly watch paths on NFS, CIFS, SMB, and FUSE mounts, which are rejected by default. See [Watch directory](/docs/filesystem/watch).
+
+## Updates
+
+**JS and Python SDK behavior aligned.** Several differences between the JS and Python SDKs were reconciled so both surfaces behave the same way for command execution, filesystem operations, and error handling.
+
+**`e2b template build` (v1) fully deprecated.** The legacy `e2b template build` command no longer runs a build — it prints the v2 migration notice and exits. Use [`e2b template create`](/docs/template/quickstart) and the [v2 migration guide](/docs/template/migration-v2) instead.
+
+**API-only request header options.** The SDKs now expose an option for setting headers that apply only to control-plane API requests, separate from envd headers. Useful when fronting E2B with a proxy or gateway.
+
+## Bug fixes
+
+- **Volume SDK reliability.** Fixed transport handling, request timeouts, empty-file uploads, and eager stream errors in the volume client.
+- **`Sandbox.kill()` returns a boolean.** The JS `Sandbox.kill()` instance method now returns whether the sandbox was killed, matching its static counterpart.
+- **`getMetrics` query parameters.** `start` and `end` are now passed correctly as query parameters in the JS SDK.
+- **Clearer API errors.** Non-2xx responses from the API and envd with empty bodies now raise proper errors instead of failing silently.
+- **HTTP/2 retries (Python).** The Python SDK now retries connection failures on HTTP/2 API transports.
+- **Async transport caching (Python).** Async transport caches are now keyed by the event loop object rather than its id, preventing reuse across recreated loops.
+- **Pause upload retries.** Sandbox pause uploads now retry on transient failures, making pause/resume more reliable.
+
+</Update>
