@@ -72,6 +72,20 @@ describe('verifyGeneratedDocs', () => {
     expect(result.errors[0]).toContain('Missing frontmatter');
   });
 
+  it('warns about unbalanced code fences', async () => {
+    const sdkPath = path.join(tempDir, CONSTANTS.DOCS_SDK_REF_PATH, 'test-sdk', 'v1.0.0');
+    await fs.ensureDir(sdkPath);
+    await fs.writeFile(
+      path.join(sdkPath, 'orphan-fence.mdx'),
+      '---\nsidebarTitle: "Test"\n---\n\n```ts\ncode\n```\n\n```\n\n***\n'
+    );
+
+    const result = await verifyGeneratedDocs(tempDir);
+
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings[0]).toContain('Unbalanced code fences');
+  });
+
   it('warns about versions with no MDX files', async () => {
     const sdkPath = path.join(tempDir, CONSTANTS.DOCS_SDK_REF_PATH, 'test-sdk', 'v1.0.0');
     await fs.ensureDir(sdkPath);

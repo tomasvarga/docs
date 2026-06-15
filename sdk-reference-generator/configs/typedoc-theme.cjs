@@ -7,14 +7,14 @@ const { MarkdownPageEvent } = require('typedoc-plugin-markdown')
 function load(app) {
   // listen to the render event
   app.renderer.on(MarkdownPageEvent.END, (page) => {
-    // process markdown content
-    page.contents = removeMarkdownLinks(
-      removeFirstNLines(
-        convertH5toH3(removeLinesWithConditions(page.contents)),
-        6
-      )
-    )
+    page.contents = processPageContents(page.contents)
   })
+}
+
+function processPageContents(text) {
+  return removeMarkdownLinks(
+    removeFirstNLines(convertH5toH3(removeLinesWithConditions(text)), 6)
+  )
 }
 
 // makes methods in the sdk reference look more prominent
@@ -42,8 +42,11 @@ function removeLinesWithConditions(text) {
       lines[i].startsWith('###### Overrides') ||
       lines[i].startsWith('###### Inherited from')
     ) {
-      // skip this line and the next three
-      i += 3
+      // section length varies: with useCodeBlocks the target is rendered as
+      // a fenced code block when the parent has no doc page (e.g. classes
+      // extending the built-in Error), so a fixed line count would leave an
+      // orphan closing fence behind
+      i = indexAfterSectionBody(lines, i) - 1
       continue
     }
 
@@ -59,5 +62,23 @@ function removeLinesWithConditions(text) {
   return filteredLines.join('\n')
 }
 
-module.exports = { load }
+// returns the index of the first line after the section body starting at
+// headingIndex (the next heading or thematic break), treating fenced code
+// blocks as opaque
+function indexAfterSectionBody(lines, headingIndex) {
+  let i = headingIndex + 1
+  while (i < lines.length) {
+    if (lines[i].startsWith('```')) {
+      i++
+      while (i < lines.length && !lines[i].startsWith('```')) i++
+      i++
+      continue
+    }
+    if (lines[i].startsWith('#') || lines[i].startsWith('***')) break
+    i++
+  }
+  return i
+}
+
+module.exports = { load, processPageContents }
 

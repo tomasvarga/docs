@@ -74,6 +74,15 @@ export async function verifyGeneratedDocs(
               `Missing frontmatter: ${sdkEntry.name}/${versionEntry.name}/${file}`
             );
           }
+
+          const fenceLineCount = content
+            .split('\n')
+            .filter((line) => line.startsWith('```')).length;
+          if (fenceLineCount % 2 !== 0) {
+            warnings.push(
+              `Unbalanced code fences: ${sdkEntry.name}/${versionEntry.name}/${file}`
+            );
+          }
         }
       }
     }
