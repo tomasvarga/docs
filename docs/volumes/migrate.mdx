@@ -1,0 +1,168 @@
+---
+title: "Migrating data between volumes"
+description: "Copy all data from one E2B volume to another by mounting both into a sandbox and using rsync."
+---
+
+When you need to move data from an old volume to a new one, the simplest approach is to mount both volumes into a single sandbox and copy the files across. This page walks through a script that does exactly that: it spins up a sandbox from the **base** template, mounts a source and a destination volume, and copies all data from source to destination.
+
+- The **source** volume must already exist. If it doesn't, the script fails.
+- The **destination** volume is reused if it already exists, or created if it doesn't.
+
+## Prerequisites
+
+You need an E2B account with your API key set as `E2B_API_KEY` in your environment, and the E2B SDK installed.
+
+<CodeGroup>
+```bash JavaScript & TypeScript
+npm install e2b
+```
+```bash Python
+pip install e2b
+```
+</CodeGroup>
+
+## The script
+
+The script first resolves both volumes by name, connecting to the source and connecting to (or creating) the destination. It then mounts both into a sandbox and uses [rsync](https://rsync.samba.org/) to copy the data across. Reading the volume type from the token is optional, but it's a handy sanity check that you're copying between the volumes you expect.
+
+Save this as `copy-volume.mts` (JavaScript & TypeScript) or `copy_volume.py` (Python):
+
+<CodeGroup>
+```ts JavaScript & TypeScript
+import { Sandbox, Volume } from 'e2b'
+
+const [sourceName, destName] = process.argv.slice(2)
+if (!sourceName || !destName) {
+  throw new Error('Usage: copy-volume <source-volume> <dest-volume>')
+}
+
+async function findVolumeByName(name: string) {
+  const volumes = await Volume.list()
+  return volumes.find((v) => v.name === name) ?? null
+}
+
+const sourceInfo = await findVolumeByName(sourceName)
+if (!sourceInfo) {
+  throw new Error(`Source volume "${sourceName}" does not exist`)
+}
+const sourceVolume = await Volume.connect(sourceInfo.volumeId)
+
+const destInfo = await findVolumeByName(destName)
+const destVolume = destInfo
+  ? await Volume.connect(destInfo.volumeId)
+  : await Volume.create(destName)
+
+function voltype(token: string): string {
+  // JWT payloads are base64url and often omit padding, so normalize before decoding
+  let segment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+  segment += '='.repeat((4 - (segment.length % 4)) % 4)
+  const payload = JSON.parse(atob(segment))
+  return payload.voltype
+}
+
+console.log(`Source volume type:      ${voltype(sourceVolume.token)}`)
+console.log(`Destination volume type: ${voltype(destVolume.token)}`)
+
+const sandbox = await Sandbox.create({
+  volumeMounts: {
+    '/mnt/source': sourceVolume,
+    '/mnt/dest': destVolume,
+  },
+})
+
+try {
+  const install = await sandbox.commands.run(
+    'sudo apt-get update && sudo apt-get install -y rsync',
+  )
+  if (install.exitCode !== 0) {
+    throw new Error(`rsync install failed: ${install.stderr}`)
+  }
+
+  const result = await sandbox.commands.run('rsync -a /mnt/source/ /mnt/dest/')
+  if (result.exitCode !== 0) {
+    throw new Error(`Copy failed: ${result.stderr}`)
+  }
+
+  const listing = await sandbox.commands.run('ls -la /mnt/dest')
+  console.log(listing.stdout)
+} finally {
+  await sandbox.kill()
+}
+```
+```python Python
+import base64
+import json
+import sys
+
+from e2b import Sandbox, Volume
+
+args = sys.argv[1:]
+if len(args) != 2:
+    raise SystemExit('Usage: copy_volume <source-volume> <dest-volume>')
+source_name, dest_name = args
+
+
+def find_volume_by_name(name):
+    return next((v for v in Volume.list() if v.name == name), None)
+
+
+def voltype(token):
+    payload = token.split('.')[1]
+    payload += '=' * (-len(payload) % 4)  # JWT segments omit base64 padding
+    return json.loads(base64.urlsafe_b64decode(payload))['voltype']
+
+
+source_info = find_volume_by_name(source_name)
+if source_info is None:
+    raise SystemExit(f'Source volume "{source_name}" does not exist')
+source_volume = Volume.connect(source_info.volume_id)
+
+dest_info = find_volume_by_name(dest_name)
+dest_volume = (
+    Volume.connect(dest_info.volume_id) if dest_info else Volume.create(dest_name)
+)
+
+print(f'Source volume type:      {voltype(source_volume.token)}')
+print(f'Destination volume type: {voltype(dest_volume.token)}')
+
+sandbox = Sandbox.create(
+    volume_mounts={
+        '/mnt/source': source_volume,
+        '/mnt/dest': dest_volume,
+    },
+)
+
+try:
+    install = sandbox.commands.run(
+        'sudo apt-get update && sudo apt-get install -y rsync',
+    )
+    if install.exit_code != 0:
+        raise RuntimeError(f'rsync install failed: {install.stderr}')
+
+    result = sandbox.commands.run('rsync -a /mnt/source/ /mnt/dest/')
+    if result.exit_code != 0:
+        raise RuntimeError(f'Copy failed: {result.stderr}')
+
+    listing = sandbox.commands.run('ls -la /mnt/dest')
+    print(listing.stdout)
+finally:
+    sandbox.kill()
+```
+</CodeGroup>
+
+## Usage
+
+Run the script with the source and destination volume names. For example, to copy everything from `prod-data` into `prod-data-backup`:
+
+<CodeGroup>
+```bash JavaScript & TypeScript
+export E2B_API_KEY=your-api-key
+npx tsx copy-volume.mts prod-data prod-data-backup
+```
+```bash Python
+export E2B_API_KEY=your-api-key
+python copy_volume.py prod-data prod-data-backup
+```
+</CodeGroup>
+
+On success it prints a listing of the destination so you can confirm the data landed. The sandbox is always shut down afterward, but both volumes (and their data) persist.

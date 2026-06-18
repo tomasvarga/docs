@@ -197,7 +197,8 @@
               "docs/volumes/read-write",
               "docs/volumes/info",
               "docs/volumes/upload",
-              "docs/volumes/download"
+              "docs/volumes/download",
+              "docs/volumes/migrate"
             ]
           },
           {
