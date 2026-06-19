@@ -19,8 +19,19 @@ jobs:
       pull-requests: write
 
     steps:
+      # The default GITHUB_TOKEN is not allowed to open pull requests, so we use
+      # the same GitHub App credentials as the SDK reference sync workflow.
+      - name: Generate GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.AUTOFIXER_APP_ID }}
+          private-key: ${{ secrets.AUTOFIXER_APP_SECRET }}
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -30,57 +41,43 @@ jobs:
       - name: Install dependencies
         run: pip install pyyaml
 
-      # Step 1: Generate spec from source
+      # Generate the spec straight into openapi-public.yml; the create-pull-request
+      # action below detects drift and only opens a PR when the file changes.
       - name: Generate OpenAPI spec
-        run: python3 scripts/generate_openapi_reference.py --output openapi-generated.yml
+        run: python3 scripts/generate_openapi_reference.py --output openapi-public.yml
 
-      # Step 2: Compare with committed spec
-      - name: Compare specs
-        id: diff
-        run: |
-          if diff -q openapi-public.yml openapi-generated.yml > /dev/null 2>&1; then
-            echo "Spec is up to date — nothing to do"
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "Spec has drifted from source"
-            echo "changed=true" >> $GITHUB_OUTPUT
-          fi
+      - name: Create or update PR
+        id: pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: automation/api-reference-update
+          delete-branch: true
+          add-paths: openapi-public.yml
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          commit-message: "docs: update openapi-public.yml from source specs"
+          title: "docs: update API reference spec"
+          body: |
+            ## OpenAPI Spec Update
 
-      # Step 3: Create PR if spec has drifted
-      - name: Create PR
-        if: steps.diff.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cp openapi-generated.yml openapi-public.yml
+            The generated `openapi-public.yml` has drifted from the source specs.
+            This PR updates it to match the latest upstream definitions.
 
-          BRANCH="api-spec-update-$(date +%Y-%m-%d)"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git checkout -b "$BRANCH"
-          git add openapi-public.yml
-          git commit -m "docs: update openapi-public.yml from source specs $(date +%Y-%m-%d)"
-          git push -u origin "$BRANCH"
-
-          gh pr create \
-            --title "Update API spec $(date +%Y-%m-%d)" \
-            --body "$(cat <<EOF
-          ## OpenAPI Spec Update
-
-          The generated \`openapi-public.yml\` has drifted from the source specs.
-          This PR updates it to match the latest upstream definitions.
-          EOF
-          )" \
-            --base main
+            - Workflow: `${{ github.workflow }}`
+            - Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Summary
         if: always()
         env:
-          CHANGED: ${{ steps.diff.outputs.changed }}
+          PR_OPERATION: ${{ steps.pr.outputs.pull-request-operation }}
+          PR_URL: ${{ steps.pr.outputs.pull-request-url }}
         run: |
           echo "## API Reference Spec Check" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Result | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Spec changed | ${CHANGED:-false} |" >> $GITHUB_STEP_SUMMARY
+          echo "| PR operation | ${PR_OPERATION:-No changes} |" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "$PR_URL" ]]; then
+            echo "| Pull request | $PR_URL |" >> $GITHUB_STEP_SUMMARY
+          fi

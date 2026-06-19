@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """Generate a merged OpenAPI spec for the full E2B developer-facing API.
 
-Fetches specs from e2b-dev/infra at specified commits (or latest main),
-combines multiple sources into a single openapi-public.yml:
+Combines multiple sources into a single openapi-public.yml:
 
-  Sandbox API (served on <port>-<sandboxID>.e2b.app):
+  Sandbox API (served on the shared sandbox host, sandbox.e2b.app):
+    The envd contract the SDKs actually use. The latest SDKs source their
+    envd spec from the public, curated copy in e2b-dev/E2B (spec/envd), NOT
+    from e2b-dev/infra (which also contains internal-only endpoints such as
+    /freeze, /collapse and /files/compose). We fetch from the same place so
+    the published docs match the SDKs exactly:
     - Proto-generated OpenAPI for process/filesystem Connect RPC
-    - Hand-written REST spec (packages/envd/spec/envd.yaml)
+    - Hand-written REST spec (spec/envd/envd.yaml)
     - Auto-generated stubs for streaming RPCs (parsed from .proto files)
 
   Platform API (served on api.e2b.app):
-    - Main E2B API spec (spec/openapi.yml)
+    - Main E2B API spec from e2b-dev/infra (spec/openapi.yml)
 
 Usage:
     python3 scripts/generate_openapi_reference.py [options]
 
 Options:
-    --envd-commit HASH   Commit/branch/tag in e2b-dev/infra for envd specs (default: main)
+    --envd-commit HASH   Commit/branch/tag in e2b-dev/E2B for envd specs (default: main)
     --api-commit HASH    Commit/branch/tag in e2b-dev/infra for platform API spec (default: main)
     --output FILE        Output path (default: openapi-public.yml in repo root)
 
@@ -45,10 +49,16 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCS_REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
 INFRA_REPO = "https://github.com/e2b-dev/infra.git"
+SDK_REPO = "https://github.com/e2b-dev/E2B.git"
 
-# Paths within e2b-dev/infra
-INFRA_ENVD_SPEC_DIR = "packages/envd/spec"
-INFRA_ENVD_REST_SPEC = "packages/envd/spec/envd.yaml"
+# Envd specs come from the SDK repo (e2b-dev/E2B). This is the curated, public
+# envd contract the latest SDKs generate their clients from - it excludes the
+# internal-only endpoints (/freeze, /collapse, /files/compose, ...) that live
+# in e2b-dev/infra and should not appear in the developer-facing docs.
+SDK_ENVD_SPEC_DIR = "spec/envd"
+SDK_ENVD_REST_SPEC = "spec/envd/envd.yaml"
+
+# The platform API spec (api.e2b.app) is still sourced from e2b-dev/infra.
 INFRA_API_SPEC = "spec/openapi.yml"
 
 DOCKER_IMAGE = "e2b-openapi-generator"
@@ -70,13 +80,19 @@ plugins:
       - format=yaml
 """
 
-# Server definitions for the two API surfaces
+# Server definitions for the two API surfaces.
+#
+# The latest SDKs reach envd over a single stable host (https://sandbox.<domain>)
+# and route to a specific sandbox/port with the E2b-Sandbox-Id and
+# E2b-Sandbox-Port request headers (see SANDBOX_ROUTING_HEADERS below). The old
+# per-sandbox host (https://{port}-{sandboxID}.<domain>) is no longer used for
+# the envd API; it survives only as the "direct" host for user port-forwarding
+# (sandbox.getHost(port)).
 SANDBOX_SERVER = {
-    "url": "https://{port}-{sandboxID}.e2b.app",
-    "description": "Sandbox API (envd) — runs inside each sandbox",
+    "url": "https://sandbox.{domain}",
+    "description": "Sandbox API (envd) - runs inside each sandbox",
     "variables": {
-        "port": {"default": "49983", "description": "Port number"},
-        "sandboxID": {"default": "$SANDBOX_ID", "description": "Sandbox identifier"},
+        "domain": {"default": "e2b.app", "description": "E2B domain"},
     },
 }
 
@@ -93,7 +109,7 @@ SANDBOX_AUTH_SCHEME = "SandboxAccessTokenAuth"
 SANDBOX_USER_SCHEME = "SandboxUserAuth"
 
 # ---------------------------------------------------------------------------
-# Proto parsing — auto-detect streaming RPCs
+# Proto parsing - auto-detect streaming RPCs
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -285,18 +301,17 @@ class FetchedSpecs:
 
 
 def docker_fetch_and_generate(envd_commit: str, api_commit: str) -> FetchedSpecs:
-    """Clone e2b-dev/infra at specified commits, run buf generate, return paths.
+    """Clone the envd and platform API sources, run buf generate, return paths.
 
-    Uses a single Docker container that:
-    1. Clones the repo at the envd commit
-    2. Copies envd spec files to /output/envd/
-    3. Runs buf generate on the proto files
-    4. If api_commit differs, checks out that commit
-    5. Copies spec/openapi.yml to /output/api/
+    envd specs come from e2b-dev/E2B (the public contract the SDKs use);
+    the platform API comes from e2b-dev/infra. A single Docker container:
+    1. Clones e2b-dev/E2B at the envd commit, copies spec/envd/ to /output/envd/
+    2. Runs buf generate on the proto files
+    3. Clones e2b-dev/infra at the api commit, copies spec/openapi.yml to /output/api/
     """
-    print(f"==> Fetching specs from e2b-dev/infra")
-    print(f"    envd commit: {envd_commit}")
-    print(f"    api commit:  {api_commit}")
+    print(f"==> Fetching specs")
+    print(f"    envd ({SDK_REPO}): {envd_commit}")
+    print(f"    api  ({INFRA_REPO}): {api_commit}")
 
     tmpdir = tempfile.mkdtemp(prefix="e2b-openapi-")
     output_dir = tmpdir
@@ -305,55 +320,34 @@ def docker_fetch_and_generate(envd_commit: str, api_commit: str) -> FetchedSpecs
     for subdir in ("envd", "api", "generated"):
         os.makedirs(os.path.join(output_dir, subdir), exist_ok=True)
 
-    # Build the shell script that runs inside Docker
-    # It handles both commits in a single clone
-    same_commit = envd_commit == api_commit
-    if same_commit:
-        docker_script = f"""
+    # Build the shell script that runs inside Docker. The two sources are
+    # cloned independently. `--depth 1 --branch` works for branches and tags;
+    # the fallback handles arbitrary commit hashes.
+    docker_script = f"""
 set -e
-echo "--- Cloning e2b-dev/infra at {envd_commit} ---"
-git clone --depth 1 --branch {envd_commit} {INFRA_REPO} /repo 2>/dev/null || {{
-    git clone {INFRA_REPO} /repo
-    cd /repo
+echo "--- Cloning e2b-dev/E2B (envd specs) at {envd_commit} ---"
+git clone --depth 1 --branch {envd_commit} {SDK_REPO} /sdk 2>/dev/null || {{
+    git clone {SDK_REPO} /sdk
+    cd /sdk
     git checkout {envd_commit}
 }}
-cd /repo
 
 echo "--- Copying envd specs ---"
-cp -r {INFRA_ENVD_SPEC_DIR}/. /output/envd/
-
-echo "--- Copying platform API spec ---"
-cp {INFRA_API_SPEC} /output/api/openapi.yml
+cp -r /sdk/{SDK_ENVD_SPEC_DIR}/. /output/envd/
 
 echo "--- Running buf generate ---"
-cd {INFRA_ENVD_SPEC_DIR}
+cd /sdk/{SDK_ENVD_SPEC_DIR}
 buf generate --template /config/buf.gen.yaml
 
-echo "--- Done ---"
-"""
-    else:
-        docker_script = f"""
-set -e
-echo "--- Cloning e2b-dev/infra ---"
-git clone {INFRA_REPO} /repo
-cd /repo
-
-echo "--- Checking out envd commit: {envd_commit} ---"
-git checkout {envd_commit}
-
-echo "--- Copying envd specs ---"
-cp -r {INFRA_ENVD_SPEC_DIR}/. /output/envd/
-
-echo "--- Running buf generate ---"
-cd {INFRA_ENVD_SPEC_DIR}
-buf generate --template /config/buf.gen.yaml
-cd /repo
-
-echo "--- Checking out api commit: {api_commit} ---"
-git checkout {api_commit}
+echo "--- Cloning e2b-dev/infra (platform API) at {api_commit} ---"
+git clone --depth 1 --branch {api_commit} {INFRA_REPO} /infra 2>/dev/null || {{
+    git clone {INFRA_REPO} /infra
+    cd /infra
+    git checkout {api_commit}
+}}
 
 echo "--- Copying platform API spec ---"
-cp {INFRA_API_SPEC} /output/api/openapi.yml
+cp /infra/{INFRA_API_SPEC} /output/api/openapi.yml
 
 echo "--- Done ---"
 """
@@ -430,7 +424,7 @@ def merge_specs(raw_docs: list[str], protected_paths: set[str] | None = None) ->
     """Merge multiple raw YAML OpenAPI docs into a single spec.
 
     Args:
-        raw_docs: Raw YAML strings to merge (order matters — later docs
+        raw_docs: Raw YAML strings to merge (order matters - later docs
                   overwrite earlier ones for paths and component entries).
         protected_paths: Paths that should not be overwritten once set.
                          Used to prevent the platform API from overwriting
@@ -444,7 +438,9 @@ def merge_specs(raw_docs: list[str], protected_paths: set[str] | None = None) ->
             "description": (
                 "Complete E2B developer API. "
                 "Platform endpoints are served on api.e2b.app. "
-                "Sandbox endpoints (envd) are served on {port}-{sandboxID}.e2b.app."
+                "Sandbox endpoints (envd) are served on the shared sandbox host "
+                "(sandbox.e2b.app); target a specific sandbox with the "
+                "E2b-Sandbox-Id and E2b-Sandbox-Port headers."
             ),
         },
         "servers": [PLATFORM_SERVER],
@@ -512,6 +508,62 @@ AUTH_EXEMPT_ENDPOINTS = {
 }
 
 
+# Headers the SDKs send on every envd request to route it to a specific
+# sandbox over the shared sandbox host (https://sandbox.<domain>). They
+# replace the old per-sandbox subdomain (https://{port}-{sandboxID}.<domain>).
+ENVD_PORT_DEFAULT = 49983
+SANDBOX_ROUTING_HEADERS = [
+    {
+        "name": "E2b-Sandbox-Id",
+        "in": "header",
+        "required": True,
+        "description": (
+            "Identifier of the target sandbox. Routes the request to that "
+            "sandbox's envd over the shared sandbox host."
+        ),
+        "schema": {"type": "string"},
+    },
+    {
+        "name": "E2b-Sandbox-Port",
+        "in": "header",
+        "required": True,
+        "description": (
+            f"Port envd listens on inside the sandbox (default {ENVD_PORT_DEFAULT})."
+        ),
+        "schema": {"type": "integer", "default": ENVD_PORT_DEFAULT},
+    },
+]
+
+
+def add_sandbox_routing_headers(spec: dict[str, Any], envd_paths: set[str]) -> None:
+    """Add the sandbox-routing headers to every envd operation.
+
+    The latest SDKs no longer encode the sandbox and port in the host
+    (https://{port}-{sandboxID}.<domain>). Instead they hit the stable
+    https://sandbox.<domain> host and identify the target sandbox with the
+    E2b-Sandbox-Id and E2b-Sandbox-Port headers. We document them on every
+    sandbox endpoint so the reference matches the SDK behavior.
+    """
+    count = 0
+    for path in envd_paths:
+        path_item = spec["paths"].get(path)
+        if not path_item:
+            continue
+        for method in ("get", "post", "put", "patch", "delete"):
+            op = path_item.get(method)
+            if not op:
+                continue
+            params = op.setdefault("parameters", [])
+            existing = {p.get("name") for p in params if isinstance(p, dict)}
+            # Insert at the front, preserving header order, skipping duplicates.
+            for header in reversed(SANDBOX_ROUTING_HEADERS):
+                if header["name"] not in existing:
+                    params.insert(0, copy.deepcopy(header))
+            count += 1
+    if count:
+        print(f"==> Added sandbox-routing headers to {count} envd operations")
+
+
 def apply_sandbox_auth(spec: dict[str, Any], envd_paths: set[str]) -> None:
     """Ensure all envd/sandbox endpoints declare the SandboxAccessTokenAuth security.
 
@@ -539,7 +591,7 @@ def fix_security_schemes(spec: dict[str, Any]) -> None:
     """Fix invalid apiKey securityScheme syntax.
 
     The source envd.yaml uses `scheme: header` which is wrong for
-    type: apiKey — OpenAPI requires `in: header` instead.
+    type: apiKey - OpenAPI requires `in: header` instead.
     """
     for scheme in spec.get("components", {}).get("securitySchemes", {}).values():
         if scheme.get("type") == "apiKey" and "scheme" in scheme:
@@ -630,7 +682,7 @@ STREAMING_ENDPOINTS = {
 
 # Connect-RPC endpoints that accept an optional user via Authorization header.
 # The SDK sends: Authorization: Basic <base64("username:")>
-# This is not part of the protobuf message — it must be added as an OpenAPI parameter.
+# This is not part of the protobuf message - it must be added as an OpenAPI parameter.
 USER_HEADER_ENDPOINTS = {
     "/process.Process/Start",
     "/filesystem.Filesystem/ListDir",
@@ -667,7 +719,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             req.remove("volumeMounts")
             fixes.append(f"{name}: made 'volumeMounts' optional")
 
-    # 3. LogLevel enum too strict — server returns empty/whitespace values
+    # 3. LogLevel enum too strict - server returns empty/whitespace values
     log_level = schemas.get("LogLevel")
     if log_level:
         if "enum" in log_level:
@@ -691,7 +743,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
                 "description": "Total virtual memory in MiB",
             }
             fixes.append("Metrics: added 'mem_total_mib'")
-        # Byte and MiB values can exceed int32 — set format: int64
+        # Byte and MiB values can exceed int32 - set format: int64
         int64_fields = ("mem_total", "mem_used", "disk_used", "disk_total",
                         "mem_used_mib", "mem_total_mib")
         for field in int64_fields:
@@ -737,7 +789,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             params.insert(1, connect_timeout_param)
         fixes.append(f"{ep_path}: content-type → application/connect+json, added Connect headers")
 
-    # 6. EndEvent.exitCode not populated — API returns status string instead
+    # 6. EndEvent.exitCode not populated - API returns status string instead
     end_event = schemas.get("process.ProcessEvent.EndEvent")
     if end_event and "properties" in end_event:
         ec = end_event["properties"].get("exitCode")
@@ -755,7 +807,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             )
         fixes.append("EndEvent: marked exitCode as deprecated, documented status string")
 
-    # 7. envdAccessToken description misleading — only returned when secure: true
+    # 7. envdAccessToken description misleading - only returned when secure: true
     for schema_name in ("Sandbox", "SandboxDetail"):
         schema = schemas.get(schema_name, {})
         eat = schema.get("properties", {}).get("envdAccessToken")
@@ -768,7 +820,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             )
     fixes.append("envdAccessToken: clarified secure-only behavior, marked nullable")
 
-    # 8. Sandbox.domain always null — mark as deprecated
+    # 8. Sandbox.domain always null - mark as deprecated
     for schema_name in ("Sandbox", "SandboxDetail"):
         schema = schemas.get(schema_name, {})
         dom = schema.get("properties", {}).get("domain")
@@ -797,7 +849,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
         if word in irregulars:
             return irregulars[word]
         if word.endswith("sses"):
-            return word  # "addresses" etc — skip
+            return word  # "addresses" etc - skip
         if word.endswith("ies"):
             return word[:-3] + "y"
         if word.endswith("ses") or word.endswith("xes") or word.endswith("zes"):
@@ -831,7 +883,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
                     i += 1
                     continue
                 if seg.startswith("{") and seg.endswith("}"):
-                    # Path param — singularize the previous part if it was a collection
+                    # Path param - singularize the previous part if it was a collection
                     if parts:
                         parts[-1] = _singularize(parts[-1])
                     i += 1
@@ -969,7 +1021,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
                     param["description"] = schema.pop("description")
                     fixes.append(f"{ep_path}: moved 'end' description out of schema")
 
-    # 18. EntryInfo.type enum incomplete — missing "directory"
+    # 18. EntryInfo.type enum incomplete - missing "directory"
     entry_info = schemas.get("EntryInfo")
     if entry_info:
         type_prop = entry_info.get("properties", {}).get("type")
@@ -1016,7 +1068,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             )
             fixes.append("filesystem.EntryInfo.size: documented integer/string union type")
 
-    # 23. GET /health 502 uses application/connect+json — change to application/json
+    # 23. GET /health 502 uses application/connect+json - change to application/json
     if health_get:
         for status_code, resp in health_get.get("responses", {}).items():
             if not isinstance(resp, dict):
@@ -1026,7 +1078,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
                 content["application/json"] = content.pop("application/connect+json")
                 fixes.append(f"/health {status_code}: content-type → application/json")
 
-    # 24. PATCH /templates/{templateID} (deprecated) returns empty object —
+    # 24. PATCH /templates/{templateID} (deprecated) returns empty object -
     #     use TemplateUpdateResponse like v2
     patch_v1_path = paths.get("/templates/{templateID}", {})
     patch_v1 = patch_v1_path.get("patch")
@@ -1165,43 +1217,73 @@ def add_user_auth_security(spec: dict[str, Any]) -> None:
         print(f"==> Added optional user auth (Basic) to {count} Connect-RPC endpoints")
 
 
-def _strip_supabase_security(path_item: dict[str, Any]) -> None:
-    """Remove Supabase security entries from all operations in a path item.
+_HTTP_METHODS = ("get", "post", "put", "patch", "delete", "head", "options")
 
-    Each operation's security list is an OR of auth options. We remove
-    any option that references a Supabase scheme, keeping the rest.
+# Substrings identifying internal-only auth schemes. An operation's security
+# list is an OR of options; an option (dict) may require several schemes at
+# once (AND). We treat any option referencing one of these as internal.
+#   - supabase / authprovider: the dashboard/session auth (token + team header).
+#     "AuthProvider*" is the current replacement for the older "Supabase*"
+#     schemes; both are session auth for the web app, not programmatic access.
+#   - admin: internal admin auth.
+# Public, documented auth (ApiKeyAuth, AccessTokenAuth) is kept.
+INTERNAL_SCHEME_MARKERS = ("supabase", "authprovider", "admin")
+
+
+def _is_internal_option(sec_req: dict[str, Any]) -> bool:
+    """Whether a single security option references an internal-only scheme."""
+    return any(
+        marker in key.lower()
+        for key in sec_req
+        for marker in INTERNAL_SCHEME_MARKERS
+    )
+
+
+def _strip_internal_security(path_item: dict[str, Any]) -> None:
+    """Drop internal-only auth options (Supabase, Admin) from every operation.
+
+    Each operation's security list is an OR of auth options. We remove the
+    options that reference internal schemes while keeping the public ones
+    (e.g. ApiKeyAuth), so the docs only advertise auth a normal user can use.
     """
-    for method in ("get", "post", "put", "patch", "delete", "head", "options"):
+    for method in _HTTP_METHODS:
         op = path_item.get(method)
         if not op or "security" not in op:
             continue
         op["security"] = [
             sec_req for sec_req in op["security"]
-            if not any("supabase" in key.lower() for key in sec_req)
+            if not _is_internal_option(sec_req)
         ]
 
 
-def _has_admin_token_security(path_item: dict[str, Any]) -> bool:
-    """Check if any operation in a path item references AdminToken auth."""
-    for method in ("get", "post", "put", "patch", "delete", "head", "options"):
-        op = path_item.get(method)
-        if not op:
-            continue
-        for sec_req in op.get("security", []):
-            if any("admin" in key.lower() for key in sec_req):
-                return True
-    return False
+def _is_admin_only_op(op: dict[str, Any]) -> bool:
+    """Whether an operation can ONLY be called with admin auth.
+
+    Public endpoints in the platform spec list admin auth as one of several
+    accepted options (admins may call anything). Such endpoints are NOT
+    admin-only - a normal API key works too. An operation is admin-only only
+    when every one of its security options requires an admin scheme.
+    """
+    sec = op.get("security")
+    if not sec:  # None or [] → no auth required, so not admin-only
+        return False
+    return all(
+        any("admin" in key.lower() for key in sec_req)
+        for sec_req in sec
+    )
 
 
 def filter_paths(spec: dict[str, Any]) -> None:
     """Clean up paths that should not appear in the public spec.
 
     - Removes access-token, api-key endpoints
-    - Removes endpoints using AdminToken auth
-    - Strips Supabase auth entries from all operations
-    - Removes Supabase and AdminToken securityScheme definitions
+    - Removes operations that REQUIRE admin auth (no public option); a path is
+      dropped entirely only when it has no public operations left
+    - Strips internal auth options (Supabase, AuthProvider, Admin) from the
+      remaining operations, keeping public auth (ApiKeyAuth, AccessTokenAuth)
+    - Removes the internal securityScheme definitions
     """
-    # Remove excluded paths
+    # Remove explicitly excluded paths
     excluded_prefixes = ("/access-tokens", "/api-keys")
     excluded_exact = {"/init"}
     to_remove = [
@@ -1209,23 +1291,34 @@ def filter_paths(spec: dict[str, Any]) -> None:
         if p.startswith(excluded_prefixes) or p in excluded_exact
     ]
 
-    # Remove admin-only paths
+    # Drop admin-only operations; remove a path once no operations remain.
+    removed_ops = 0
     for path, path_item in spec["paths"].items():
-        if path not in to_remove and _has_admin_token_security(path_item):
+        if path in to_remove:
+            continue
+        for method in _HTTP_METHODS:
+            op = path_item.get(method)
+            if op and _is_admin_only_op(op):
+                del path_item[method]
+                removed_ops += 1
+        if not any(m in path_item for m in _HTTP_METHODS):
             to_remove.append(path)
 
     for path in to_remove:
         del spec["paths"][path]
-    if to_remove:
-        print(f"==> Removed {len(to_remove)} paths (admin, internal)")
+    if to_remove or removed_ops:
+        print(f"==> Removed {len(to_remove)} paths and {removed_ops} admin-only operations (admin, internal)")
 
-    # Strip supabase security entries from all operations
+    # Strip internal (Supabase/Admin) auth options from the remaining operations
     for path_item in spec["paths"].values():
-        _strip_supabase_security(path_item)
+        _strip_internal_security(path_item)
 
-    # Remove supabase and admin security scheme definitions
+    # Remove the internal (Supabase / AuthProvider / Admin) security scheme defs
     schemes = spec.get("components", {}).get("securitySchemes", {})
-    remove_keys = [k for k in schemes if "supabase" in k.lower() or "admin" in k.lower()]
+    remove_keys = [
+        k for k in schemes
+        if any(marker in k.lower() for marker in INTERNAL_SCHEME_MARKERS)
+    ]
     for key in remove_keys:
         del schemes[key]
     if remove_keys:
@@ -1449,9 +1542,8 @@ def main() -> None:
     print("=" * 60)
     print("  E2B OpenAPI Reference Generator")
     print("=" * 60)
-    print(f"  Source repo:    {INFRA_REPO}")
-    print(f"  envd commit:    {envd_commit}")
-    print(f"  api commit:     {api_commit}")
+    print(f"  envd source:    {SDK_REPO} @ {envd_commit}")
+    print(f"  api source:     {INFRA_REPO} @ {api_commit}")
     print(f"  Output:         {output_path}")
     print()
 
@@ -1498,6 +1590,9 @@ def main() -> None:
 
         # Ensure all sandbox endpoints declare auth
         apply_sandbox_auth(merged, envd_paths)
+
+        # Document the sandbox-routing headers used by the shared sandbox host
+        add_sandbox_routing_headers(merged, envd_paths)
 
         # Add 502 sandbox-not-found to all envd endpoints
         add_sandbox_not_found(merged, envd_paths)

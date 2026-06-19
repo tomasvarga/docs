@@ -3,7 +3,8 @@ info:
   title: E2B API
   version: 0.1.0
   description: Complete E2B developer API. Platform endpoints are served on api.e2b.app.
-    Sandbox endpoints (envd) are served on {port}-{sandboxID}.e2b.app.
+    Sandbox endpoints (envd) are served on the shared sandbox host (sandbox.e2b.app);
+    target a specific sandbox with the E2b-Sandbox-Id and E2b-Sandbox-Port headers.
 servers:
 - &id001
   url: https://api.e2b.app
@@ -32,8 +33,7 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
-                  - $ref: '#/components/schemas/ListedSandbox'
+                  $ref: '#/components/schemas/ListedSandbox'
         '401':
           $ref: '#/components/responses/401'
         '400':
@@ -106,8 +106,7 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
-                  - $ref: '#/components/schemas/ListedSandbox'
+                  $ref: '#/components/schemas/ListedSandbox'
         '401':
           $ref: '#/components/responses/401'
         '400':
@@ -459,16 +458,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-              - timeout
-              properties:
-                timeout:
-                  description: Timeout in seconds from the current time after which
-                    the sandbox should expire
-                  type: integer
-                  format: int32
-                  minimum: 0
+              $ref: '#/components/schemas/SandboxTimeoutRequest'
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -487,8 +477,8 @@ paths:
   /sandboxes/{sandboxID}/network:
     put:
       description: Update the network configuration for a running sandbox. Replaces
-        the current egress rules with the provided configuration. Omitting both fields
-        clears all egress rules.
+        the current egress rules with the provided configuration. Omitting field clears
+        it.
       security:
       - ApiKeyAuth: []
       tags:
@@ -498,22 +488,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                allowOut:
-                  type: array
-                  description: List of allowed destinations for egress traffic. Each
-                    entry can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address
-                    (e.g. "8.8.8.8"), or a domain name (e.g. "example.com", "*.example.com").
-                    Allowed entries always take precedence over denied entries.
-                  items:
-                    type: string
-                denyOut:
-                  type: array
-                  description: List of denied CIDR blocks or IP addresses for egress
-                    traffic. Domain names are not supported for deny rules.
-                  items:
-                    type: string
+              $ref: '#/components/schemas/SandboxNetworkUpdateConfig'
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -541,14 +516,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                duration:
-                  description: Duration for which the sandbox should be kept alive
-                    in seconds
-                  type: integer
-                  maximum: 3600
-                  minimum: 0
+              $ref: '#/components/schemas/SandboxRefreshRequest'
       parameters:
       - $ref: '#/components/parameters/sandboxID'
       responses:
@@ -580,13 +548,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  description: Optional name for the snapshot template. If a snapshot
-                    template with this name already exists, a new build will be assigned
-                    to the existing template instead of creating a new one.
+              $ref: '#/components/schemas/SandboxSnapshotRequest'
       responses:
         '201':
           description: Snapshot created successfully
@@ -661,6 +623,8 @@ paths:
           $ref: '#/components/responses/400'
         '401':
           $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplatesV3
@@ -756,8 +720,7 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
-                  - $ref: '#/components/schemas/Template'
+                  $ref: '#/components/schemas/Template'
         '401':
           $ref: '#/components/responses/401'
         '500':
@@ -1330,21 +1293,33 @@ paths:
                   sandboxID:
                     type: string
                     description: Identifier of the sandbox
+      parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       operationId: getHealth
       security: []
       tags:
       - Envd
     servers:
     - &id004
-      url: https://{port}-{sandboxID}.e2b.app
-      description: Sandbox API (envd) — runs inside each sandbox
+      url: https://sandbox.{domain}
+      description: Sandbox API (envd) - runs inside each sandbox
       variables:
-        port:
-          default: '49983'
-          description: Port number
-        sandboxID:
-          default: $SANDBOX_ID
-          description: Sandbox identifier
+        domain:
+          default: e2b.app
+          description: E2B domain
   /metrics:
     get:
       summary: Get the stats of the service
@@ -1359,6 +1334,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Metrics'
         '502': *id003
+      parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       operationId: getMetrics
       tags:
       - Envd
@@ -1377,6 +1367,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvVars'
         '502': *id003
+      parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       operationId: getEnvVars
       tags:
       - Envd
@@ -1390,6 +1395,20 @@ paths:
       security:
       - *id005
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - $ref: '#/components/parameters/FilePath'
       - $ref: '#/components/parameters/User'
       - $ref: '#/components/parameters/Signature'
@@ -1402,63 +1421,95 @@ paths:
               schema:
                 type: string
                 format: binary
-                description: The raw file content
-        '400':
-          description: Invalid path
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                message: path '/home/user/docs' is a directory
-                code: 400
+                description: The file content
         '401':
           description: Invalid user
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: 'error looking up user ''nonexistent'': user: unknown user
-                  nonexistent'
-                code: 401
+        '400':
+          description: Invalid path
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: File not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: path '/home/user/missing.txt' does not exist
-                code: 404
-        '406':
-          description: Requested encoding is not supported
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                message: 'no acceptable encoding found, supported: [identity, gzip]'
-                code: 406
         '500':
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: 'error opening file ''/home/user/file.txt'': permission denied'
-                code: 500
         '502': *id003
       operationId: downloadFile
     post:
       summary: Upload a file and ensure the parent directories exist. If the file
         exists, it will be overwritten.
+      description: 'Any request header of the form `X-Metadata-<key>: <value>` is
+        persisted
+
+        as a user-defined extended attribute on the uploaded file. The
+
+        `X-Metadata-` prefix is stripped and the remaining header name is
+
+        lowercased to form the metadata key; the resulting map is returned on
+
+        `EntryInfo` lookups (e.g. `Stat`, `ListDir`).
+
+
+        Each upload replaces the file''s metadata with the keys provided in
+
+        that request: keys previously stored but absent from the new request
+
+        are removed, and an upload that sends no `X-Metadata-*` header clears
+
+        all existing metadata.
+
+
+        Both keys and values must be printable US-ASCII (bytes `0x20`-`0x7E`)
+
+        and are rejected with HTTP 400 otherwise. Each key is capped at 246
+
+        bytes (the Linux VFS xattr-name limit minus the namespace prefix), and
+
+        the combined size of all metadata on a file (keys plus values, with the
+
+        namespace prefix counted per key) is capped at 4096 bytes to stay within
+
+        the filesystem''s per-inode xattr budget. Multiple files in a single
+
+        multipart upload receive the same metadata. If the same
+
+        `X-Metadata-<key>` header is sent more than once, only the first
+
+        value is used.
+
+        '
       tags:
       - Filesystem
       security:
       - *id005
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - $ref: '#/components/parameters/FilePath'
       - $ref: '#/components/parameters/User'
       - $ref: '#/components/parameters/Signature'
@@ -1474,84 +1525,32 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EntryInfo'
-              example:
-              - path: /home/user/hello.txt
-                name: hello.txt
-                type: file
         '400':
           description: Invalid path
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: path '/home/user/docs' is a directory
-                code: 400
         '401':
           description: Invalid user
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: 'error looking up user ''nonexistent'': user: unknown user
-                  nonexistent'
-                code: 401
         '500':
           description: Internal server error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: 'error opening file ''/home/user/file.txt'': permission denied'
-                code: 500
         '507':
           description: Not enough disk space
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                message: not enough disk space available
-                code: 507
         '502': *id003
       operationId: uploadFile
-    servers:
-    - *id004
-  /files/compose:
-    post:
-      summary: Compose multiple files into a single file using zero-copy concatenation.
-        Source files are deleted after successful composition.
-      tags:
-      - Filesystem
-      security:
-      - *id005
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ComposeRequest'
-      responses:
-        '200':
-          description: Files composed successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EntryInfo'
-        '400':
-          $ref: '#/components/responses/InvalidPath'
-        '401':
-          $ref: '#/components/responses/InvalidUser'
-        '404':
-          $ref: '#/components/responses/FileNotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-        '507':
-          $ref: '#/components/responses/NotEnoughDiskSpace'
-        '502': *id003
-      operationId: postFilesCompose
     servers:
     - *id004
   /filesystem.Filesystem/CreateWatcher:
@@ -1562,6 +1561,20 @@ paths:
       description: Non-streaming versions of WatchDir
       operationId: filesystem.Filesystem.CreateWatcher
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1597,6 +1610,20 @@ paths:
       summary: GetWatcherEvents
       operationId: filesystem.Filesystem.GetWatcherEvents
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1631,6 +1658,20 @@ paths:
       summary: ListDir
       operationId: filesystem.Filesystem.ListDir
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1666,6 +1707,20 @@ paths:
       summary: MakeDir
       operationId: filesystem.Filesystem.MakeDir
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1701,6 +1756,20 @@ paths:
       summary: Move
       operationId: filesystem.Filesystem.Move
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1736,6 +1805,20 @@ paths:
       summary: Remove
       operationId: filesystem.Filesystem.Remove
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1771,6 +1854,20 @@ paths:
       summary: RemoveWatcher
       operationId: filesystem.Filesystem.RemoveWatcher
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1805,6 +1902,20 @@ paths:
       summary: Stat
       operationId: filesystem.Filesystem.Stat
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1869,6 +1980,20 @@ paths:
         in: header
         schema:
           $ref: '#/components/schemas/connect-timeout-header'
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
     servers:
     - *id004
   /process.Process/CloseStdin:
@@ -1880,6 +2005,20 @@ paths:
         \ processes. For PTY, send Ctrl+D (0x04) instead."
       operationId: process.Process.CloseStdin
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1933,6 +2072,20 @@ paths:
       parameters:
       - *id006
       - *id007
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
     servers:
     - *id004
   /process.Process/List:
@@ -1942,6 +2095,20 @@ paths:
       summary: List
       operationId: process.Process.List
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -1976,6 +2143,20 @@ paths:
       summary: SendInput
       operationId: process.Process.SendInput
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -2010,6 +2191,20 @@ paths:
       summary: SendSignal
       operationId: process.Process.SendSignal
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -2064,6 +2259,20 @@ paths:
       parameters:
       - *id006
       - *id007
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
     servers:
     - *id004
   /process.Process/StreamInput:
@@ -2093,6 +2302,20 @@ paths:
       parameters:
       - *id006
       - *id007
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
     servers:
     - *id004
   /process.Process/Update:
@@ -2102,6 +2325,20 @@ paths:
       summary: Update
       operationId: process.Process.Update
       parameters:
+      - name: E2b-Sandbox-Id
+        in: header
+        required: true
+        description: Identifier of the target sandbox. Routes the request to that
+          sandbox's envd over the shared sandbox host.
+        schema:
+          type: string
+      - name: E2b-Sandbox-Port
+        in: header
+        required: true
+        description: Port envd listens on inside the sandbox (default 49983).
+        schema:
+          type: integer
+          default: 49983
       - name: Connect-Protocol-Version
         in: header
         required: true
@@ -2144,8 +2381,7 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
-                  - $ref: '#/components/schemas/Team'
+                  $ref: '#/components/schemas/Team'
         '401':
           $ref: '#/components/responses/401'
         '500':
@@ -2283,16 +2519,14 @@ components:
       name: path
       in: query
       required: false
-      description: Path to the file, URL encoded. Can be relative to the user's home
-        directory (e.g. "file.txt" resolves to ~/file.txt).
+      description: Path to the file, URL encoded. Can be relative to user's home directory.
       schema:
         type: string
     User:
       name: username
       in: query
       required: false
-      description: User for setting file ownership and resolving relative paths. Defaults
-        to the sandbox's default user.
+      description: User used for setting the owner, or resolving relative paths.
       schema:
         type: string
     Signature:
@@ -2306,8 +2540,8 @@ components:
       name: signature_expiration
       in: query
       required: false
-      description: Unix timestamp (seconds) after which the signature expires. Only
-        used with the signature parameter.
+      description: Signature expiration used for defining the expiration time of the
+        signature.
       schema:
         type: integer
     templateID:
@@ -2401,12 +2635,6 @@ components:
               file:
                 type: string
                 format: binary
-        application/octet-stream:
-          schema:
-            type: string
-            format: binary
-            description: Raw file content. The 'path' query parameter is required
-              when using this content type.
   responses:
     UploadSuccess:
       description: The file was uploaded successfully.
@@ -2416,10 +2644,6 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/EntryInfo'
-          example:
-          - path: /home/user/hello.txt
-            name: hello.txt
-            type: file
     DownloadSuccess:
       description: Entire file downloaded successfully.
       content:
@@ -2427,61 +2651,37 @@ components:
           schema:
             type: string
             format: binary
-            description: The raw file content
-    NotAcceptable:
-      description: Requested encoding is not supported
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            message: 'no acceptable encoding found, supported: [identity, gzip]'
-            code: 406
+            description: The file content
     InvalidPath:
       description: Invalid path
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-          example:
-            message: path '/home/user/docs' is a directory
-            code: 400
     InternalServerError:
       description: Internal server error
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-          example:
-            message: 'error opening file ''/home/user/file.txt'': permission denied'
-            code: 500
     FileNotFound:
       description: File not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-          example:
-            message: path '/home/user/missing.txt' does not exist
-            code: 404
     InvalidUser:
       description: Invalid user
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-          example:
-            message: 'error looking up user ''nonexistent'': user: unknown user nonexistent'
-            code: 401
     NotEnoughDiskSpace:
       description: Not enough disk space
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-          example:
-            message: not enough disk space available
-            code: 507
     '400':
       description: Bad request
       content:
@@ -2550,6 +2750,12 @@ components:
           enum:
           - file
           - directory
+        metadata:
+          type: object
+          description: User-defined metadata stored as extended attributes on the
+            file.
+          additionalProperties:
+            type: string
       type: object
     EnvVars:
       additionalProperties:
@@ -2579,17 +2785,6 @@ components:
           type: integer
           description: Used virtual memory in bytes
           format: int64
-        mem_cache:
-          type: integer
-          description: Cached memory (page cache) in bytes
-        mem_total_mib:
-          type: integer
-          description: Total virtual memory in MiB
-          format: int64
-        mem_used_mib:
-          type: integer
-          description: Used virtual memory in MiB
-          format: int64
         disk_used:
           type: integer
           description: Used disk space in bytes
@@ -2598,23 +2793,14 @@ components:
           type: integer
           description: Total disk space in bytes
           format: int64
-    ComposeRequest:
-      type: object
-      required:
-      - source_paths
-      - destination
-      properties:
-        source_paths:
-          type: array
-          items:
-            type: string
-          description: Ordered list of source file paths to concatenate
-        destination:
-          type: string
-          description: Destination file path for the composed file
-        username:
-          type: string
-          description: User for setting ownership and resolving relative paths
+        mem_used_mib:
+          type: integer
+          description: Used virtual memory in MiB
+          format: int64
+        mem_total_mib:
+          type: integer
+          description: Total virtual memory in MiB
+          format: int64
     connect-protocol-version:
       type: number
       title: Connect-Protocol-Version
@@ -2633,6 +2819,17 @@ components:
         recursive:
           type: boolean
           title: recursive
+        includeEntry:
+          type: boolean
+          title: include_entry
+          description: If true, each FilesystemEvent includes the EntryInfo of the
+            affected entry, when available.
+        allowNetworkMounts:
+          type: boolean
+          title: allow_network_mounts
+          description: "If true, allows watching paths on network filesystem mounts\
+            \ (NFS, CIFS, SMB, FUSE).\n Events on network mounts may be unreliable\
+            \ or not delivered at all."
       title: CreateWatcherRequest
       additionalProperties: false
     filesystem.CreateWatcherResponse:
@@ -2685,6 +2882,16 @@ components:
           title: symlink_target
           description: If the entry is a symlink, this field contains the target of
             the symlink.
+        metadata:
+          type: object
+          title: metadata
+          additionalProperties:
+            type: string
+            title: value
+          description: "User-defined metadata stored as extended attributes (xattrs)\
+            \ on the file.\n Keys live under the `user.e2b.` xattr namespace; the\
+            \ prefix is stripped here.\n Plain `user.*` xattrs written by other tooling\
+            \ are not reflected."
       title: EntryInfo
       additionalProperties: false
     filesystem.EventType:
@@ -2704,7 +2911,6 @@ components:
       - FILE_TYPE_UNSPECIFIED
       - FILE_TYPE_FILE
       - FILE_TYPE_DIRECTORY
-      - FILE_TYPE_SYMLINK
     filesystem.FilesystemEvent:
       type: object
       properties:
@@ -2714,6 +2920,15 @@ components:
         type:
           title: type
           $ref: '#/components/schemas/filesystem.EventType'
+        entry:
+          oneOf:
+          - $ref: '#/components/schemas/filesystem.EntryInfo'
+          - type: 'null'
+          title: entry
+          description: "Info of the entry that triggered the event. Only populated\
+            \ when include_entry\n was requested and the entry could be stat-ed (e.g.\
+            \ not set for remove/rename-away\n events, where the entry no longer exists\
+            \ at this path)."
       title: FilesystemEvent
       additionalProperties: false
     filesystem.GetWatcherEventsRequest:
@@ -2839,6 +3054,17 @@ components:
         recursive:
           type: boolean
           title: recursive
+        includeEntry:
+          type: boolean
+          title: include_entry
+          description: If true, each FilesystemEvent includes the EntryInfo of the
+            affected entry, when available.
+        allowNetworkMounts:
+          type: boolean
+          title: allow_network_mounts
+          description: "If true, allows watching paths on network filesystem mounts\
+            \ (NFS, CIFS, SMB, FUSE).\n Events on network mounts may be unreliable\
+            \ or not delivered at all."
       title: WatchDirRequest
       additionalProperties: false
     filesystem.WatchDirResponse:
@@ -3226,8 +3452,6 @@ components:
           - boolean
           - 'null'
           title: stdin
-          description: "This is optional for backwards compatibility.\n We default\
-            \ to true. New SDK versions will set this to false by default."
       title: StartRequest
       additionalProperties: false
     process.StartResponse:
@@ -3335,7 +3559,11 @@ components:
           format: uuid
           description: Identifier of the user
         email:
-          type: string
+          type:
+          - string
+          - 'null'
+          deprecated: true
+          default: null
           description: Email of the user
       type: object
     TemplateUpdateRequest:
@@ -3427,9 +3655,96 @@ components:
             Domain names are not supported for deny rules.
           items:
             type: string
+        egressProxy:
+          $ref: '#/components/schemas/SandboxEgressProxyConfig'
         maskRequestHost:
           type: string
           description: Specify host mask which will be used for all sandbox requests
+        rules:
+          type: object
+          description: 'Per-domain transform rules applied to matching egress HTTP/HTTPS
+            requests. Keys are domains (e.g. "api.example.com", "example.com"). A
+            domain listed here is not automatically allowed - use allowOut to permit
+            the traffic.
+
+            '
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+    SandboxNetworkUpdateConfig:
+      type: object
+      description: Network configuration update for a running sandbox. Replaces the
+        current egress rules with the provided configuration. Omitting a field clears
+        it.
+      properties:
+        allowOut:
+          type: array
+          description: List of allowed destinations for egress traffic. Each entry
+            can be a CIDR block (e.g. "8.8.8.8/32"), a bare IP address (e.g. "8.8.8.8"),
+            or a domain name (e.g. "example.com", "*.example.com"). Allowed entries
+            always take precedence over denied entries.
+          items:
+            type: string
+        denyOut:
+          type: array
+          description: List of denied CIDR blocks or IP addresses for egress traffic.
+            Domain names are not supported for deny rules.
+          items:
+            type: string
+        egressProxy:
+          $ref: '#/components/schemas/SandboxEgressProxyConfig'
+        rules:
+          type: object
+          description: Per-domain transform rules. Replaces all existing rules when
+            provided.
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SandboxNetworkRule'
+        allow_internet_access:
+          type: boolean
+          description: Allow sandbox to access the internet. When set to false, it
+            behaves the same as specifying denyOut to 0.0.0.0/0 in the network config.
+    SandboxNetworkRule:
+      type: object
+      description: Transform rule applied to egress requests matching a domain pattern.
+      properties:
+        transform:
+          $ref: '#/components/schemas/SandboxNetworkTransform'
+    SandboxNetworkTransform:
+      type: object
+      description: Transformations applied to matching egress requests before forwarding.
+      properties:
+        headers:
+          type: object
+          description: 'HTTP headers to inject or override in matching requests. An
+            existing header with the same name is replaced. Values are plain strings;
+            secret resolution happens client-side before sending to the API.
+
+            '
+          additionalProperties:
+            type: string
+    SandboxEgressProxyConfig:
+      type: object
+      nullable: true
+      description: SOCKS5 proxy for sandbox egress. Outbound TCP is tunneled through
+        the proxy after allow/deny filtering; the sandbox is unaware. Domain-matched
+        flows use remote DNS (ATYP=domain).
+      required:
+      - address
+      properties:
+        address:
+          type: string
+          description: SOCKS5 proxy address in host:port format (e.g. "proxy.example.com:1080").
+        username:
+          type: string
+          maxLength: 255
+          description: Optional SOCKS5 username (RFC 1929), max 255 bytes.
+        password:
+          type: string
+          maxLength: 255
+          description: Optional SOCKS5 password (RFC 1929), max 255 bytes.
     SandboxAutoResumeEnabled:
       type: boolean
       description: Auto-resume enabled flag for paused sandboxes. Default false.
@@ -3822,6 +4137,33 @@ components:
           type: integer
           format: int32
           minimum: 0
+    SandboxTimeoutRequest:
+      type: object
+      required:
+      - timeout
+      properties:
+        timeout:
+          description: Timeout in seconds from the current time after which the sandbox
+            should expire
+          type: integer
+          format: int32
+          minimum: 0
+    SandboxRefreshRequest:
+      type: object
+      properties:
+        duration:
+          description: Duration for which the sandbox should be kept alive in seconds
+          type: integer
+          maximum: 3600
+          minimum: 0
+    SandboxSnapshotRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Optional name for the snapshot template. If a snapshot template
+            with this name already exists, a new build will be assigned to the existing
+            template instead of creating a new one.
     TeamMetric:
       description: Team metric with timestamp
       required:
