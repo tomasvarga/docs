@@ -245,6 +245,12 @@
             ]
           },
           {
+            "group": "Changelog",
+            "pages": [
+              "docs/changelog"
+            ]
+          },
+          {
             "group": "FAQ",
             "pages": [
               "docs/faq/paused-sandboxes-concurrency",

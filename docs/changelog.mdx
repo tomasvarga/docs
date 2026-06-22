@@ -1,0 +1,37 @@
+---
+title: "Changelog"
+description: "Product updates and changes to E2B."
+---
+
+<Update label="June 22, 2026">
+
+## New features
+
+**Disable client-side API key validation** — The JS and Python SDKs let you skip the default `e2b_` API key format check. Useful for self-hosted deployments that issue API keys in a different format. Set `E2B_VALIDATE_API_KEY=false`, or pass `validateApiKey: false` (JS) / `validate_api_key=False` (Python) when creating a sandbox. Default behavior is unchanged. See [API key](/docs/api-key).
+
+**`E2B_API_KEY` accepted in `template list` and `template create`** — The CLI now honors the `E2B_API_KEY` environment variable for these template commands, matching the rest of the CLI. See [Templates](/docs/template/quickstart).
+
+**Composable integration user-agent** — SDKs now let integrations append a custom identifier to the user-agent string, making it easier to attribute traffic from tools built on top of E2B.
+
+## Updates
+
+**SDK auth cleanup** — The SDKs' auth handling has been tidied up. The `ConnectionConfig` access token field is now deprecated; prefer passing credentials via `apiKey` / `headers`. Existing code keeps working.
+
+**Sandbox status timestamps** — The orchestrator now tracks and reports the timestamp of the last status change for each sandbox, giving you more precise visibility into sandbox lifecycle events. See [Lifecycle events](/docs/sandbox/lifecycle-events-api).
+
+**Faster sandbox cold boot** — Guest cold-boot time has been reduced, so sandboxes start more quickly when no warm pool is available.
+
+**More reliable filesystem snapshots** — Snapshots now use `FIFREEZE` to quiesce the guest filesystem before capture, producing more consistent on-disk state for paused and snapshotted sandboxes. See [Persistence](/docs/sandbox/persistence) and [Snapshots](/docs/sandbox/snapshots).
+
+## Bug fixes
+
+- **Python SDK:** Fixed flaky `TimeoutException` when streaming command output. Command timeouts are now enforced server-side. See [Commands](/docs/commands).
+- **Python SDK:** `api_headers` Authorization now takes precedence over the deprecated `access_token` field, so explicit header overrides work as expected.
+- **JS SDK:** Connection-dropped errors are now correctly detected on Bun and Deno during health checks, preventing false-positive failures.
+- **SDKs (filesystem):** Fixed `WriteInfo.type` enum, made timestamps timezone-aware, and enabled gzip on the default upload path. See [Filesystem](/docs/filesystem).
+- **SDKs (filesystem):** Resolved edge cases where signed upload/download URLs could be reported as expired prematurely. See [Upload](/docs/filesystem/upload) and [Download](/docs/filesystem/download).
+- **Templates:** Fixed build bugs and consolidated shell quoting so multi-line and quoted commands in template definitions behave predictably. See [Defining a template](/docs/template/defining-template).
+- **BYOC storage:** Removed an internal 30-second timeout on S3 uploads that could fail large object writes. See [BYOC](/docs/byoc).
+- **envd compatibility:** Bumped the minimum envd version required for cgroup freeze to 0.6.3, fixing pause reliability on older templates.
+
+</Update>
