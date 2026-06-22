@@ -29,13 +29,13 @@ You can get your API key at [dashboard](https://e2b.dev/dashboard?tab=keys).
 
 # Access token
 
-The access token is used only in the CLI and is **not needed in the SDK**. There's no need to set it when logging into the CLI using `e2b auth login`.
+<Warning>
+`E2B_ACCESS_TOKEN` is deprecated. New access tokens can no longer be generated after **July 1, 2026**, and all access tokens stop working on **August 1, 2026**. Authenticate with `E2B_API_KEY` instead. See the [access token deprecation](/docs/migration/access-token-deprecation).
+</Warning>
 
-<Note>
-To authenticate without the browser, you can set `E2B_ACCESS_TOKEN` as an environment variable. This is useful for CI/CD pipelines.
-</Note>
+The access token is used only by the interactive CLI login commands `e2b auth login` and `e2b auth configure`, which set up your local workstation. It is **not needed in the SDK**, and you do not need to set it as an environment variable to use the CLI.
 
 ## Where to find access token
 
-You can get your **Access token key** at the [dashboard](https://e2b.dev/dashboard/account).
+You can get your **Access token key** at the [dashboard](https://e2b.dev/dashboard/account). After July 1, 2026, new access tokens can no longer be generated.
 

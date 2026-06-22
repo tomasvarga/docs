@@ -241,7 +241,9 @@
           {
             "group": "Migration",
             "pages": [
-              "docs/migration/v2"
+              "docs/migration/v2",
+              "docs/migration/access-token-deprecation",
+              "docs/migration/v1-build-deprecation"
             ]
           },
           {

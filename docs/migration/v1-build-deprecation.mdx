@@ -1,0 +1,19 @@
+---
+title: "V1 build system deprecation"
+sidebarTitle: "V1 build deprecation"
+description: "The V1 template build system is deprecated. Migrate to the V2 build system."
+---
+
+The V1 build system is deprecated and V2 is now the supported build system. There is no announced hard cutoff date for V1 yet, but you should migrate as soon as possible to stay on a supported path.
+
+## What changed
+
+The `e2b template build` command that drove V1 builds is now a deprecation stub and exits immediately. The current build command is `e2b template create`, which authenticates with your `E2B_API_KEY`.
+
+## How to migrate
+
+Follow the [V2 migration guide](/docs/template/migration-v2) to move an existing template to the V2 build system. It covers three paths:
+
+- `e2b template migrate` to convert an existing `e2b.toml` and `e2b.Dockerfile` definition (recommended).
+- `fromDockerfile()` to keep using a Dockerfile, parsed into a V2 template.
+- `fromImage()` to reference a Docker image you build and push yourself.
