@@ -10,6 +10,9 @@ on:
             - "docs.json"
             - "docs/sdk-reference/**"
 
+permissions:
+    contents: read
+
 jobs:
     test:
         runs-on: ubuntu-latest
