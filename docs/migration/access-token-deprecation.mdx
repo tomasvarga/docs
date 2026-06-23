@@ -17,6 +17,8 @@ This affects anyone who authenticates the E2B CLI by setting the `E2B_ACCESS_TOK
 
 The interactive login commands `e2b auth login` and `e2b auth configure` set up your local workstation. They are outside the scope of this change.
 
+It also affects anyone still on the V1 build system, since V1 builds authenticate with the access token. When tokens stop on August 1, 2026, V1 builds stop working. See the [V1 build system deprecation](/docs/migration/v1-build-deprecation) to migrate to V2, which builds with `E2B_API_KEY`.
+
 ## Migrate your CLI authentication
 
 First, get an API key. You can find it in the [dashboard keys tab](https://e2b.dev/dashboard?tab=keys). It is the same key you use with the SDKs.

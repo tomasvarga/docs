@@ -162,8 +162,7 @@
                   "docs/template/examples/claude-code",
                   "docs/template/examples/docker"
                 ]
-              },
-              "docs/template/migration-v2"
+              }
             ]
           },
           {
@@ -242,6 +241,7 @@
             "group": "Migration",
             "pages": [
               "docs/migration/v2",
+              "docs/migration/template-v2",
               "docs/migration/access-token-deprecation",
               "docs/migration/v1-build-deprecation"
             ]
@@ -4976,7 +4976,12 @@
     },
     {
       "source": "/docs/legacy/guide/beta-migration",
-      "destination": "/docs/template/migration-v2",
+      "destination": "/docs/migration/template-v2",
+      "permanent": true
+    },
+    {
+      "source": "/docs/template/migration-v2",
+      "destination": "/docs/migration/template-v2",
       "permanent": true
     },
     {
