@@ -673,6 +673,111 @@ def add_operation_ids(spec: dict[str, Any]) -> None:
         print(f"==> Added {count} operationIds to envd endpoints")
 
 
+VERSIONED_PLATFORM_SEGMENT_RE = re.compile(r"^(v\d+)([A-Za-z][^/]*)?$", re.IGNORECASE)
+
+
+def extract_leading_version_label(ep_path: str) -> str | None:
+    """Return `vN` for a versioned leading path segment like `v2` or `v2templates`."""
+    first_segment = ep_path.lstrip("/").split("/", 1)[0]
+    match = VERSIONED_PLATFORM_SEGMENT_RE.match(first_segment)
+    if not match:
+        return None
+    return match.group(1).lower()
+
+
+def split_leading_version_segment(segment: str) -> tuple[str | None, str | None]:
+    """Split `vNfoo` into (`VN`, `foo`) and `vN` into (`VN`, None)."""
+    match = VERSIONED_PLATFORM_SEGMENT_RE.match(segment)
+    if not match:
+        return None, None
+    return match.group(1).upper(), match.group(2)
+
+
+def singularize(word: str) -> str:
+    """Simple singularization for common API resource names."""
+    irregulars = {"aliases": "alias", "statuses": "status", "indices": "index"}
+    if word in irregulars:
+        return irregulars[word]
+    if word.endswith("sses"):
+        return word  # "addresses" etc - skip
+    if word.endswith("ies"):
+        return word[:-3] + "y"
+    if word.endswith("ses") or word.endswith("xes") or word.endswith("zes"):
+        return word[:-2]
+    if word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
+
+
+def titleize_resource_name(name: str) -> str:
+    return name.replace("-", " ")
+
+
+def synthesize_versioned_summary(ep_path: str, method: str) -> str | None:
+    """Build a readable fallback summary for versioned platform endpoints."""
+    raw_segments = ep_path.strip("/").split("/")
+    parts: list[str] = []
+
+    for i, seg in enumerate(raw_segments):
+        if i == 0:
+            _, remainder = split_leading_version_segment(seg)
+            if extract_leading_version_label(ep_path):
+                if remainder:
+                    parts.append(remainder)
+                continue
+        if seg.startswith("{") and seg.endswith("}"):
+            if parts:
+                parts[-1] = singularize(parts[-1])
+            continue
+        parts.append(seg)
+
+    if not parts:
+        return None
+
+    resource = titleize_resource_name(parts[-1])
+    if method == "get":
+        if not any(seg.startswith("{") for seg in raw_segments[1:]) and parts[-1].endswith("s"):
+            return f"List {resource}"
+        return f"Get {resource}"
+    if method == "post":
+        return f"Create {titleize_resource_name(singularize(parts[-1]))}"
+    if method in {"put", "patch"}:
+        return f"Update {titleize_resource_name(singularize(parts[-1]))}"
+    if method == "delete":
+        return f"Delete {titleize_resource_name(singularize(parts[-1]))}"
+
+    return None
+
+
+def normalize_versioned_summaries(spec: dict[str, Any]) -> int:
+    """Ensure versioned platform summaries exist and end with `(vN)`."""
+    count = 0
+    for ep_path, path_item in spec.get("paths", {}).items():
+        version_label = extract_leading_version_label(ep_path)
+        if not version_label:
+            continue
+
+        for method in ("get", "post", "put", "patch", "delete", "head", "options"):
+            op = path_item.get(method)
+            if not op:
+                continue
+
+            summary = op.get("summary")
+            if not isinstance(summary, str) or not summary.strip():
+                summary = synthesize_versioned_summary(ep_path, method)
+                if not summary:
+                    continue
+                op["summary"] = summary
+                count += 1
+            if re.search(rf"\({re.escape(version_label)}\)", summary, re.IGNORECASE):
+                continue
+
+            op["summary"] = f"{summary.rstrip()} ({version_label})"
+            count += 1
+
+    return count
+
+
 STREAMING_ENDPOINTS = {
     "/filesystem.Filesystem/WatchDir",
     "/process.Process/Start",
@@ -843,21 +948,6 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             fixes.append("/templates/{templateID}/files/{hash}: changed 201 → 200 response")
 
     # 10. Generate operationId for platform endpoints that lack one
-    def _singularize(word: str) -> str:
-        """Simple singularization for common API resource names."""
-        irregulars = {"aliases": "alias", "statuses": "status", "indices": "index"}
-        if word in irregulars:
-            return irregulars[word]
-        if word.endswith("sses"):
-            return word  # "addresses" etc - skip
-        if word.endswith("ies"):
-            return word[:-3] + "y"
-        if word.endswith("ses") or word.endswith("xes") or word.endswith("zes"):
-            return word[:-2]
-        if word.endswith("s") and not word.endswith("ss"):
-            return word[:-1]
-        return word
-
     op_id_count = 0
     seen_ids: dict[str, str] = {}  # operationId → path (for dedup)
     for ep_path, path_item in paths.items():
@@ -878,6 +968,14 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             i = 0
             while i < len(raw_segments):
                 seg = raw_segments[i]
+                if i == 0:
+                    detected_version, remainder = split_leading_version_segment(seg)
+                    if detected_version:
+                        version_suffix = detected_version
+                        if remainder:
+                            parts.append(remainder)
+                        i += 1
+                        continue
                 if seg in ("v2", "v3"):
                     version_suffix = seg.upper()
                     i += 1
@@ -885,7 +983,7 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
                 if seg.startswith("{") and seg.endswith("}"):
                     # Path param - singularize the previous part if it was a collection
                     if parts:
-                        parts[-1] = _singularize(parts[-1])
+                        parts[-1] = singularize(parts[-1])
                     i += 1
                     continue
                 parts.append(seg)
@@ -1151,6 +1249,12 @@ def fix_spec_issues(spec: dict[str, Any]) -> None:
             summary_count += 1
     if summary_count:
         fixes.append(f"Added summary to {summary_count} platform endpoints")
+
+    normalized_summary_count = normalize_versioned_summaries(spec)
+    if normalized_summary_count:
+        fixes.append(
+            f"Normalized version suffix on {normalized_summary_count} versioned endpoint summaries"
+        )
 
     # 27. Replace nullable: true with OpenAPI 3.1.0 type arrays
     #     In 3.1.0, nullable was removed. Use type: ["string", "null"] instead,
