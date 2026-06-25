@@ -12,7 +12,9 @@ servers:
 paths:
   /sandboxes:
     get:
-      description: List all running sandboxes
+      summary: List sandboxes
+      description: List all running sandboxes. Use GET /v2/sandboxes instead.
+      deprecated: true
       tags:
       - Sandboxes
       security:
@@ -41,8 +43,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: listSandboxes
-      summary: List sandboxes
     post:
+      summary: Create sandbox
       description: Create a sandbox from the template
       tags:
       - Sandboxes
@@ -68,11 +70,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postSandboxes
-      summary: Create sandbox
     servers:
     - *id001
   /v2/sandboxes:
     get:
+      summary: List sandboxes (v2)
       description: List all sandboxes
       tags:
       - Sandboxes
@@ -114,11 +116,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: listSandboxesV2
-      summary: List sandboxes (v2)
     servers:
     - *id001
   /sandboxes/metrics:
     get:
+      summary: List sandbox metrics
       description: List metrics for given sandboxes
       tags:
       - Sandboxes
@@ -150,11 +152,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: listSandboxesMetrics
-      summary: List sandbox metrics
     servers:
     - *id001
   /sandboxes/{sandboxID}/logs:
     get:
+      summary: Get sandbox logs
       description: Get sandbox logs. Use /v2/sandboxes/{sandboxID}/logs instead.
       deprecated: true
       tags:
@@ -192,11 +194,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getSandboxLogs
-      summary: Get sandbox logs
     servers:
     - *id001
   /v2/sandboxes/{sandboxID}/logs:
     get:
+      summary: Get sandbox logs (v2)
       description: Get sandbox logs
       tags:
       - Sandboxes
@@ -250,11 +252,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getSandboxLogsV2
-      summary: Get sandbox logs (v2)
     servers:
     - *id001
   /sandboxes/{sandboxID}:
     get:
+      summary: Get sandbox
       description: Get a sandbox by id
       tags:
       - Sandboxes
@@ -276,8 +278,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getSandbox
-      summary: Get sandbox
     delete:
+      summary: Delete sandbox
       description: Kill a sandbox
       tags:
       - Sandboxes
@@ -295,11 +297,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: deleteSandbox
-      summary: Delete sandbox
     servers:
     - *id001
   /sandboxes/{sandboxID}/metrics:
     get:
+      summary: Get sandbox metrics
       description: Get sandbox metrics
       tags:
       - Sandboxes
@@ -341,11 +343,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getSandboxMetrics
-      summary: Get sandbox metrics
     servers:
     - *id001
   /sandboxes/{sandboxID}/pause:
     post:
+      summary: Pause sandbox
       description: Pause the sandbox
       tags:
       - Sandboxes
@@ -371,11 +373,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postSandboxPause
-      summary: Pause sandbox
     servers:
     - *id001
   /sandboxes/{sandboxID}/resume:
     post:
+      summary: Resume sandbox
       deprecated: true
       description: Resume the sandbox
       tags:
@@ -406,11 +408,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postSandboxResume
-      summary: Resume sandbox
     servers:
     - *id001
   /sandboxes/{sandboxID}/connect:
     post:
+      summary: Connect to sandbox
       description: Returns sandbox details. If the sandbox is paused, it will be resumed.
         TTL is only extended.
       tags:
@@ -447,11 +449,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postSandboxConnect
-      summary: Connect to sandbox
     servers:
     - *id001
   /sandboxes/{sandboxID}/timeout:
     post:
+      summary: Set sandbox timeout
       description: Set the timeout for the sandbox. The sandbox will expire x seconds
         from the time of the request. Calling this method multiple times overwrites
         the TTL, each time using the current timestamp as the starting point to measure
@@ -477,11 +479,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postSandboxTimeout
-      summary: Set sandbox timeout
     servers:
     - *id001
   /sandboxes/{sandboxID}/network:
     put:
+      summary: Update sandbox network
       description: Update the network configuration for a running sandbox. Replaces
         the current egress rules with the provided configuration. Omitting field clears
         it.
@@ -513,6 +515,7 @@ paths:
     - *id001
   /sandboxes/{sandboxID}/refreshes:
     post:
+      summary: Refresh sandbox
       description: Refresh the sandbox extending its time to live
       security:
       - ApiKeyAuth: []
@@ -535,11 +538,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postSandboxRefreshes
-      summary: Refresh sandbox
     servers:
     - *id001
   /sandboxes/{sandboxID}/snapshots:
     post:
+      summary: Create snapshot
       description: Create a persistent snapshot from the sandbox's current state.
         Snapshots can be used to create new sandboxes and persist beyond the original
         sandbox's lifetime.
@@ -575,6 +578,7 @@ paths:
     - *id001
   /snapshots:
     get:
+      summary: List snapshots
       description: List all snapshots for the team
       tags:
       - Sandboxes
@@ -607,6 +611,7 @@ paths:
     - *id001
   /v3/templates:
     post:
+      summary: Create template (v3)
       description: Create a new template
       tags:
       - Templates
@@ -634,11 +639,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplatesV3
-      summary: Create template (v3)
     servers:
     - *id001
   /v2/templates:
     get:
+      summary: List templates (v2)
       description: List all templates
       tags:
       - Templates
@@ -677,8 +682,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: listTemplatesV2
-      summary: List templates (v2)
     post:
+      summary: Create template (v2)
       description: Create a new template
       deprecated: true
       tags:
@@ -705,11 +710,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplatesV2
-      summary: Create template (v2)
     servers:
     - *id001
   /templates/{templateID}/files/{hash}:
     get:
+      summary: Get build upload link
       description: Get an upload link for a tar file containing build layer files
       tags:
       - Templates
@@ -740,11 +745,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/TemplateBuildFileUpload'
       operationId: getTemplateFile
-      summary: Get build upload link
     servers:
     - *id001
   /templates:
     get:
+      summary: List templates
       description: List all templates
       deprecated: true
       tags:
@@ -773,8 +778,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: listTemplates
-      summary: List templates
     post:
+      summary: Create template
       description: Create a new template
       deprecated: true
       tags:
@@ -801,11 +806,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplates
-      summary: Create template
     servers:
     - *id001
   /templates/{templateID}:
     get:
+      summary: Get template
       description: List all builds for a template
       tags:
       - Templates
@@ -827,8 +832,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTemplate
-      summary: Get template
     post:
+      summary: Rebuild template
       description: Rebuild an template
       deprecated: true
       tags:
@@ -855,8 +860,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplate
-      summary: Rebuild template
     delete:
+      summary: Delete template
       description: Delete a template
       tags:
       - Templates
@@ -873,8 +878,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: deleteTemplate
-      summary: Delete template
     patch:
+      summary: Update template
       description: Update template
       deprecated: true
       tags:
@@ -904,11 +909,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: patchTemplate
-      summary: Update template
     servers:
     - *id001
   /templates/{templateID}/builds/{buildID}:
     post:
+      summary: Start build
       description: Start the build
       deprecated: true
       tags:
@@ -931,11 +936,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplateBuild
-      summary: Start build
     servers:
     - *id001
   /v2/templates/{templateID}/builds/{buildID}:
     post:
+      summary: Start build (v2)
       description: Start the build
       tags:
       - Templates
@@ -959,11 +964,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplateBuildV2
-      summary: Start build (v2)
     servers:
     - *id001
   /v2/templates/{templateID}:
     patch:
+      summary: Update template (v2)
       description: Update template
       tags:
       - Templates
@@ -992,11 +997,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: patchTemplateV2
-      summary: Update template (v2)
     servers:
     - *id001
   /templates/{templateID}/builds/{buildID}/status:
     get:
+      summary: Get build status
       description: Get template build info
       tags:
       - Templates
@@ -1042,11 +1047,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTemplateBuildStatus
-      summary: Get build status
     servers:
     - *id001
   /templates/{templateID}/builds/{buildID}/logs:
     get:
+      summary: Get build logs
       description: Get template build logs
       tags:
       - Templates
@@ -1099,11 +1104,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTemplateBuildLogs
-      summary: Get build logs
     servers:
     - *id001
   /templates/aliases/{alias}:
     get:
+      summary: Get template by alias
       description: Check if template with given alias exists
       tags:
       - Templates
@@ -1132,11 +1137,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTemplatesAlias
-      summary: Get template by alias
     servers:
     - *id001
   /templates/tags:
     post:
+      summary: Assign tags
       description: Assign tag(s) to a template build
       tags:
       - Tags
@@ -1164,8 +1169,8 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: postTemplatesTags
-      summary: Assign tags
     delete:
+      summary: Delete tags
       description: Delete multiple tags from templates
       tags:
       - Tags
@@ -1189,11 +1194,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: deleteTemplatesTags
-      summary: Delete tags
     servers:
     - *id001
   /templates/{templateID}/tags:
     get:
+      summary: List template tags
       description: List all tags for a template
       tags:
       - Tags
@@ -1219,11 +1224,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTemplateTags
-      summary: List template tags
     servers:
     - *id001
   /volumes:
     get:
+      summary: List team volumes
       description: List all team volumes
       tags:
       - Volumes
@@ -1244,6 +1249,7 @@ paths:
           $ref: '#/components/responses/500'
       operationId: listVolumes
     post:
+      summary: Create team volume
       description: Create a new team volume
       tags:
       - Volumes
@@ -1273,6 +1279,7 @@ paths:
     - *id001
   /volumes/{volumeID}:
     get:
+      summary: Team volume
       description: Get team volume info
       tags:
       - Volumes
@@ -1295,6 +1302,7 @@ paths:
           $ref: '#/components/responses/500'
       operationId: getVolume
     delete:
+      summary: Delete team volume
       description: Delete a team volume
       tags:
       - Volumes
@@ -2415,6 +2423,7 @@ paths:
     - *id004
   /teams:
     get:
+      summary: List teams
       description: List all teams
       tags:
       - Teams
@@ -2434,11 +2443,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: listTeams
-      summary: List teams
     servers:
     - *id001
   /teams/{teamID}/metrics:
     get:
+      summary: Get team metrics
       description: Get metrics for the team
       tags:
       - Teams
@@ -2480,11 +2489,11 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTeamMetrics
-      summary: Get team metrics
     servers:
     - *id001
   /teams/{teamID}/metrics/max:
     get:
+      summary: Get team metrics max
       description: Get the maximum metrics for the team in the given interval
       tags:
       - Teams
@@ -2533,7 +2542,6 @@ paths:
         '500':
           $ref: '#/components/responses/500'
       operationId: getTeamMetricsMax
-      summary: Get team metrics max
     servers:
     - *id001
 components:
