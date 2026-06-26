@@ -61,6 +61,8 @@ same_sbx = sbx.connect()
 
 `keepMemory` / `keep_memory` defaults to `true`, so omitting it (or calling `pause()`) takes a full memory snapshot — see [Persistence](/docs/sandbox/persistence).
 
+`keepMemory` is a per-pause choice, not a sandbox-wide mode. Pausing once with `keepMemory: false` / `keep_memory=False` does not lock the sandbox into filesystem-only: after you resume, the next `pause()` takes a full memory snapshot again unless you pass `keepMemory: false` / `keep_memory=False` once more.
+
 ## Auto-pause filesystem-only
 
 You can also make the timeout-driven [auto-pause](/docs/sandbox/persistence#auto-pause) filesystem-only. Set `onTimeout` / `on_timeout` to the object form and include `keepMemory` / `keep_memory`:
