@@ -98,6 +98,8 @@ print('Sandbox paused', sbx.sandbox_id)
 </CodeGroup>
 
 
+By default a pause saves **both** the filesystem and the memory. To save only the filesystem — a lighter snapshot that cold-boots (reboots) on resume — pass `keepMemory: false` (JavaScript) / `keep_memory=False` (Python). See [Filesystem-only snapshots](/docs/sandbox/filesystem-only-snapshots).
+
 ## Resuming sandbox
 When you resume a sandbox, it will be in the same state it was in when you paused it.
 This means that all the files in the sandbox's filesystem will be restored and all the running processes, loaded variables, data, etc. will be restored.
@@ -255,6 +257,8 @@ sandbox = Sandbox.create(
 </CodeGroup>
 
 Auto-pause is persistent, meaning if your sandbox resumes and later times out again, it will pause again.
+
+To make the auto-pause filesystem-only — dropping memory so resume cold-boots — use the object form `onTimeout: { action: 'pause', keepMemory: false }` (JavaScript) / `"on_timeout": {"action": "pause", "keep_memory": False}` (Python). See [Filesystem-only snapshots](/docs/sandbox/filesystem-only-snapshots).
 
 If you call `.kill()`, the sandbox is permanently deleted and cannot be resumed.
 

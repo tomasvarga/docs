@@ -124,6 +124,7 @@
               "docs/sandbox/persistence",
               "docs/sandbox/snapshots",
               "docs/sandbox/auto-resume",
+              "docs/sandbox/filesystem-only-snapshots",
               "docs/sandbox/git-integration",
               "docs/sandbox/metrics",
               "docs/sandbox/otel-telemetry-export",
