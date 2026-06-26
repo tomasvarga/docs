@@ -1,0 +1,73 @@
+---
+title: "Crabbox"
+description: "Run Crabbox test and execution workflows on E2B sandboxes."
+icon: "terminal"
+---
+
+[Crabbox](https://github.com/openclaw/crabbox) is a remote software testing and execution control plane for maintainers and AI agents. Use its E2B provider when you want Crabbox to create an E2B Linux sandbox, sync your working tree, run a command, stream output, and clean up from one CLI command.
+
+## Install
+
+Install Crabbox locally.
+
+```bash
+brew install openclaw/tap/crabbox
+crabbox --version
+```
+
+## Configure E2B
+
+Export your E2B API key before running Crabbox.
+
+```bash
+export E2B_API_KEY=e2b_...
+```
+
+You can select E2B per command with `--provider e2b`, or set it in a repo-level Crabbox config.
+
+```yaml .crabbox.yaml
+provider: e2b
+target: linux
+e2b:
+  template: base
+  workdir: crabbox
+```
+
+`template` is the E2B template to create. `workdir` is the directory where Crabbox syncs and runs your project inside the sandbox.
+
+## Run tests
+
+Run a command in a fresh E2B sandbox.
+
+```bash
+crabbox run --provider e2b -- echo crabbox-e2b-ok
+```
+
+Use an existing warm sandbox for repeated runs.
+
+```bash
+crabbox warmup --provider e2b --e2b-template base
+lease="<lease-or-slug>"
+crabbox run --provider e2b --id "$lease" -- echo crabbox-e2b-ok
+crabbox status --provider e2b --id "$lease" --wait
+crabbox stop --provider e2b "$lease"
+```
+
+Run in a custom E2B workdir.
+
+```bash
+crabbox run --provider e2b --e2b-workdir repo -- echo crabbox-e2b-ok
+```
+
+## How it works
+
+With `provider: e2b`, Crabbox uses E2B sandbox lifecycle, file upload, and process APIs instead of SSH. Crabbox owns local config, sync manifests, command orchestration, output streaming, and normalized `list` / `status` behavior. E2B owns the sandbox runtime and command transport.
+
+## Limitations
+
+- E2B is a Linux delegated-run provider for Crabbox.
+- Crabbox SSH commands such as `ssh`, `vnc`, `code`, and SSH-based Actions hydration are not available with `provider: e2b`.
+- `--class` and `--type` are rejected because sandbox resources come from the selected E2B template.
+- `--e2b-template`, `--e2b-workdir`, `--e2b-user`, `--e2b-api-url`, and `--e2b-domain` override matching config values.
+
+For the full Crabbox command and provider reference, see the [Crabbox repository](https://github.com/openclaw/crabbox).

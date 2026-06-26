@@ -50,6 +50,7 @@
             "pages": [
               "docs/use-cases/coding-agents",
               "docs/use-cases/computer-use",
+              "docs/use-cases/crabbox",
               "docs/use-cases/ci-cd",
               "docs/use-cases/remote-browser"
             ]
