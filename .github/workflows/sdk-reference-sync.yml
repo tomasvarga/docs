@@ -26,8 +26,10 @@ on:
 
   repository_dispatch:
     types: [sdk-release]
-  schedule:
-    - cron: "*/15 * * * *"
+  # Scheduled runs disabled — generation is triggered on SDK release (repository_dispatch)
+  # or manually (workflow_dispatch). Re-enable by uncommenting the schedule below.
+  # schedule:
+  #   - cron: "*/15 * * * *"
 
 permissions:
   contents: write
