@@ -1,0 +1,66 @@
+---
+title: "Changelog"
+sidebarTitle: Changelog
+description: "Product updates and new releases from E2B."
+---
+
+<Update label="2026-06-29" description="Week of June 22 – June 29, 2026">
+
+## New features
+
+**Filesystem-only snapshots**
+
+You can now pause a sandbox by persisting only the filesystem, skipping the memory snapshot. This produces a lighter snapshot that boots fresh on resume — useful when you don't need to preserve in-memory state. Available via `pause({ memory: false })` and as an auto-pause option on `lifecycle.onTimeout`. See [Filesystem-only snapshots](/docs/sandbox/filesystem-only-snapshots).
+
+**Paginated templates API**
+
+`GET /v2/templates` now supports pagination, making it practical to list large numbers of templates. Both the JavaScript and Python SDKs ship with a shared paginator that gives you a consistent iteration API across languages.
+
+**Python SDK logger option**
+
+The Python SDK now accepts a `logger` option for request and debug logging, matching the JavaScript SDK and making it easier to trace SDK behavior in your own logs.
+
+## Updates
+
+**Streaming uploads and downloads**
+
+File uploads and downloads in the SDKs, volumes, and template build-context uploads now stream from disk instead of buffering the full payload in memory. Large files no longer require proportional memory on the client.
+
+**Auto-resume on by default**
+
+Auto-resume is now enabled by default for paused sandboxes. Requests to a paused sandbox will transparently resume it. See [Auto-resume on request](/docs/sandbox/auto-resume).
+
+**More reliable resume retries**
+
+When a resume request times out, retries are now pinned to the same node, reducing tail latency on intermittently slow resumes.
+
+**Webhook events include execution metrics**
+
+[Sandbox lifecycle webhooks](/docs/sandbox/lifecycle-events-webhooks) now always include execution metrics, so you can monitor sandbox usage directly from webhook payloads without an extra API call.
+
+**Sandbox status timestamp**
+
+Sandbox status responses now include the timestamp of the last status change, making it easier to track sandbox lifecycle transitions.
+
+**Path-style S3 addressing**
+
+S3-compatible storage backends that require path-style addressing (e.g. MinIO and some on-prem deployments) are now supported for self-hosted deployments.
+
+**Template build name limit**
+
+Template build names are now capped at 128 characters to prevent oversized identifiers.
+
+**CLI authentication**
+
+The CLI now uses an OAuth-based login flow, replacing the long-lived access token flow for interactive sign-in. See [CLI authentication](/docs/cli/auth).
+
+## Bug fixes
+
+- Fixed a leak in the JavaScript SDK where `CommandHandle.disconnect()` could leave the output subscription open.
+- Fixed quadratic memory growth in the Python SDK when accumulating large `stdout`/`stderr` from long-running commands.
+- Fixed the filesystem watch handle's callback and timeout behavior in the SDKs.
+- Fixed parsing of the sandbox pause request body when `Content-Length` was missing.
+- Fixed an NBD read-loop stall on `WRITE_ZEROES` operations (gated behind a feature flag).
+- Hardened orchestrator shutdown with graceful drain of in-flight sandboxes and template builds.
+
+</Update>
