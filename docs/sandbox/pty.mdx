@@ -13,7 +13,7 @@ Unlike `commands.run()` which executes a command and returns output after comple
 
 ## Create a PTY session
 
-Use `sandbox.pty.create()` to start an interactive bash shell.
+Use `sandbox.pty.create()` to start an interactive bash shell. This example runs `echo 'hello world'`, then exits and prints the terminal output.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -22,37 +22,56 @@ import { Sandbox } from 'e2b'
 const sandbox = await Sandbox.create()
 
 const terminal = await sandbox.pty.create({
-  cols: 80,              // Terminal width in characters
-  rows: 24,              // Terminal height in characters
+  cols: 80,                    // Terminal size in characters
+  rows: 24,
+  envs: { MY_VAR: 'hello' },   // Optional environment variables
+  cwd: '/home/user',           // Optional working directory
+  user: 'root',                // Optional user to run as
   onData: (data) => {
-    // Called whenever terminal outputs data
+    // Called whenever the terminal outputs data
     process.stdout.write(data)
   },
-  envs: { MY_VAR: 'hello' },  // Optional environment variables
-  cwd: '/home/user',          // Optional working directory
-  user: 'root',               // Optional user to run as
 })
 
 // terminal.pid contains the process ID
 console.log('Terminal PID:', terminal.pid)
+
+// Send input to the PTY. Data must be bytes (Uint8Array), and the trailing newline "presses Enter".
+await sandbox.pty.sendInput(terminal.pid, new TextEncoder().encode("echo 'hello world'\n"))
+
+// The PTY runs an interactive login shell that won't exit on its own, so tell it
+// to exit — otherwise wait() below blocks forever.
+await sandbox.pty.sendInput(terminal.pid, new TextEncoder().encode('exit\n'))
+
+// Wait for the terminal to exit (output is streamed to onData above)
+await terminal.wait()
 ```
 
 ```python Python
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 terminal = sandbox.pty.create(
-    cols=80,              # Terminal width in characters
-    rows=24,              # Terminal height in characters
-    on_data=lambda data: print(data.decode(), end=''),  # end='' prevents print from adding extra newline
-    envs={'MY_VAR': 'hello'},  # Optional environment variables
-    cwd='/home/user',          # Optional working directory
-    user='root',               # Optional user to run as
+    size=PtySize(rows=24, cols=80),  # Terminal size in characters
+    envs={'MY_VAR': 'hello'},        # Optional environment variables
+    cwd='/home/user',                # Optional working directory
+    user='root',                     # Optional user to run as
 )
 
 # terminal.pid contains the process ID
 print('Terminal PID:', terminal.pid)
+
+# Send input to the PTY via the pty module. Data must be bytes, and the trailing newline "presses Enter".
+sandbox.pty.send_stdin(terminal.pid, b"echo 'hello world'\n")
+
+# The PTY runs an interactive login shell that won't exit on its own, so tell it
+# to exit — otherwise wait() below blocks forever.
+sandbox.pty.send_stdin(terminal.pid, b"exit\n")
+
+# Stream output by passing on_pty to wait()
+# end='' prevents print from adding an extra newline
+terminal.wait(on_pty=lambda data: print(data.decode(), end=''))
 ```
 </CodeGroup>
 
@@ -79,24 +98,24 @@ const terminal = await sandbox.pty.create({
 ```
 
 ```python Python
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
+
+terminal = sandbox.pty.create(
+    PtySize(rows=24, cols=80),
+    timeout=0,  # Keep the session open indefinitely
+)
 
 # end='' prevents print() from adding an extra newline
 # (PTY output already contains newlines)
-terminal = sandbox.pty.create(
-    cols=80,
-    rows=24,
-    on_data=lambda data: print(data.decode(), end=''),
-    timeout=0,  # Keep the session open indefinitely
-)
+terminal.wait(on_pty=lambda data: print(data.decode(), end=''))
 ```
 </CodeGroup>
 
 ## Send input to PTY
 
-Use `sendInput()` in JavaScript or `send_stdin()` in Python to send data to the terminal. These methods return a Promise (JavaScript) or complete synchronously (Python) - the actual output will be delivered to your `onData` callback.
+Use `sendInput()` in JavaScript or `send_stdin()` in Python to send data to the terminal. These methods return a Promise (JavaScript) or complete synchronously (Python) - the actual output is delivered to your `onData` callback (JavaScript) or to the `on_pty` callback you pass to `wait()` (Python).
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -118,19 +137,19 @@ await sandbox.pty.sendInput(
 ```
 
 ```python Python
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
-terminal = sandbox.pty.create(
-    cols=80,
-    rows=24,
-    on_data=lambda data: print(data.decode(), end=''),  # end='' prevents extra newline
-)
+terminal = sandbox.pty.create(PtySize(rows=24, cols=80))
 
 # Send a command as bytes (b'...' is Python's byte string syntax)
 # Don't forget the newline!
 sandbox.pty.send_stdin(terminal.pid, b'echo "Hello from PTY"\n')
+
+# Receive output by passing on_pty to wait()
+# end='' prevents print from adding an extra newline
+terminal.wait(on_pty=lambda data: print(data.decode(), end=''))
 ```
 </CodeGroup>
 
@@ -158,18 +177,14 @@ await sandbox.pty.resize(terminal.pid, {
 ```
 
 ```python Python
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
-terminal = sandbox.pty.create(
-    cols=80,
-    rows=24,
-    on_data=lambda data: print(data.decode(), end=''),  # end='' prevents extra newline
-)
+terminal = sandbox.pty.create(PtySize(rows=24, cols=80))
 
 # Resize to new dimensions (in characters)
-sandbox.pty.resize(terminal.pid, cols=120, rows=40)
+sandbox.pty.resize(terminal.pid, PtySize(rows=40, cols=120))
 ```
 </CodeGroup>
 
@@ -214,38 +229,29 @@ await reconnected.wait()
 ```
 
 ```python Python
-import time
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
 # Create a PTY session
-terminal = sandbox.pty.create(
-    cols=80,
-    rows=24,
-    on_data=lambda data: print('Handler 1:', data.decode()),
-)
+terminal = sandbox.pty.create(PtySize(rows=24, cols=80))
 
 pid = terminal.pid
 
 # Send a command
 sandbox.pty.send_stdin(pid, b'echo hello\n')
-time.sleep(0.5)
 
 # Disconnect - PTY keeps running in the background
 terminal.disconnect()
 
-# Later: reconnect with a new data handler
-reconnected = sandbox.pty.connect(
-    pid,
-    on_data=lambda data: print('Handler 2:', data.decode()),
-)
+# Later: reconnect to the same session
+reconnected = sandbox.pty.connect(pid)
 
-# Continue using the session
-sandbox.pty.send_stdin(pid, b'echo world\n')
+# Continue using the session, then exit
+sandbox.pty.send_stdin(pid, b'echo world\nexit\n')
 
-# Wait for the terminal to exit
-reconnected.wait()
+# Wait for the terminal to exit, streaming output via on_pty
+reconnected.wait(on_pty=lambda data: print('Handler:', data.decode()))
 ```
 </CodeGroup>
 
@@ -274,15 +280,11 @@ console.log('Killed:', killed)  // true if successful
 ```
 
 ```python Python
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
-terminal = sandbox.pty.create(
-    cols=80,
-    rows=24,
-    on_data=lambda data: print(data.decode(), end=''),  # end='' prevents extra newline
-)
+terminal = sandbox.pty.create(PtySize(rows=24, cols=80))
 
 # Kill the PTY
 killed = sandbox.pty.kill(terminal.pid)
@@ -318,21 +320,17 @@ console.log('Exit code:', result.exitCode)
 ```
 
 ```python Python
-from e2b import Sandbox
+from e2b import Sandbox, PtySize
 
-sandbox = Sandbox()
+sandbox = Sandbox.create()
 
-terminal = sandbox.pty.create(
-    cols=80,
-    rows=24,
-    on_data=lambda data: print(data.decode(), end=''),  # end='' prevents extra newline
-)
+terminal = sandbox.pty.create(PtySize(rows=24, cols=80))
 
 # Send exit command
 sandbox.pty.send_stdin(terminal.pid, b'exit\n')
 
-# Wait for the terminal to exit
-result = terminal.wait()
+# Wait for the terminal to exit, streaming output via on_pty
+result = terminal.wait(on_pty=lambda data: print(data.decode(), end=''))
 print('Exit code:', result.exit_code)
 ```
 </CodeGroup>
