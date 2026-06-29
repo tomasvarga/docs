@@ -38,6 +38,16 @@ sandbox = Sandbox.create('my-python-env')
 
 </CodeGroup>
 
+## Name format
+
+Before a name is used, it's trimmed of surrounding whitespace and lowercased. The result must match the pattern `^[a-z0-9-_]+$`:
+
+- Lowercase letters (`a`–`z`), numbers (`0`–`9`), dashes (`-`), and underscores (`_`)
+- Between 1 and 128 characters
+- Leading and trailing dashes or underscores are allowed
+
+Uppercase letters are accepted on input and lowercased automatically, so `My-Template` and `my-template` refer to the same name. Any other character (spaces inside the name, dots, slashes, and so on) is rejected.
+
 ## Team-local naming
 
 Template names are scoped to your team. This means:
