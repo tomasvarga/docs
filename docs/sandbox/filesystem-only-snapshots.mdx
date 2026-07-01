@@ -18,10 +18,11 @@ survive, but RAM and running processes do not.
 | | Full snapshot (default) | Filesystem-only snapshot |
 |---|---|---|
 | Filesystem (disk) | Preserved | Preserved |
-| Memory (RAM) | Preserved | **Dropped** |
-| Running processes | Restored | **Lost** (reboot) |
-| In-memory state (variables, caches) | Restored | **Lost** (reboot) |
-| Resume behavior | Restored in place | **reboot** from disk |
+| Memory (RAM) | Preserved | **Disposed** |
+| Running processes | Restored | **Terminated** (reboot) |
+| In-memory state (variables, caches) | Restored | **Discarded** (reboot) |
+| Resume behavior | Restored in place | **Reboot** from disk |
+| Speed | Baseline | **Faster** |
 
 <Note>
 Network connections to clients **outside** the sandbox drop when it pauses — in both cases — and must be re-established on resume (see [Persistence](/docs/sandbox/persistence#network)). The in-sandbox
