@@ -352,6 +352,12 @@ When webhooks is send, we are adding headers to help you verify the authenticity
 - `e2b-signature-version` - Currently always `v1`, reserved for future use
 - `e2b-signature` - Signature for verifying the request authenticity`
 
+## Delivery and retries
+
+If a delivery fails, E2B retries it **up to 3 times, 10 seconds apart**. A delivery is treated as failed when your endpoint returns a 4xx or 5xx status code, the request times out, or it fails with a network error.
+
+Because a delivery can be retried, the same event may be delivered more than once. Make your webhook handler idempotent and use the `e2b-delivery-id` header to deduplicate deliveries you've already processed.
+
 ## Available event types
 
 The following event types can be subscribed to via webhooks, they are used as the `type` field in the [payload](#webhook-payload).

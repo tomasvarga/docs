@@ -229,7 +229,7 @@ sbx = Sandbox.connect(sandbox_id, timeout=60) # 60 seconds
 
 ### Auto-pause
 
-Auto-pause is configured in the sandbox lifecycle on create. Set `onTimeout`/`on_timeout` to `pause`.
+Auto-pause is configured in the sandbox lifecycle on create. `onTimeout`/`on_timeout` defaults to `"kill"`, meaning the sandbox is terminated when its timeout expires. Set it to `"pause"` to auto-pause on timeout instead.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -238,7 +238,7 @@ import { Sandbox } from 'e2b'
 const sandbox = await Sandbox.create({
   timeoutMs: 10 * 60 * 1000, // Optional: change default timeout (10 minutes)
   lifecycle: {
-    onTimeout: 'pause',
+    onTimeout: 'pause', // Defaults to 'kill'; set to 'pause' to auto-pause on timeout
     autoResume: false, // Optional (default is false)
   },
 })
@@ -249,8 +249,8 @@ from e2b import Sandbox
 sandbox = Sandbox.create(
     timeout=10 * 60,  # Optional: change default timeout (10 minutes)
     lifecycle={
-        "on_timeout": "pause", # Auto-pause after the sandbox times out
-        "auto_resume": False,  # Optional (default is False)
+        "on_timeout": "pause",  # Defaults to "kill"; set to "pause" to auto-pause on timeout
+        "auto_resume": False,   # Optional (default is False)
     },
 )
 ```
@@ -276,8 +276,10 @@ If you resume the sandbox, the service will be accessible again but you need to 
 - Resuming a sandbox takes approximately **1 second**
 
 ### Paused sandbox retention
-- Paused sandboxes are kept **indefinitely** — there is no automatic deletion or time-to-live limit
+- Paused sandboxes are kept **indefinitely**; there is no automatic deletion or time-to-live limit
+- There is currently **no configurable "auto-kill after N days" option**; a paused sandbox will not expire on its own
 - You can resume a paused sandbox at any time
+- To remove a paused sandbox, you must kill it explicitly with an API call (`sandbox.kill()` / `Sandbox.kill(sandboxId)`), as shown in [Removing paused sandboxes](#removing-paused-sandboxes)
 
 ### Continuous runtime limits
 - A sandbox can remain running (without being paused) for:

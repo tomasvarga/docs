@@ -91,6 +91,14 @@ template.from_base_image()  # e2bdev/base
 
 </CodeGroup>
 
+`base` is also the template used when you call `Sandbox.create()` without specifying one. It is Debian-based and comes with common tooling pre-installed: Python 3, Node.js, Yarn, `git`, `curl`, `build-essential`, and the GitHub CLI (`gh`). For the exact contents, see the public Dockerfile: [`templates/base/e2b.Dockerfile`](https://github.com/e2b-dev/E2B/blob/main/templates/base/e2b.Dockerfile).
+
+### Default resources
+
+A sandbox gets its CPU and memory from the template it's built on. A sandbox built from `base` starts with **2 vCPU and 512 MiB of RAM**.
+
+You can override CPU and memory when you [build a template](/docs/template/build) (`cpuCount`/`cpu_count`, `memoryMB`/`memory_mb`). Disk size is not a default you set per sandbox; it's determined by your team's tier limit and applied at build time (see [Build limits](/docs/template/quickstart#build-limits)).
+
 ### Build from existing template
 
 Extend an existing template from your team or organization:
