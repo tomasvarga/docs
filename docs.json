@@ -55,12 +55,13 @@
             ]
           },
           {
-            "group": "Agents in sandbox",
+            "group": "Agents",
             "pages": [
               "docs/agents/amp",
               "docs/agents/claude-code",
               "docs/agents/claude-managed-agents",
               "docs/agents/codex",
+              "docs/agents/crabbox",
               "docs/agents/devin",
               "docs/agents/openai-agents-sdk",
               {
