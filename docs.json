@@ -50,18 +50,18 @@
             "pages": [
               "docs/use-cases/coding-agents",
               "docs/use-cases/computer-use",
-              "docs/use-cases/crabbox",
               "docs/use-cases/ci-cd",
               "docs/use-cases/remote-browser"
             ]
           },
           {
-            "group": "Agents in sandbox",
+            "group": "Agents",
             "pages": [
               "docs/agents/amp",
               "docs/agents/claude-code",
               "docs/agents/claude-managed-agents",
               "docs/agents/codex",
+              "docs/agents/crabbox",
               "docs/agents/devin",
               "docs/agents/openai-agents-sdk",
               {
