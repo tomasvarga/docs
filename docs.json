@@ -63,6 +63,7 @@
               "docs/agents/codex",
               "docs/agents/crabbox",
               "docs/agents/devin",
+              "docs/agents/grok",
               "docs/agents/openai-agents-sdk",
               {
                 "group": "OpenClaw",
