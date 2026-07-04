@@ -4,14 +4,14 @@ description: "Run Grok Build in a secure E2B sandbox with full filesystem, termi
 icon: "/images/icons/grok.svg"
 ---
 
-[Grok Build](https://x.ai/cli) is xAI's coding agent and CLI. E2B provides a pre-built `grok` template with Grok Build already installed.
+[Grok Build](https://x.ai/cli) is xAI's coding agent and CLI. E2B provides a pre-built `e2b/grok` template with Grok Build already installed.
 
 ## CLI
 
 Create a sandbox with the [E2B CLI](/docs/cli).
 
 ```bash
-e2b sbx create grok
+e2b sbx create e2b/grok
 ```
 
 Once inside the sandbox, start Grok Build.
@@ -28,7 +28,7 @@ Use `-p` for non-interactive mode and `--always-approve` to auto-approve all too
 ```typescript JavaScript & TypeScript
 import { Sandbox } from 'e2b'
 
-const sandbox = await Sandbox.create('grok', {
+const sandbox = await Sandbox.create('e2b/grok', {
   envs: { XAI_API_KEY: process.env.XAI_API_KEY },
 })
 
@@ -43,7 +43,7 @@ await sandbox.kill()
 import os
 from e2b import Sandbox
 
-sandbox = Sandbox.create("grok", envs={
+sandbox = Sandbox.create("e2b/grok", envs={
     "XAI_API_KEY": os.environ["XAI_API_KEY"],
 })
 
@@ -62,7 +62,7 @@ sandbox.kill()
 ```typescript JavaScript & TypeScript
 import { Sandbox } from 'e2b'
 
-const sandbox = await Sandbox.create('grok', {
+const sandbox = await Sandbox.create('e2b/grok', {
   envs: { XAI_API_KEY: process.env.XAI_API_KEY },
   timeoutMs: 600_000,
 })
@@ -88,7 +88,7 @@ await sandbox.kill()
 import os
 from e2b import Sandbox
 
-sandbox = Sandbox.create("grok", envs={
+sandbox = Sandbox.create("e2b/grok", envs={
     "XAI_API_KEY": os.environ["XAI_API_KEY"],
 }, timeout=600)
 
@@ -113,7 +113,7 @@ sandbox.kill()
 
 ## Build a custom template
 
-If you need to customize the environment (e.g. pre-install dependencies, add config files), build your own template on top of the pre-built `grok` template.
+If you need to customize the environment (e.g. pre-install dependencies, add config files), build your own template on top of the pre-built `e2b/grok` template.
 
 <CodeGroup>
 ```typescript JavaScript & TypeScript
@@ -121,7 +121,7 @@ If you need to customize the environment (e.g. pre-install dependencies, add con
 import { Template } from 'e2b'
 
 export const template = Template()
-  .fromTemplate('grok')
+  .fromTemplate('e2b/grok')
 ```
 ```python Python
 # template.py
@@ -129,7 +129,7 @@ from e2b import Template
 
 template = (
     Template()
-    .from_template("grok")
+    .from_template("e2b/grok")
 )
 ```
 </CodeGroup>
