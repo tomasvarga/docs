@@ -1,0 +1,50 @@
+---
+title: "Changelog"
+sidebarTitle: Changelog
+description: "Product updates and new releases from E2B."
+---
+
+<Update label="2026-07-06" description="Week of June 29 – July 6, 2026">
+
+## New features
+
+**Filter snapshots by name**
+
+`GET /snapshots` now accepts an optional `name` query parameter, mirroring the metadata filter on sandbox listing. You can pass a bare alias (`my-snapshot`), the namespaced form (`my-team/my-snapshot`), the raw snapshot ID, or add a `:tag` suffix to filter to a specific successful build. This makes it practical to look up a snapshot without paginating the full list. See [Sandbox persistence](/docs/sandbox/persistence).
+
+**CLI overrides for `template migrate`**
+
+`e2b template migrate` now accepts `--name`, `--cmd`, `--ready-cmd`, `--cpu-count`, and `--memory-mb` flags to override values from `e2b.toml` when generating SDK build files. Omitted flags still fall back to the config, so you can migrate the same template into multiple variants without editing the config. See the [V2 template migration guide](/docs/migration/template-v2).
+
+**Gzip option for template copy layer**
+
+The JavaScript SDK's template `copy` layer now accepts a `gzip` option so build-context uploads can be transparently gzip-compressed, reducing bandwidth for large source trees.
+
+## Updates
+
+**Template name validation aligned with the server**
+
+The CLI now applies a single validation rule across `template init`, `template create`, and `template migrate` that matches the server: lowercase letters, numbers, dashes, and underscores (leading/trailing allowed), capped at 128 characters. Names are trimmed and lowercased automatically, so uppercase input is normalized instead of rejected.
+
+**Numeric CLI flags fail fast**
+
+`template create` and `template migrate` now reject non-numeric `--cpu-count` and `--memory-mb` values at parse time with a clear error, instead of silently dropping the field from the generated build. `--memory-mb` must also be an even number.
+
+**Access token authentication deprecated in the API**
+
+The OpenAPI spec now marks access token authentication as deprecated. Use API keys for programmatic access; the CLI already uses an OAuth login flow for interactive sign-in. See [Access token deprecation](/docs/migration/access-token-deprecation).
+
+**Better errors from the API**
+
+Internal timeouts are no longer misclassified as user cancellations, so failing requests surface a more accurate error class. A related fix corrects error reporting in custom-error handling paths.
+
+## Bug fixes
+
+- Fixed a Python SDK issue where colon-separated SGR escape codes in template build logs were not stripped, leaving raw ANSI sequences in output.
+- Fixed the Python CLI's generated build scripts to use absolute imports, so migrated templates run correctly regardless of the caller's working directory.
+- Fixed handling of corrupted `stop time` values in sandbox records so listings no longer fail on bad data, and clamped sandbox duration to guard against out-of-range values.
+- Corrected the `Sandbox.list()` docstring in the Python SDK to note that paused sandboxes are also included.
+- Patched security vulnerabilities by upgrading the Go toolchain (CVE-2026-42504) and Redis (CVE-2025-49844) in the platform.
+
+</Update>
+
