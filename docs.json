@@ -274,8 +274,50 @@
             "icon": "square-js",
             "versions": [
               {
-                "version": "v2.29.1",
+                "version": "v2.32.0",
                 "default": true,
+                "pages": [
+                  "docs/sdk-reference/js-sdk/v2.32.0/errors",
+                  "docs/sdk-reference/js-sdk/v2.32.0/sandbox",
+                  "docs/sdk-reference/js-sdk/v2.32.0/sandbox-commands",
+                  "docs/sdk-reference/js-sdk/v2.32.0/sandbox-filesystem",
+                  "docs/sdk-reference/js-sdk/v2.32.0/template",
+                  "docs/sdk-reference/js-sdk/v2.32.0/template-logger",
+                  "docs/sdk-reference/js-sdk/v2.32.0/template-readycmd",
+                  "docs/sdk-reference/js-sdk/v2.32.0/volume"
+                ]
+              },
+              {
+                "version": "v2.31.0",
+                "default": false,
+                "pages": [
+                  "docs/sdk-reference/js-sdk/v2.31.0/errors",
+                  "docs/sdk-reference/js-sdk/v2.31.0/sandbox",
+                  "docs/sdk-reference/js-sdk/v2.31.0/sandbox-commands",
+                  "docs/sdk-reference/js-sdk/v2.31.0/sandbox-filesystem",
+                  "docs/sdk-reference/js-sdk/v2.31.0/template",
+                  "docs/sdk-reference/js-sdk/v2.31.0/template-logger",
+                  "docs/sdk-reference/js-sdk/v2.31.0/template-readycmd",
+                  "docs/sdk-reference/js-sdk/v2.31.0/volume"
+                ]
+              },
+              {
+                "version": "v2.30.6",
+                "default": false,
+                "pages": [
+                  "docs/sdk-reference/js-sdk/v2.30.6/errors",
+                  "docs/sdk-reference/js-sdk/v2.30.6/sandbox",
+                  "docs/sdk-reference/js-sdk/v2.30.6/sandbox-commands",
+                  "docs/sdk-reference/js-sdk/v2.30.6/sandbox-filesystem",
+                  "docs/sdk-reference/js-sdk/v2.30.6/template",
+                  "docs/sdk-reference/js-sdk/v2.30.6/template-logger",
+                  "docs/sdk-reference/js-sdk/v2.30.6/template-readycmd",
+                  "docs/sdk-reference/js-sdk/v2.30.6/volume"
+                ]
+              },
+              {
+                "version": "v2.29.1",
+                "default": false,
                 "pages": [
                   "docs/sdk-reference/js-sdk/v2.29.1/errors",
                   "docs/sdk-reference/js-sdk/v2.29.1/sandbox",
@@ -1702,8 +1744,56 @@
             "icon": "python",
             "versions": [
               {
-                "version": "v2.28.2",
+                "version": "v2.31.0",
                 "default": true,
+                "pages": [
+                  "docs/sdk-reference/python-sdk/v2.31.0/exceptions",
+                  "docs/sdk-reference/python-sdk/v2.31.0/logger",
+                  "docs/sdk-reference/python-sdk/v2.31.0/readycmd",
+                  "docs/sdk-reference/python-sdk/v2.31.0/sandbox_async",
+                  "docs/sdk-reference/python-sdk/v2.31.0/sandbox_sync",
+                  "docs/sdk-reference/python-sdk/v2.31.0/template",
+                  "docs/sdk-reference/python-sdk/v2.31.0/template_async",
+                  "docs/sdk-reference/python-sdk/v2.31.0/template_sync",
+                  "docs/sdk-reference/python-sdk/v2.31.0/volume_async",
+                  "docs/sdk-reference/python-sdk/v2.31.0/volume_sync"
+                ]
+              },
+              {
+                "version": "v2.30.0",
+                "default": false,
+                "pages": [
+                  "docs/sdk-reference/python-sdk/v2.30.0/exceptions",
+                  "docs/sdk-reference/python-sdk/v2.30.0/logger",
+                  "docs/sdk-reference/python-sdk/v2.30.0/readycmd",
+                  "docs/sdk-reference/python-sdk/v2.30.0/sandbox_async",
+                  "docs/sdk-reference/python-sdk/v2.30.0/sandbox_sync",
+                  "docs/sdk-reference/python-sdk/v2.30.0/template",
+                  "docs/sdk-reference/python-sdk/v2.30.0/template_async",
+                  "docs/sdk-reference/python-sdk/v2.30.0/template_sync",
+                  "docs/sdk-reference/python-sdk/v2.30.0/volume_async",
+                  "docs/sdk-reference/python-sdk/v2.30.0/volume_sync"
+                ]
+              },
+              {
+                "version": "v2.29.6",
+                "default": false,
+                "pages": [
+                  "docs/sdk-reference/python-sdk/v2.29.6/exceptions",
+                  "docs/sdk-reference/python-sdk/v2.29.6/logger",
+                  "docs/sdk-reference/python-sdk/v2.29.6/readycmd",
+                  "docs/sdk-reference/python-sdk/v2.29.6/sandbox_async",
+                  "docs/sdk-reference/python-sdk/v2.29.6/sandbox_sync",
+                  "docs/sdk-reference/python-sdk/v2.29.6/template",
+                  "docs/sdk-reference/python-sdk/v2.29.6/template_async",
+                  "docs/sdk-reference/python-sdk/v2.29.6/template_sync",
+                  "docs/sdk-reference/python-sdk/v2.29.6/volume_async",
+                  "docs/sdk-reference/python-sdk/v2.29.6/volume_sync"
+                ]
+              },
+              {
+                "version": "v2.28.2",
+                "default": false,
                 "pages": [
                   "docs/sdk-reference/python-sdk/v2.28.2/exceptions",
                   "docs/sdk-reference/python-sdk/v2.28.2/logger",
@@ -3107,8 +3197,18 @@
             "icon": "square-js",
             "versions": [
               {
-                "version": "v2.6.0",
+                "version": "v2.6.1",
                 "default": true,
+                "pages": [
+                  "docs/sdk-reference/code-interpreter-js-sdk/v2.6.1/charts",
+                  "docs/sdk-reference/code-interpreter-js-sdk/v2.6.1/consts",
+                  "docs/sdk-reference/code-interpreter-js-sdk/v2.6.1/messaging",
+                  "docs/sdk-reference/code-interpreter-js-sdk/v2.6.1/sandbox"
+                ]
+              },
+              {
+                "version": "v2.6.0",
+                "default": false,
                 "pages": [
                   "docs/sdk-reference/code-interpreter-js-sdk/v2.6.0/charts",
                   "docs/sdk-reference/code-interpreter-js-sdk/v2.6.0/consts",
@@ -3333,8 +3433,15 @@
             "icon": "python",
             "versions": [
               {
-                "version": "v2.8.0",
+                "version": "v2.8.1",
                 "default": true,
+                "pages": [
+                  "docs/sdk-reference/code-interpreter-python-sdk/v2.8.1/code_interpreter"
+                ]
+              },
+              {
+                "version": "v2.8.0",
+                "default": false,
                 "pages": [
                   "docs/sdk-reference/code-interpreter-python-sdk/v2.8.0/code_interpreter"
                 ]
@@ -3953,8 +4060,35 @@
             "icon": "terminal",
             "versions": [
               {
-                "version": "v2.11.1",
+                "version": "v2.13.1",
                 "default": true,
+                "pages": [
+                  "docs/sdk-reference/cli/v2.13.1/auth",
+                  "docs/sdk-reference/cli/v2.13.1/sandbox",
+                  "docs/sdk-reference/cli/v2.13.1/template"
+                ]
+              },
+              {
+                "version": "v2.13.0",
+                "default": false,
+                "pages": [
+                  "docs/sdk-reference/cli/v2.13.0/auth",
+                  "docs/sdk-reference/cli/v2.13.0/sandbox",
+                  "docs/sdk-reference/cli/v2.13.0/template"
+                ]
+              },
+              {
+                "version": "v2.12.2",
+                "default": false,
+                "pages": [
+                  "docs/sdk-reference/cli/v2.12.2/auth",
+                  "docs/sdk-reference/cli/v2.12.2/sandbox",
+                  "docs/sdk-reference/cli/v2.12.2/template"
+                ]
+              },
+              {
+                "version": "v2.11.1",
+                "default": false,
                 "pages": [
                   "docs/sdk-reference/cli/v2.11.1/auth",
                   "docs/sdk-reference/cli/v2.11.1/sandbox",
@@ -5030,22 +5164,22 @@
     },
     {
       "source": "/docs/sdk-reference/js-sdk/latest/:slug*",
-      "destination": "/docs/sdk-reference/js-sdk/v2.29.1/:slug*",
+      "destination": "/docs/sdk-reference/js-sdk/v2.32.0/:slug*",
       "permanent": false
     },
     {
       "source": "/docs/sdk-reference/python-sdk/latest/:slug*",
-      "destination": "/docs/sdk-reference/python-sdk/v2.28.2/:slug*",
+      "destination": "/docs/sdk-reference/python-sdk/v2.31.0/:slug*",
       "permanent": false
     },
     {
       "source": "/docs/sdk-reference/code-interpreter-js-sdk/latest/:slug*",
-      "destination": "/docs/sdk-reference/code-interpreter-js-sdk/v2.6.0/:slug*",
+      "destination": "/docs/sdk-reference/code-interpreter-js-sdk/v2.6.1/:slug*",
       "permanent": false
     },
     {
       "source": "/docs/sdk-reference/code-interpreter-python-sdk/latest/:slug*",
-      "destination": "/docs/sdk-reference/code-interpreter-python-sdk/v2.8.0/:slug*",
+      "destination": "/docs/sdk-reference/code-interpreter-python-sdk/v2.8.1/:slug*",
       "permanent": false
     },
     {
@@ -5060,7 +5194,7 @@
     },
     {
       "source": "/docs/sdk-reference/cli/latest/:slug*",
-      "destination": "/docs/sdk-reference/cli/v2.11.1/:slug*",
+      "destination": "/docs/sdk-reference/cli/v2.13.1/:slug*",
       "permanent": false
     }
   ]
