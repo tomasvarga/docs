@@ -4656,6 +4656,13 @@
           "source": "openapi-public.yml",
           "directory": "docs/api-reference"
         }
+      },
+      {
+        "anchor": "Changelog",
+        "icon": "clock-rotate-left",
+        "pages": [
+          "docs/changelog"
+        ]
       }
     ],
     "global": {}

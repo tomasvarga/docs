@@ -1,0 +1,44 @@
+---
+title: "Changelog"
+sidebarTitle: Changelog
+description: "Product updates and new releases from E2B."
+---
+
+<Update label="2026-07-13" description="Week of July 6 – 13, 2026">
+
+## New features
+
+**Set-once integration attribution in the SDKs**
+
+Integrations that wrap the E2B SDK can now tag every request with a single call at startup — `ConnectionConfig.setIntegration()` in JavaScript and `ConnectionConfig.set_integration()` in Python — instead of threading an `integration` option through each connection. The identifier is added to the `User-Agent` on all outgoing requests; an explicitly provided `User-Agent` still wins. The old per-call `integration` option is deprecated.
+
+**Enterprise SSO teams**
+
+Users signing in through an enterprise SSO connection are now automatically enrolled in the E2B team(s) mapped to their identity provider organization instead of getting a personal team. SSO-managed teams can't be modified by their members, keeping team membership in sync with the upstream directory. Reach out to E2B if you'd like SSO enabled for your organization — see [Support](/docs/support).
+
+## Updates
+
+**Access token cutoff rollout begins**
+
+The API and the Docker registry proxy used for V1 template builds can now reject `E2B_ACCESS_TOKEN` authentication per user, ahead of the August 1, 2026 removal. Move any remaining scripts and CI to API keys before then. See [Access token deprecation](/docs/migration/access-token-deprecation).
+
+**Template builds match Docker's OCI unpack behavior**
+
+Template layer extraction now runs the same way Docker's daemon does, so images that use relative symlinks pointing outside the layer directory (for example, Nix store optimization links) build correctly instead of failing with `invalid symlink`. As part of the change, nested whiteout files are no longer supported — this matches Docker's behavior. See [Template quickstart](/docs/template/quickstart).
+
+**Template V2 detection with stacked SDK user agents**
+
+The template builder now correctly parses requests that carry multiple SDK `User-Agent` values — a case that previously crashed the version check used to route between the beta and GA builders. Wrappers and proxies that append their own agent no longer break template builds. See [Template V2 migration](/docs/migration/template-v2).
+
+## Bug fixes
+
+- Fixed a networking regression where resumed sandboxes could silently drop packets for several seconds until a stale ARP entry expired. Resumed sandboxes now reach their gateway immediately. See [Sandbox persistence](/docs/sandbox/persistence).
+- Fixed an `envd` deadlock that could hang sandbox startup when a client cancelled the `/init` request mid-flight; the process cleanly returns instead of blocking indefinitely.
+- Suppressed misleading "cancelled" errors reported during rapid sandbox `/init` retries while a previous CA-install cleanup was still finishing.
+- Hardened `envd` signature validation with a constant-time comparison to prevent timing-based signature disclosure.
+- Corrected the Python SDK docstring for `TemplateBuilder.apt_install(no_install_recommends=...)` — the parameter skips recommended packages when `True`, matching apt's own `--no-install-recommends` flag rather than the inverted description that shipped previously.
+- Fixed a rare metrics underflow that could produce nonsensical allocated-resource numbers on a node after a sandbox left the orchestrator between polls.
+- Added a self-healing pass that re-registers sandboxes missing from the eviction index, so an out-of-sync entry no longer prevents scheduled cleanup.
+- Patched additional CVEs and upgraded the Go toolchain and Alpine base image used across platform services.
+
+</Update>
