@@ -1,0 +1,720 @@
+---
+title: "Changelog"
+sidebarTitle: "Changelog"
+description: "Product updates and new releases from E2B."
+---
+
+<Update label="July 13, 2026" description="SDK integration attribution, SSO teams, template build fixes">
+
+## New features
+
+**Set-once integration attribution in the SDKs**
+
+Integrations that wrap the E2B SDK can now tag every request with a single call at startup, `ConnectionConfig.setIntegration()` in JavaScript and `ConnectionConfig.set_integration()` in Python, instead of threading an `integration` option through each connection. The identifier is added to the `User-Agent` header on all outgoing requests, and an explicitly provided `User-Agent` still takes precedence. The old per-call `integration` option is deprecated.
+
+**Enterprise SSO teams**
+
+Users signing in through an enterprise SSO connection are now automatically enrolled in the E2B team(s) mapped to their identity provider organization instead of getting a personal team. SSO-managed teams cannot be modified by their members, keeping team membership in sync with the upstream directory. Reach out to E2B to enable SSO for your organization: see [Support](/docs/support).
+
+## Updates
+
+**Access token cutoff rollout**
+
+The API and the Docker registry proxy used for V1 template builds can now reject `E2B_ACCESS_TOKEN` authentication per user, ahead of the August 1, 2026 removal. Move any remaining scripts and CI to API keys before then. See [Access token deprecation](/docs/migration/access-token-deprecation).
+
+**Docker-compatible template layer extraction**
+
+Template layer extraction now runs the same way Docker's daemon does, so images that use relative symlinks pointing outside the layer directory (for example, Nix store optimization links) build correctly instead of failing with an `invalid symlink` error. As part of the change, an unusual layer construct that Docker itself does not support is no longer supported either, keeping E2B builds consistent with Docker. See [Template quickstart](/docs/template/quickstart).
+
+**Template V2 detection with stacked SDK user agents**
+
+The template builder now correctly parses requests that carry multiple SDK `User-Agent` values, a case that previously crashed the version check used to route between the beta and GA builders. Wrappers and proxies that append their own agent no longer break template builds. See [Template V2 migration](/docs/migration/template-v2).
+
+## Bug fixes
+
+- Fixed a networking regression where resumed sandboxes could silently drop packets for several seconds after resuming; resumed sandboxes now reconnect to the network immediately (see [Sandbox persistence](/docs/sandbox/persistence)).
+- Fixed a deadlock that could hang sandbox startup when a client cancelled the initialization request mid-flight.
+- Suppressed misleading "cancelled" errors that could appear during rapid sandbox startup retries.
+- Hardened sandbox request signature validation with a constant-time comparison to prevent timing-based signature disclosure.
+- Corrected the Python SDK docstring for `TemplateBuilder.apt_install(no_install_recommends=...)`: the parameter skips recommended packages when `True`, matching apt's own `--no-install-recommends` flag rather than the inverted description that shipped previously.
+- Fixed an issue where an out-of-sync internal record could prevent an expired sandbox from being cleaned up on schedule.
+- Reliability and security hardening across platform services, including dependency and base image CVE patches.
+
+</Update>
+
+<Update label="July 6, 2026" description="Snapshot filtering, template CLI improvements, and fixes">
+
+## New features
+
+**Snapshot filtering by name**
+
+The `GET /snapshots` endpoint now accepts an optional `name` query parameter, mirroring the metadata filter on sandbox listing. You can pass a bare alias (`my-snapshot`), the namespaced form (`my-team/my-snapshot`), the raw snapshot ID, or add a `:tag` suffix to target a specific successful build, so you can look up a snapshot without paginating the full list. See [Sandbox persistence](/docs/sandbox/persistence).
+
+**CLI overrides for `template migrate`**
+
+`e2b template migrate` now accepts `--name`, `--cmd`, `--ready-cmd`, `--cpu-count`, and `--memory-mb` flags to override values from `e2b.toml` when generating SDK build files. Omitted flags still fall back to the config, so you can migrate the same template into multiple variants without editing it. See the [template migration guide](/docs/migration/template-v2).
+
+**Gzip compression for template copy uploads**
+
+The JavaScript SDK's template `copy` layer now accepts a `gzip` option that transparently compresses build-context uploads, reducing bandwidth for large source trees.
+
+## Updates
+
+**Template name validation aligned with the server**
+
+The CLI now applies a single validation rule across `template init`, `template create`, and `template migrate` that matches the server: lowercase letters, numbers, dashes, and underscores (leading and trailing allowed), capped at 128 characters. Names are trimmed and lowercased automatically, so uppercase input is normalized instead of rejected.
+
+**Fail-fast validation for numeric CLI flags**
+
+`template create` and `template migrate` now reject non-numeric `--cpu-count` and `--memory-mb` values at parse time with a clear error, instead of silently dropping the field from the generated build. `--memory-mb` must also be an even number.
+
+**Access token authentication deprecated in the API**
+
+The API now marks access token authentication as deprecated. Use API keys for programmatic access; the CLI already uses an OAuth login flow for interactive sign-in. See [Access token deprecation](/docs/migration/access-token-deprecation).
+
+**More accurate API errors**
+
+Internal timeouts are no longer misclassified as user cancellations, so failing requests surface a more accurate error class. A related fix corrects error reporting in custom error handling paths.
+
+## Bug fixes
+
+- Fixed a Python SDK issue where colon-separated ANSI escape codes in template build logs were not stripped, leaving raw escape sequences in output.
+- Fixed the Python CLI's generated build scripts to use absolute imports, so migrated templates run correctly regardless of the caller's working directory.
+- Fixed sandbox listings failing on records with corrupted stop time values, and clamped sandbox duration to guard against out-of-range values.
+- Corrected the `Sandbox.list()` docstring in the Python SDK to note that paused sandboxes are also included.
+- Security hardening across platform services, including dependency CVE patches.
+
+</Update>
+
+<Update label="June 29, 2026" description="Filesystem-only snapshots, paginated templates, and CLI OAuth login">
+
+## New features
+
+**Filesystem-only snapshots**
+
+You can now pause a sandbox by persisting only the filesystem, skipping the memory snapshot. This produces a lighter snapshot that boots fresh on resume, which is useful when you don't need to preserve in-memory state. It is available via `pause({ memory: false })` and as an auto-pause option on `lifecycle.onTimeout`. See [Filesystem-only snapshots](/docs/sandbox/filesystem-only-snapshots).
+
+**Paginated templates API**
+
+`GET /v2/templates` now supports pagination, making it practical to list large numbers of templates. Both the JavaScript and Python SDKs ship with a shared paginator that gives you a consistent iteration API across languages.
+
+**Python SDK logger option**
+
+The Python SDK now accepts a `logger` option for request and debug logging, matching the JavaScript SDK and making it easier to trace SDK behavior in your own logs.
+
+## Updates
+
+**Streaming uploads and downloads**
+
+File uploads and downloads in the SDKs, volumes, and template build-context uploads now stream from disk instead of buffering the full payload in memory. Large files no longer require proportional memory on the client.
+
+**Auto-resume enabled by default**
+
+Auto-resume is now enabled by default for paused sandboxes. Requests to a paused sandbox will transparently resume it. See [Auto-resume on request](/docs/sandbox/auto-resume).
+
+**More reliable resume retries**
+
+When a resume request times out, retries are now pinned to the same node, reducing tail latency on intermittently slow resumes.
+
+**Execution metrics in webhook events**
+
+[Sandbox lifecycle webhooks](/docs/sandbox/lifecycle-events-webhooks) now always include execution metrics, so you can monitor sandbox usage directly from webhook payloads without an extra API call.
+
+**Path-style S3 addressing**
+
+S3-compatible storage backends that require path-style addressing (such as MinIO and some on-prem deployments) are now supported for self-hosted deployments.
+
+**Template build name limit**
+
+Template build names are now capped at 128 characters to prevent oversized identifiers.
+
+**CLI authentication**
+
+The CLI now uses an OAuth-based login flow, replacing the long-lived access token flow for interactive sign-in. See [CLI authentication](/docs/cli/auth).
+
+## Bug fixes
+
+- Fixed a leak in the JavaScript SDK where `CommandHandle.disconnect()` could leave the output subscription open.
+- Fixed quadratic memory growth in the Python SDK when accumulating large `stdout`/`stderr` from long-running commands.
+- Fixed the filesystem watch handle's callback and timeout behavior in the SDKs.
+- Fixed a failure when pausing a sandbox via a request that omitted the `Content-Length` header.
+- Running sandboxes and template builds are now drained gracefully during platform maintenance instead of being interrupted.
+
+</Update>
+
+<Update label="June 22, 2026" description="SDK auth options, faster starts, snapshot reliability">
+
+## New features
+
+**Opt-out for client-side API key validation**
+
+The JavaScript and Python SDKs can now skip the default `e2b_` [API key](/docs/api-key) format check, which is useful for self-hosted deployments that issue keys in a different format. Set `E2B_VALIDATE_API_KEY=false`, or pass `validateApiKey: false` in JavaScript or `validate_api_key=False` in Python when creating a sandbox. Default behavior is unchanged.
+
+**`E2B_API_KEY` support in template commands**
+
+The CLI now honors the `E2B_API_KEY` environment variable in the `template list` and `template create` [template commands](/docs/template/quickstart), matching the rest of the CLI.
+
+**Composable integration user-agent**
+
+The SDKs now let integrations append a custom identifier to the user-agent string, making it easier to attribute traffic from tools built on top of E2B.
+
+## Updates
+
+**SDK auth cleanup**
+
+The `ConnectionConfig` access token field is now deprecated; prefer passing credentials via `apiKey` or custom headers. Existing code keeps working.
+
+**Sandbox status timestamps**
+
+Each sandbox now reports the timestamp of its last status change, giving you more precise visibility into [sandbox lifecycle events](/docs/sandbox/lifecycle-events-api).
+
+**Faster sandbox cold boot**
+
+Cold-boot time has been reduced, so sandboxes start more quickly when no pre-warmed instance is available.
+
+**More reliable filesystem snapshots**
+
+Snapshots now quiesce the sandbox filesystem before capture, producing more consistent on-disk state for [paused](/docs/sandbox/persistence) and [snapshotted](/docs/sandbox/snapshots) sandboxes.
+
+## Bug fixes
+
+- Fixed a flaky `TimeoutException` in the Python SDK when streaming [command](/docs/commands) output; command timeouts are now enforced server-side.
+- The Python SDK's `api_headers` Authorization value now takes precedence over the deprecated `access_token` field, so explicit header overrides work as expected.
+- The JavaScript SDK now correctly detects connection-dropped errors on Bun and Deno during health checks, preventing false-positive failures.
+- Fixed the [filesystem](/docs/filesystem) `WriteInfo.type` enum, made timestamps timezone-aware, and enabled gzip compression on the default upload path.
+- Resolved edge cases where signed [upload](/docs/filesystem/upload) and [download](/docs/filesystem/download) URLs could be reported as expired prematurely.
+- Fixed template build bugs and consolidated shell quoting so multi-line and quoted commands in [template definitions](/docs/template/defining-template) behave predictably.
+- Removed an internal 30-second timeout on S3 uploads in [BYOC](/docs/byoc) deployments that could fail large object writes.
+- Improved pause reliability for sandboxes created from older templates.
+
+</Update>
+
+<Update label="June 15, 2026" description="CLI lifecycle flags, network mount watching, and SDK fixes">
+
+## New features
+
+**Sandbox lifecycle flags in the CLI**
+
+`e2b sandbox create` now accepts `--lifecycle.autoresume` and `--lifecycle.ontimeout`, plus a `--timeout` option. You can configure auto-resume and pause-on-timeout behavior directly from the CLI without writing a script. See [Auto-resume](/docs/sandbox/auto-resume).
+
+**Opt-in support for watching network mounts**
+
+Filesystem watch requests now accept an option to explicitly watch paths on NFS, CIFS, SMB, and FUSE mounts, which are rejected by default. See [Watch directory](/docs/filesystem/watch).
+
+## Updates
+
+**JavaScript and Python SDK behavior aligned**
+
+Several differences between the JavaScript and Python SDKs were reconciled so both surfaces behave the same way for command execution, filesystem operations, and error handling.
+
+## Bug fixes
+
+- Fixed transport handling, request timeouts, empty-file uploads, and eager stream errors in the volume SDK client.
+- The JavaScript `Sandbox.kill()` instance method now returns whether the sandbox was killed, matching its static counterpart.
+- The JavaScript SDK now passes `start` and `end` correctly as query parameters in `getMetrics`.
+- Non-2xx responses from the API or the sandbox with empty bodies now raise proper errors instead of failing silently.
+- The Python SDK now retries connection failures on HTTP/2 API transports.
+- Fixed a Python SDK issue where async transports could be incorrectly reused across recreated event loops.
+- Sandbox pause uploads now retry on transient failures, making pause and resume more reliable.
+
+</Update>
+
+<Update label="June 8, 2026" description="Command stdin streaming and SDK reliability improvements">
+
+## New features
+
+**Stdin streaming for commands**
+
+For commands started with `stdin: true`, `CommandHandle` now exposes `sendStdin` and `closeStdin`, so you can write to a running process's standard input and close it when you're done. This is useful for interactive CLIs and programs that read from stdin. See [Commands](/docs/commands).
+
+**Per-sandbox resource allocation metrics**
+
+Per-sandbox CPU and memory allocation metrics are now available, giving better visibility into resource usage across your fleet of sandboxes.
+
+**Paginated templates list**
+
+The templates list endpoint in the dashboard API now supports pagination, making it easier to work with large template catalogs.
+
+**API-only header options in the SDKs**
+
+The SDKs now expose an option for setting headers that apply only to E2B API requests, separate from requests sent to the sandbox itself. This is useful when fronting E2B with a proxy or gateway.
+
+## Updates
+
+**CLI `template build` deprecation**
+
+The v1 `template build` command is now fully deprecated in favor of the v2 build flow: it no longer runs a build and instead prints the v2 migration notice and exits. See the [v2 migration guide](/docs/migration/v2) and the [template quickstart](/docs/template/quickstart).
+
+**Cross-generation CPU compatibility**
+
+Sandboxes can now be scheduled across multiple CPU generations, increasing available capacity and reducing scheduling failures.
+
+## Bug fixes
+
+- The CLI now restricts `~/.e2b/config.json` to owner-only permissions so your credentials are not readable by other local users on the machine.
+- Bumped the `ws` dependency to 8.20.1 or newer in the JavaScript SDK to address CVE-2026-45736.
+- The Python SDK now uses thread-local API transports, so it behaves correctly under multi-threaded workloads.
+- `CommandHandle.wait()` in the Python SDK now correctly awaits async callbacks.
+- Rate limit (429) responses from the sandbox now surface as a consistent `RateLimitError` in both SDKs.
+- `fromDockerfile` now handles multi-source `COPY` and `ADD` instructions correctly in template builds.
+- Looking up a template by alias no longer returns false negatives, as the template `exists` check now includes alias tags.
+- Fixed rare scheduling conflicts during template builds.
+
+</Update>
+
+<Update label="June 1, 2026" description="Runtime network rules and faster template builds">
+
+## New features
+
+**Runtime updates to sandbox network rules**
+
+Change a running sandbox's network configuration without restarting it using `sandbox.updateNetwork()` in JavaScript and `sandbox.update_network()` in Python. See [Internet access](/docs/network/internet-access).
+
+**Structured network rules with per-host transforms**
+
+Define network rules as structured objects and apply per-host transforms, such as header injection or URL rewrites, when sandboxes call out to the internet. See [Internet access](/docs/network/internet-access).
+
+**`AbortSignal` support for template operations**
+
+Cancel template builds and other long-running template calls from the JavaScript SDK using a standard `AbortSignal`.
+
+**Client-side API key validation**
+
+Both SDKs now validate the format of your `E2B_API_KEY` before making any request, so misconfigured keys fail fast with a clear error.
+
+## Updates
+
+**HTTP/2 with a stable sandbox host by default in the JavaScript SDK**
+
+Sandbox traffic in the JavaScript SDK now goes through a stable sandbox host with HTTP/2 by default, where it was previously opt-in, reducing connection overhead and improving latency for high-throughput agents.
+
+**Higher concurrency limits in the JavaScript SDK**
+
+Default max-concurrency settings have been increased so large agent workloads need less manual tuning.
+
+**Faster template builds and uploads**
+
+Template builds now parallelize more of the work and stream compressed templates directly to storage on upload, cutting build and upload times for large templates.
+
+**Better stability for memory-heavy workloads**
+
+Memory handling and storage upload paths have been reworked to reduce copying and free buffers sooner, lowering memory pressure on long-running sandboxes.
+
+## Bug fixes
+
+- Fixed `fromDockerfile` in JavaScript and `from_dockerfile` in Python to correctly handle multi-source `COPY` and `ADD` instructions when building [custom templates](/docs/template/quickstart).
+- Fixed connection leaks in the Python SDK caused by streams not closing cleanly when filesystem watchers and commands were torn down on sandbox shutdown.
+- Fixed `lifecycle.on_timeout` and `auto_pause` precedence so [sandbox lifecycle](/docs/sandbox) settings now behave consistently across both SDKs.
+- Fixed the [CLI](/docs/cli) `e2b auth login` flow on headless machines: when a browser cannot be opened, the CLI now prints the login URL instead of failing.
+- Fixed transport stability issues in the Python SDK that could cause intermittent disconnects under load.
+- Improved sandbox cluster reliability during routine sync, reducing transient sandbox unavailability.
+
+</Update>
+
+<Update label="May 25, 2026" description="Sandbox lifecycle options and SDK reliability improvements">
+
+## New features
+
+**HTTP/2 opt-out in the Python SDK**
+
+You can now disable HTTP/2 when constructing the Python SDK's HTTP transport, which is useful for environments where HTTP/2 causes connection issues with proxies or load balancers. HTTP/2 remains the default; see the SDK reference for transport configuration.
+
+## Updates
+
+**Clearer lifecycle precedence in the SDKs**
+
+When creating a sandbox, `lifecycle.onTimeout` in JavaScript and `lifecycle.on_timeout` in Python now consistently take precedence over the older `autoPause` / `auto_pause` argument. Passing a partial `lifecycle` object no longer throws or silently misbehaves. See [Sandbox lifecycle](/docs/sandbox).
+
+**`autoPause` deprecated**
+
+Use `lifecycle.onTimeout: "pause"` instead. Calls that pass `autoPause` in JavaScript or `auto_pause` in Python continue to work but emit a deprecation warning.
+
+**Stricter validation for `autoResume`**
+
+Setting `autoResume: true` together with an effective timeout action of `kill` now raises `InvalidArgumentError` in JavaScript and `InvalidArgumentException` in Python at sandbox creation time, surfacing a misconfiguration that previously failed silently.
+
+**Faster sandbox creation under load**
+
+Creating many sandboxes at once is now faster: the API responds as soon as capacity is available instead of waiting on a polling interval.
+
+**Better error responses for invalid template tags**
+
+The API now returns `400 Bad Request` instead of a generic server error when a template tag is invalid. See [Template tags and versioning](/docs/template/tags).
+
+**Removed experimental `Sandbox.betaCreate`**
+
+The experimental `Sandbox.betaCreate` method in JavaScript and `Sandbox.beta_create` in Python have been removed now that their options are available on the stable `Sandbox.create` API. Migrate any remaining usage to `Sandbox.create` with the equivalent `lifecycle` options.
+
+## Bug fixes
+
+- Improved HTTP/2 connection handling in the JavaScript SDK for sandbox and API traffic, reducing connection-reuse issues under concurrency.
+- The Python SDK now properly closes the streams used by file watchers and command execution on teardown, preventing leaked connections.
+- `e2b auth login` no longer fails on headless machines without `xdg-open`; the CLI now prints the login URL for you to open manually (see [CLI authentication](/docs/cli/auth)).
+
+</Update>
+
+<Update label="May 18, 2026" description="Named snapshots, memory savings, and reliability fixes">
+
+## New features
+
+**Named snapshots**
+
+The [JavaScript SDK](https://www.npmjs.com/package/e2b) (e2b 2.20.1) and [Python SDK](https://pypi.org/project/e2b/) (2.21.1) now accept an optional `name` parameter when creating a snapshot and return the snapshot's name in the response. See [persistence and snapshots](/docs/sandbox/persistence) for usage.
+
+**More memory-efficient templates**
+
+Sandboxes built from the same template now reclaim unused memory more effectively, so paused sandboxes use less memory.
+
+## Updates
+
+**Cleaner, more reliable sandbox logs**
+
+Sandbox runtime logs are quieter and more dependable. Repeated failure messages are deduplicated, debug-level noise no longer floods sandbox logs, and log delivery buffers safely during brief network interruptions so log lines are not lost.
+
+## Bug fixes
+
+- Sandbox startup no longer piles up retries when many requests hit a sandbox at once, and pending calls now cancel cleanly when your client disconnects instead of queueing behind a stuck lock.
+- Resuming a sandbox that still holds open files on a network mount now succeeds instead of failing.
+- Sandbox log lines now always carry the correct template, sandbox, and team IDs, even when the sandbox is unhealthy.
+
+</Update>
+
+<Update label="May 11, 2026" description="Snapshot compression, HTTP/2 SDKs, faster persistence">
+
+## New features
+
+**Snapshot compression**
+
+Memory and root filesystem snapshots are now compressed with zstd, reducing storage size and the bandwidth used by [pause and resume](/docs/sandbox/persistence). Existing snapshots remain compatible, and the format is detected automatically. Compression is rolling out gradually.
+
+**Custom domain header transforms**
+
+Sandboxes can now be configured with header injection rules at creation time, and the configuration persists across [pause and resume](/docs/sandbox/persistence). See the [custom domain](/docs/network/custom-domain) docs.
+
+**Stable per-sandbox hostname routing**
+
+The SDKs can now reach sandboxes through a stable `sandbox.<domain>` host using header-based routing instead of per-sandbox hostnames, simplifying egress, DNS, and TLS setup.
+
+**HTTP/2 in the Python SDK**
+
+The Python SDK now communicates with E2B and your sandboxes over HTTP/2, reducing connection overhead under concurrent calls.
+
+**HTTP/2 in the JavaScript SDK**
+
+The JavaScript SDK now uses HTTP/2 for sandbox traffic on Node 20.18.1 and newer. Other JavaScript runtimes are unaffected.
+
+## Updates
+
+**Faster pause, resume, and template builds**
+
+Snapshot storage now avoids thousands of redundant metadata fetches per operation, lowering tail latency and storage cost during [pause and resume](/docs/sandbox/persistence) and [template builds](/docs/template/build).
+
+**Lower latency when connecting to busy sandboxes**
+
+The sandbox connect endpoint now wakes waiting requests directly instead of constantly polling, reducing tail latency when many requests target the same sandbox.
+
+**Smaller snapshots when deleting data**
+
+Writes that zero or discard disk blocks are now omitted from snapshot diffs and the space is reclaimed sooner, shrinking snapshots. Existing snapshots remain compatible.
+
+**Smaller snapshots for small-file workloads**
+
+New [template](/docs/template/quickstart) builds store files under about 160 bytes more compactly, shrinking snapshot diffs for workloads that churn many small files. Applies to newly built templates.
+
+**Lower snapshot growth for rebuilt templates**
+
+Newly built base templates avoid a background memory compaction behavior that marked untouched memory as changed, so subsequent snapshots grow less. Existing templates pick this up on rebuild.
+
+**Opt-in pre-pause memory and disk reclaim**
+
+Sandboxes can optionally flush, trim, and compact memory and disk right before pausing to produce smaller snapshots. This is disabled by default and rolling out gradually with per-step time limits.
+
+**Automatic release of freed memory**
+
+Sandboxes can now return memory they no longer use back to the platform, reducing memory footprint and snapshot size. This capability is rolling out gradually.
+
+**Kernel updates for new template builds**
+
+New template builds can pick up newer kernel versions as E2B rolls them out, while existing templates and snapshots keep the kernel they were built with.
+
+## Bug fixes
+
+- Fixed a regression where SDK connections over a raw IP host (for example on-prem or `e2b-local`) failed with HTTP 400.
+- Fixed a deadlock that could freeze [command](/docs/commands) output for all subscribers and hang new `connect` calls when one client disconnected.
+- Fixed a crash that could occur when a client disconnected in the middle of a [streaming command](/docs/commands/streaming).
+- Fixed an issue where reads after resume could fail on snapshots stored in the new compressed format.
+- Fixed a case where leaked sandbox processes could survive sandbox shutdown after rapid pause bursts.
+- Fixed a race that could surface stale snapshot data during pause and resume.
+
+</Update>
+
+<Update label="May 4, 2026" description="BYOC auto-resume and file upload options">
+## New features
+
+**Auto-resume for BYOC clusters**
+
+Self-hosted [BYOC](/docs/byoc) deployments now support [auto-resume](/docs/sandbox/auto-resume). Paused sandboxes resume automatically on the next request, just like on E2B Cloud.
+
+## Updates
+
+**Opt-in octet-stream file uploads**
+
+Sandbox [file uploads](/docs/filesystem/upload) once again default to `multipart/form-data`. Pass `useOctetStream: true` in JavaScript or `use_octet_stream=True` in Python when uploading to use `application/octet-stream` instead.
+
+## Bug fixes
+
+- API error responses for blocked teams now include a `BlockedReason` field, so you can surface a useful message to your users.
+- Resolved dependency security alerts across the JavaScript and Python SDKs; update to the latest SDK versions to pick up the fixes.
+</Update>
+
+<Update label="April 27, 2026" description="Internet access toggle, FUSE support, manual template builds">
+
+## New features
+
+**Internet access toggle for running sandboxes**
+
+The sandbox network endpoint now accepts `allow_internet_access`, so you can block or restore all egress on a running sandbox without recreating it. See [internet access](/docs/network/internet-access).
+
+**FUSE filesystems for non-root users**
+
+Templates can now mount FUSE filesystems from non-root accounts: `user_allow_other` is enabled by default and `/dev/fuse` is accessible without `sudo`. See [building templates](/docs/template/quickstart).
+
+**Manual template builds**
+
+You can now trigger a template build manually after creating it, decoupling build time from create time. See [build templates](/docs/template/build).
+
+## Updates
+
+**Clearer template-not-found errors**
+
+When you create a sandbox or build from a base template, the API now distinguishes between a missing alias, an unbuilt tag, and access errors, and it shows the name and tag you actually requested instead of an opaque internal ID. See [template names](/docs/template/names) and [tags](/docs/template/tags).
+
+**Finer-grained sandbox memory metrics**
+
+Sandbox metrics now report per-sample peak memory instead of a lifetime maximum, so memory spikes show up immediately. See [sandbox metrics](/docs/sandbox/metrics).
+
+## Bug fixes
+
+- Killing a sandbox while it is being paused no longer fails with a not-found error; the kill request now waits for the pause to complete and returns success once the sandbox is gone.
+- Fixed an issue where a transient service crash inside a sandbox could leave it unresponsive after pause and resume; sandboxes now recover automatically and stay reachable (see [auto-resume](/docs/sandbox/auto-resume)).
+- Template installs using Bun no longer pick up `.env.local`, so unintended environment variables stay out of the build.
+- Fixed a rare networking race condition that could drop sandboxes under heavy load.
+
+</Update>
+
+<Update label="April 20, 2026" description="Ubuntu 24.04 base image, template option in Sandbox.create, and fixes">
+## New features
+
+**Template option in `Sandbox.create()`**
+
+The JavaScript SDK now accepts `Sandbox.create({ template: 'my-template' })` as an alternative to `Sandbox.create('my-template')`, making it easier to pass the template alongside other options. The Python SDK already supported this via named parameters.
+
+## Updates
+
+**Sandbox base image upgraded to Ubuntu 24.04**
+
+Sandboxes now run on Ubuntu 24.04 with Linux kernel 6.14 or newer, bringing improved security and compatibility.
+
+**Volumes remounted on sandbox resume**
+
+Volumes are now automatically remounted when a sandbox resumes from a paused state, so your persistent storage stays available across pause and resume cycles.
+
+## Bug fixes
+
+- Fixed a bug where the default connection config was not properly propagated when connecting to sandboxes.
+- Fixed a race condition in sandbox pause that could prevent clean shutdowns.
+</Update>
+
+<Update label="April 13, 2026" description="Scheduling reliability, more accurate CPU metrics, and CLI fixes">
+## Updates
+
+**Improved sandbox scheduling reliability**
+
+Sandbox creation under high concurrency is now more reliable thanks to improved scheduling logic that handles bursts of requests more evenly.
+
+**More accurate CPU metrics**
+
+CPU usage metrics for sandboxes are now sampled in the background, preventing short spikes from inflating reported values.
+
+## Bug fixes
+
+- Fixed a bug where a custom API key, domain, or headers set on a `Sandbox` instance were not forwarded to `pause()`, `connect()`, and `getInfo()` calls.
+- `e2b template init` now generates code with the current `Template.build()` API instead of the deprecated `alias` parameter.
+- The CLI update-available notification, silently broken by a bundling issue, now displays correctly again.
+- Fixed a Python SDK issue where streaming operations such as `commands.run` could hang indefinitely if a sandbox became unreachable; the `request_timeout` parameter now correctly applies to streaming calls.
+- Long-running sandboxes no longer risk template cache expiration before their configured lifetime ends.
+</Update>
+
+<Update label="April 6, 2026" description="Volume SDK support, gzip transfers, faster pause">
+
+## New features
+
+**Volume management in the SDKs**
+
+You can now create, list, and delete [volumes](/docs/volumes/manage) directly from the JavaScript and Python SDKs, and mount them to sandboxes with the `volumeMounts` parameter in JavaScript or `volume_mounts` in Python when creating a sandbox. Previously, volume management required the dashboard or API; this makes it easier to programmatically manage persistent storage for your sandboxes.
+
+**Gzip compression for file operations**
+
+A new optional `gzip` parameter on sandbox file read and write operations lets you compress uploads and request compressed downloads, which can significantly reduce transfer times for large files. See the [file upload](/docs/filesystem/upload) and [file download](/docs/filesystem/download) docs.
+
+## Updates
+
+**Faster sandbox pause**
+
+Pausing a sandbox is now significantly faster. The platform avoids copying unchanged data during pause, so you should notice reduced pause times, especially for sandboxes with large filesystems.
+
+**Longer volume upload timeout**
+
+The default timeout for volume file read and write operations has increased from 60 seconds to 1 hour, so you can upload larger datasets to [volumes](/docs/volumes/upload) without running into timeout errors. You can still set a custom timeout.
+
+**Faster file uploads with binary encoding**
+
+File uploads in the SDKs now use binary encoding (`application/octet-stream`) instead of `multipart/form-data` when supported, improving upload efficiency. The change is backward compatible and falls back automatically for older sandbox environments.
+
+**Sandbox runtime upgrade**
+
+The underlying sandbox runtime has been upgraded, bringing performance improvements and better resource management for sandboxes.
+
+## Bug fixes
+
+- The `e2b sandbox create` command no longer inadvertently deletes snapshots when shutting down; the sandbox now expires gracefully on exit instead.
+- Default connection configuration is now correctly applied across all SDK operations.
+- Template names now resolve correctly for paused sandboxes in the API and dashboard.
+- Improved state handling during auto-resume reduces edge cases where sandboxes could fail to resume properly.
+
+</Update>
+
+<Update label="March 30, 2026" description="CLI sandbox info, expanded sandbox info API, and better errors">
+
+## New features
+
+**CLI `sandbox info` command**
+
+The CLI now includes a `sandbox info` command that displays detailed information about a sandbox, including its state, template, CPU and memory configuration, network rules, and lifecycle settings. It supports human-readable (`--format pretty`) and JSON (`--format json`) output:
+
+```bash
+e2b sandbox info <sandboxID>
+e2b sandbox info <sandboxID> --format json
+```
+
+**Expanded sandbox info API**
+
+The `getInfo()` method in JavaScript and `get_info()` in Python now return additional fields: the `lifecycle` configuration, `network` rules, and `allowInternetAccess`. This gives you full visibility into a sandbox's configuration without needing to track it separately.
+
+## Updates
+
+**Improved auto-resume reliability**
+
+Auto-resume now correctly handles sandboxes that are mid-transition (pausing or snapshotting), preventing transient 502 errors when traffic arrives during state changes.
+
+**More specific error types in the SDKs**
+
+The SDKs now distinguish between "sandbox not found" and "file not found" errors with dedicated `SandboxNotFound` and `FileNotFound` error types, making it easier to handle each case in your code. The previous error types are deprecated but still work.
+
+## Bug fixes
+
+- Instance-level connection config (API key, domain, headers) is now correctly forwarded to all SDK methods, including `pause` and `connect`.
+- Template file uploads now correctly include dotfiles (such as `.env` and `.gitignore`) that were previously skipped.
+- Fixed CLI `sandbox list` pagination: the command could previously fetch all sandboxes regardless of the specified limit; it now respects the `--limit` flag and defaults to 1,000 results.
+- The CLI `sandbox logs` command without `--follow` no longer hangs due to unnecessary status polling.
+- The CLI no longer crashes when the API returns non-standard HTTP status codes.
+- The Python SDK has improved timeout handling for streaming requests to prevent hanging connections.
+
+</Update>
+
+<Update label="March 23, 2026" description="Detached sandbox creation, default sandbox metrics, and fixes">
+## New features
+
+**`fixMissing` option for template `aptInstall`**
+
+`aptInstall()` in the JavaScript SDK and `apt_install()` in the Python SDK now accept a `fixMissing` / `fix_missing` option that passes `--fix-missing` to `apt-get install` during template builds, helping resolve incomplete package downloads without manual intervention. [Learn more](/docs/template/quickstart)
+
+**Detached sandbox creation in the CLI**
+
+Use `e2b sandbox create <template> -d` to create a sandbox without attaching a terminal session. The command prints the sandbox ID and a dashboard link, then exits immediately.
+
+## Updates
+
+**Sandbox metrics enabled by default**
+
+Sandbox CPU and memory metrics are now collected and queryable by default, with no feature flag required. You can monitor resource usage for your sandboxes without any additional configuration. [Learn more](/docs/sandbox/metrics)
+
+**CLI `template init` uses the `name` parameter**
+
+The `e2b template init` command now generates code using the current `name` parameter instead of the deprecated `alias`. Existing templates continue to work.
+
+**Python SDK timeout handling improvements**
+
+Server-streaming requests in the Python SDK now include proper read timeouts, reducing the chance of hanging connections on slow or stalled streams.
+
+**Dotfiles included in template uploads**
+
+Files starting with a dot (`.env`, `.gitignore`, and similar) are now correctly included when uploading template files via the JavaScript and Python SDKs.
+
+**arm64 support for the base template image**
+
+The base template Docker image is now built for both `amd64` and `arm64` architectures.
+
+## Bug fixes
+
+- Fixed an issue where template builds could fail with an "Invalid filesystem option" error.
+- Fixed `listSandboxes()` pagination in the JavaScript SDK so it correctly stops when the requested limit is reached.
+- Fixed a CLI crash when the API returns an error without a standard HTTP status code, such as a network failure or timeout.
+- Fixed the CLI update check so it works correctly in the bundled CLI and handles errors gracefully.
+- Fixed the `sandbox logs` CLI command timing out unnecessarily when `--follow` is not set.
+- Fixed `Sandbox.create()` failures in self-hosted environments when using the JavaScript SDK.
+- Fixed the async Python SDK to use a separate HTTP transport per event loop, preventing errors when `asyncio.run()` is called multiple times or from different threads.
+- Fixed the error message shown when calling `set_timeout()` on a nonexistent sandbox in the Python SDK, which previously incorrectly referred to a paused sandbox.
+</Update>
+
+<Update label="March 16, 2026" description="Snapshots, lifecycle controls, and SDK improvements">
+## New features
+
+**Sandbox snapshots**
+
+You can now create persistent point-in-time captures of a running sandbox, including both filesystem and memory state. Spawn new sandboxes from a snapshot to start from the exact same state, which makes it easy to create reusable checkpoints across multiple sandbox instances. Snapshots are available in both the JavaScript and Python SDKs; [learn more about snapshots](/docs/sandbox/snapshots).
+
+**Lifecycle configuration and auto-resume**
+
+The new `lifecycle` option on `Sandbox.create` lets you control what happens when a sandbox times out. Set `onTimeout` to `pause` instead of the default `kill` so the sandbox's state is preserved for later, and enable `autoResume` so paused sandboxes automatically wake up when traffic arrives. This replaces the previous `betaPause` / `beta_pause` API; see the [auto-resume docs](/docs/sandbox/auto-resume).
+
+**CLI `sandbox pause` and `sandbox resume` commands**
+
+You can now pause and resume sandboxes directly from the CLI. The new commands take a sandbox ID:
+
+```bash
+e2b sandbox pause <sandboxID>
+e2b sandbox resume <sandboxID>
+```
+
+**Template tags API**
+
+A new `getTags` method in JavaScript, `get_tags` in Python, lets you list all tags for a template, returning each tag's name, build ID, and creation date. [Read more about template tags](/docs/template/tags).
+
+**Recursive directory listing**
+
+The `listDir` filesystem method now supports a `depth` parameter (1 to 10) for recursively listing subdirectory contents in a single call. See the [filesystem docs](/docs/filesystem).
+
+**CLI piping support**
+
+The E2B CLI now supports piping, so you can compose its commands with other tools in your shell workflows.
+
+## Updates
+
+**Default limit for CLI `sandbox list`**
+
+The `sandbox list` command now defaults to returning up to 1,000 results and prints a note when results are truncated. Pass `--limit 0` for no limit.
+
+**API timeout responses changed from 503 to 408**
+
+Requests that exceed the server timeout now return `408 Request Timeout` instead of `503 Service Unavailable`, making it easier to distinguish timeouts from server errors.
+
+## Bug fixes
+
+- Dotfiles such as `.env` and `.gitignore` are now correctly included when uploading template files; previously, glob defaults excluded them.
+- The Python SDK's async HTTP transport is now scoped per event loop, fixing errors when `asyncio.run()` is called multiple times or from different threads.
+- Fixed a JavaScript SDK bug where passing a `limit` to `listSandboxes` could paginate through all results instead of stopping at the requested count.
+- The JavaScript SDK now correctly passes sandbox headers when creating sandboxes, fixing creation failures in self-hosted setups.
+- The `set_timeout` error message no longer incorrectly references `Paused` when a sandbox is not found.
+
+</Update>
