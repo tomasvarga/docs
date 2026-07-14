@@ -1,0 +1,53 @@
+---
+title: "Changelog"
+sidebarTitle: "Changelog"
+description: "Product updates and new releases from E2B."
+---
+
+<Update label="July 14, 2026" description="Template build reliability fixes" tags={["Templates", "SDK"]}>
+
+## Bug fixes
+
+- Fixed an issue where template builds could silently drop files during a `COPY` step when the destination directory already existed, so `COPY` now merges into existing directories the way Docker does (see [Template quickstart](/docs/template/quickstart)).
+- Fixed template builds occasionally producing sandboxes with less free disk than expected after an unclean host restart, so the free space calculation is now accurate.
+- Fixed template builds reporting a failed step as successful under a rare race, so failing build commands now consistently surface the underlying error.
+
+</Update>
+
+<Update label="July 13, 2026" description="SDK integration attribution, SSO teams, template build fixes">
+
+## New features
+
+**Set-once integration attribution in the SDKs**
+
+Integrations that wrap the E2B SDK can now tag every request with a single call at startup, `ConnectionConfig.setIntegration()` in JavaScript and `ConnectionConfig.set_integration()` in Python, instead of threading an `integration` option through each connection. The identifier is added to the `User-Agent` header on all outgoing requests, and an explicitly provided `User-Agent` still takes precedence. The old per-call `integration` option is deprecated.
+
+**Enterprise SSO teams**
+
+Users signing in through an enterprise SSO connection are now automatically enrolled in the E2B team(s) mapped to their identity provider organization instead of getting a personal team. SSO-managed teams cannot be modified by their members, keeping team membership in sync with the upstream directory. Reach out to E2B to enable SSO for your organization: see [Support](/docs/support).
+
+## Updates
+
+**Access token cutoff rollout**
+
+The API and the Docker registry proxy used for V1 template builds can now reject `E2B_ACCESS_TOKEN` authentication per user, ahead of the August 1, 2026 removal. Move any remaining scripts and CI to API keys before then. See [Access token deprecation](/docs/migration/access-token-deprecation).
+
+**Docker-compatible template layer extraction**
+
+Template layer extraction now runs the same way Docker's daemon does, so images that use relative symlinks pointing outside the layer directory (for example, Nix store optimization links) build correctly instead of failing with an `invalid symlink` error. As part of the change, an unusual layer construct that Docker itself does not support is no longer supported either, keeping E2B builds consistent with Docker. See [Template quickstart](/docs/template/quickstart).
+
+**Template V2 detection with stacked SDK user agents**
+
+The template builder now correctly parses requests that carry multiple SDK `User-Agent` values, a case that previously crashed the version check used to route between the beta and GA builders. Wrappers and proxies that append their own agent no longer break template builds. See [Template V2 migration](/docs/migration/template-v2).
+
+## Bug fixes
+
+- Fixed a networking regression where resumed sandboxes could silently drop packets for several seconds after resuming; resumed sandboxes now reconnect to the network immediately (see [Sandbox persistence](/docs/sandbox/persistence)).
+- Fixed a deadlock that could hang sandbox startup when a client cancelled the initialization request mid-flight.
+- Suppressed misleading "cancelled" errors that could appear during rapid sandbox startup retries.
+- Hardened sandbox request signature validation with a constant-time comparison to prevent timing-based signature disclosure.
+- Corrected the Python SDK docstring for `TemplateBuilder.apt_install(no_install_recommends=...)`: the parameter skips recommended packages when `True`, matching apt's own `--no-install-recommends` flag rather than the inverted description that shipped previously.
+- Fixed an issue where an out-of-sync internal record could prevent an expired sandbox from being cleaned up on schedule.
+- Reliability and security hardening across platform services, including dependency and base image CVE patches.
+
+</Update>
