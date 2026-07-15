@@ -1,0 +1,31 @@
+---
+title: "Changelog"
+description: "Weekly updates on what shipped in E2B"
+rss: true
+---
+
+<Update label="July 14, 2026" description="Storage, sandbox reliability, and template build fixes" tags={["Sandboxes", "Templates", "Self-hosted"]}>
+
+## New features
+
+**Per-role storage URLs for self-hosted deployments**
+
+Self-hosted deployments can now point templates and the build cache at different storage backends by setting `TEMPLATE_STORAGE_URL` and `BUILD_CACHE_STORAGE_URL` to full destination URLs, including `s3://`, `gs://`, and `file://` schemes. Existing bucket and provider environment variables continue to work unchanged. ([#3246](https://github.com/e2b-dev/infra/pull/3246))
+
+## Updates
+
+**Compressed uploads for AWS storage**
+
+Self-hosted deployments backed by AWS S3 can now upload template layers with the same compressed transfer path already used for other providers, cutting bandwidth on large template builds. ([#3232](https://github.com/e2b-dev/infra/pull/3232))
+
+## Bug fixes
+
+- Fixed an issue where a resumed sandbox could silently drop outbound traffic until its network cache re-resolved, causing stalled connections right after resume. ([#3271](https://github.com/e2b-dev/infra/pull/3271))
+- Fixed a rare deadlock in [sandbox command execution](/docs/commands) where cancelling a request while a command was starting could leave the call hung. ([#3256](https://github.com/e2b-dev/infra/pull/3256))
+- Fixed [template build](/docs/template/build) failures caused by incorrect compressed uploads and cache handling for template layers. ([#3231](https://github.com/e2b-dev/infra/pull/3231))
+- Fixed an issue where creating a template could fail with a stale lock error when a previous build had exited without cleaning up. ([#3217](https://github.com/e2b-dev/infra/pull/3217))
+- Fixed [template builds](/docs/template/build) unpacking OCI image layers so that whiteouts and permissions match the behavior of the Docker daemon. ([#3215](https://github.com/e2b-dev/infra/pull/3215))
+- Fixed an issue where a sandbox could remain accounted for after being removed, keeping it in the paused list until the next reconciliation. ([#3199](https://github.com/e2b-dev/infra/pull/3199))
+- Reliability and security hardening across platform services, including dependency and base image CVE patches.
+
+</Update>
