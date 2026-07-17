@@ -7,6 +7,8 @@ You can upload data to the sandbox using the `files.write()` method.
 
 ## Upload single file
 
+Read the file from your local filesystem and pass its contents to `files.write()`.
+
 <CodeGroup>
 ```js JavaScript & TypeScript
 import fs from 'fs'
@@ -28,6 +30,19 @@ sandbox = Sandbox.create()
 with open("path/to/local/file", "rb") as file:
   # Upload file to sandbox
   sandbox.files.write("/path/in/sandbox", file)
+```
+</CodeGroup>
+
+The upload has a default request timeout of 60 seconds. If you're uploading large files that take longer to transfer, override it by passing `requestTimeoutMs` (JavaScript & TypeScript) or `request_timeout` (Python).
+
+<CodeGroup>
+```js JavaScript & TypeScript
+// Override the default 60 second request timeout with 120 seconds
+await sandbox.files.write('/path/in/sandbox', content, { requestTimeoutMs: 120_000 })
+```
+```python Python
+# Override the default 60 second request timeout with 120 seconds
+sandbox.files.write("/path/in/sandbox", file, request_timeout=120)
 ```
 </CodeGroup>
 
