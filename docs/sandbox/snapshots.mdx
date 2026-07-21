@@ -198,6 +198,6 @@ If you can express the state you need as a declarative template build, you'll ge
 
 - **Checkpointing agent work** — an AI agent has loaded data and produced partial results in memory. Snapshot it so you can resume or fork from that point later.
 - **Rollback points** — snapshot before a risky or expensive operation (running untrusted code, applying a migration, refactoring a web app). If it fails, rollback - spawn a fresh sandbox from the snapshot before the operation happened.
-- **Forking workflows** — spawn multiple sandboxes from the same snapshot to explore different approaches in parallel.
+- **Forking workflows** — spawn multiple sandboxes from the same snapshot to explore different approaches in parallel. To snapshot and spawn copies in a single call, see [Forking](/docs/sandbox/fork).
 - **Cached sandboxes** — avoid repeating expensive setup by snapshotting a sandbox that has already loaded a large dataset or started a long-running process.
 - **Sharing state** — one user or agent configures an environment interactively, snapshots it, and others start from that exact state.
