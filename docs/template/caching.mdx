@@ -8,7 +8,7 @@ Each layer is cached based on the command and its inputs (e.g., files copied, co
 If a layer command is unchanged and its inputs are the same as in any previous build, we reuse the cached layer instead of rebuilding it.
 
 This significantly speeds up the build process, especially for large templates with many layers.
-The cache is scoped to the team, so even if you have multiple templates, they can share the same cache if they have identical layers.
+The cache is scoped to the project, so even if you have multiple templates, they can share the same cache if they have identical layers.
 
 ## Invalidation
 You can invalidate the caches only partially, or for the whole template.

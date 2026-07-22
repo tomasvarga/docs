@@ -5,14 +5,14 @@ sidebarTitle: Lifecycle events webhooks
 
 Webhooks provide a way for notifications to be delivered to an external web server whenever certain sandbox lifecycle events occur. 
 This allows you to receive real-time updates about sandbox creation, updates, and termination without having to poll the API.
-All webhook requests require authentication using your team [API key](/docs/api-key#where-to-find-api-key).
+All webhook requests require authentication using your project [API key](/docs/api-key#where-to-find-api-key).
 
 ## Webhook management
 
 ### Register webhook
 
 Register a new webhook to receive sandbox lifecycle events.
-The webhook will be registered for the team ID associated with your API key.
+The webhook will be registered for the project associated with your API key.
 All events specified during webhook creation will be sent to URL provided during registration with [following payload](#webhook-payload).
 
 <CodeGroup>
@@ -66,7 +66,7 @@ if resp.status_code == 201:
 
 ### List webhooks
 
-List all registered webhooks for your team.
+List all registered webhooks for your project.
 
 <CodeGroup>
 ```js JavaScript & TypeScript
@@ -106,7 +106,7 @@ if resp.status_code == 200:
 
 ### Get webhook configuration
 
-Retrieve the current webhook configuration for your team.
+Retrieve the current webhook configuration for your project.
 
 <CodeGroup>
 ```js JavaScript & TypeScript

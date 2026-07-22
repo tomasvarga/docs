@@ -97,21 +97,21 @@ template.from_base_image()  # e2bdev/base
 
 A sandbox gets its CPU and memory from the template it's built on. A sandbox built from `base` starts with **2 vCPU and 512 MiB of RAM**.
 
-You can override CPU and memory when you [build a template](/docs/template/build) (`cpuCount`/`cpu_count`, `memoryMB`/`memory_mb`). Disk size is not a default you set per sandbox; it's determined by your team's tier limit and applied at build time (see [Build limits](/docs/template/quickstart#build-limits)).
+You can override CPU and memory when you [build a template](/docs/template/build) (`cpuCount`/`cpu_count`, `memoryMB`/`memory_mb`). Disk size is not a default you set per sandbox; it's determined by your project's tier limit and applied at build time (see [Build limits](/docs/template/quickstart#build-limits)).
 
 ### Build from existing template
 
-Extend an existing template from your team or organization:
+Extend an existing template from your project or organization:
 
 <CodeGroup>
 
 ```typescript JavaScript & TypeScript
-template.fromTemplate("my-template"); // Your team's template
+template.fromTemplate("my-template"); // Your project's template
 template.fromTemplate("acme/other-template"); // Full namespaced reference
 ```
 
 ```python Python
-template.from_template("my-template")  # Your team's template
+template.from_template("my-template")  # Your project's template
 template.from_template("acme/other-template")  # Full namespaced reference
 ```
 

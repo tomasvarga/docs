@@ -48,17 +48,17 @@ Before a name is used, it's trimmed of surrounding whitespace and lowercased. Th
 
 Uppercase letters are accepted on input and lowercased automatically, so `My-Template` and `my-template` refer to the same name. Any other character (spaces inside the name, dots, slashes, and so on) is rejected.
 
-## Team-local naming
+## Project-local naming
 
-Template names are scoped to your team. This means:
+Template names are scoped to your project. This means:
 
-- Your template named `my-app` is stored as `your-team-slug/my-app`
-- You can reference it simply as `my-app` within your team
-- Other teams can have their own `my-app` template without conflict
-- Public templates should be referenced using the full namespaced format (`team-slug/template-name`)
+- Your template named `my-app` is stored as `your-project-slug/my-app`
+- You can reference it simply as `my-app` within your project
+- Other projects can have their own `my-app` template without conflict
+- Public templates should be referenced using the full namespaced format (`project-slug/template-name`)
 
 <Info>
-**Backwards Compatibility**: Existing public templates remain accessible without the team slug prefix. New public templates should be referenced using the full namespaced format (`team-slug/template-name`).
+**Backwards Compatibility**: Existing public templates remain accessible without the project slug prefix. New public templates should be referenced using the full namespaced format (`project-slug/template-name`).
 </Info>
 
 ## Common use cases
@@ -149,7 +149,7 @@ When building variants with the same template definition but different CPU/RAM c
 
 ## Checking name availability
 
-You can check if a name is already in use within your team with the `exists` method.
+You can check if a name is already in use within your project with the `exists` method.
 
 <CodeGroup>
 
@@ -173,4 +173,4 @@ print(f"Name {'is taken' if exists else 'is available'}")
 
 1. **Use descriptive names**: Choose names that clearly indicate the template's purpose or configuration
 2. **Use tags for versioning**: Instead of baking version numbers into names, use [tags](/docs/template/tags) for version management (e.g., `myapp:v1`, `myapp:v2`)
-3. **Use consistent naming**: Establish a naming convention for your team and stick to it
+3. **Use consistent naming**: Establish a naming convention for your project and stick to it

@@ -4,7 +4,7 @@ sidebarTitle: Lifecycle events API
 ---
 
 The lifecycle API provides RESTful endpoints to request the latest sandbox lifecycle events. This allows you to track when sandboxes are created, paused, resumed, updated, snapshotted, or killed, along with metadata.
-All requests require authentication using your team [API key](/docs/api-key#where-to-find-api-key).
+All requests require authentication using your project [API key](/docs/api-key#where-to-find-api-key).
 
 ## Retention
 
@@ -34,7 +34,7 @@ const resp1 = await fetch(
 )
 const sandboxEvents = await resp1.json()
 
-// Get the latest 10 events for all sandboxes associated with the team
+// Get the latest 10 events for all sandboxes associated with the project
 const resp2 = await fetch(
   'https://api.e2b.app/events/sandboxes?limit=10',
   {
@@ -117,7 +117,7 @@ resp1 = requests.get(
 )
 sandbox_events = resp1.json()
 
-# Get the latest 10 events for all sandboxes associated with the team
+# Get the latest 10 events for all sandboxes associated with the project
 resp2 = requests.get(
     "https://api.e2b.app/events/sandboxes?limit=10",
     headers={
