@@ -410,6 +410,48 @@ paths:
       operationId: postSandboxResume
     servers:
     - *id001
+  /sandboxes/{sandboxID}/fork:
+    post:
+      summary: Fork sandbox
+      description: 'Fork the sandbox: checkpoint the running sandbox in place (it
+        is briefly paused, snapshotted with its full memory state, and resumed on
+        its node, keeping its ID and expiration untouched) and create count new sandboxes
+        from that snapshot. Returns one result per requested fork, each carrying either
+        the created sandbox or the error that prevented it from starting. A non-201
+        status means the request failed before any fork was attempted.'
+      tags:
+      - Sandboxes
+      security:
+      - ApiKeyAuth: []
+      parameters:
+      - $ref: '#/components/parameters/sandboxID'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SandboxForkRequest'
+      responses:
+        '201':
+          description: The sandbox was snapshotted and the forks were attempted; each
+            entry reports one fork's outcome
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SandboxForkResult'
+        '409':
+          $ref: '#/components/responses/409'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+      operationId: postSandboxFork
+    servers:
+    - *id001
   /sandboxes/{sandboxID}/connect:
     post:
       summary: Connect to sandbox
@@ -591,6 +633,13 @@ paths:
         schema:
           type: string
           description: Filter snapshots by source sandbox ID
+      - name: name
+        in: query
+        description: Filter snapshots by name or ID, optionally tag-qualified (e.g.
+          "my-snapshot", "my-team/my-snapshot" or "my-snapshot:v1").
+        required: false
+        schema:
+          type: string
       - $ref: '#/components/parameters/paginationLimit'
       - $ref: '#/components/parameters/paginationNextToken'
       responses:
@@ -2767,6 +2816,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    '410':
+      description: Gone
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
     '500':
       description: Server error
       content:
@@ -4173,11 +4228,38 @@ components:
           $ref: '#/components/schemas/EnvVars'
         mcp:
           $ref: '#/components/schemas/Mcp'
+        iam:
+          $ref: '#/components/schemas/SandboxIam'
         volumeMounts:
           type: array
           items:
             $ref: '#/components/schemas/SandboxVolumeMount'
       type: object
+    SandboxIam:
+      type: object
+      description: Sandbox workload identity configuration. A non-empty, valid tokens
+        map enables workload identity for the sandbox.
+      properties:
+        tokens:
+          $ref: '#/components/schemas/SandboxIamTokens'
+    SandboxIamTokens:
+      type: object
+      description: Named workload-token definitions, keyed by a caller-chosen token
+        name.
+      additionalProperties:
+        $ref: '#/components/schemas/SandboxIamToken'
+    SandboxIamToken:
+      type: object
+      required:
+      - audience
+      - tokenType
+      properties:
+        audience:
+          type: string
+          description: Audience of the workload token, stored exactly as provided.
+        tokenType:
+          type: string
+          description: Workload token type.
     ResumedSandbox:
       properties:
         timeout:
@@ -4241,6 +4323,35 @@ components:
             Resume it with an explicit request (connect or resume); auto-resume, which
             can be triggered by arbitrary traffic, refuses such a sandbox. Defaults
             to true.
+    SandboxForkRequest:
+      type: object
+      properties:
+        timeout:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 15
+          description: Time to live for the new forked sandboxes in seconds.
+        count:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 100
+          default: 1
+          description: Number of forked sandboxes to create. All forks boot from the
+            same snapshot, so the snapshot is captured once regardless of count. Each
+            fork succeeds or fails independently; the outcome of each is reported
+            in its entry of the response list.
+    SandboxForkResult:
+      type: object
+      description: 'Result of one requested fork. Exactly one of sandbox or error
+        is set: sandbox when the fork started successfully, error when it failed to
+        start.'
+      properties:
+        sandbox:
+          $ref: '#/components/schemas/Sandbox'
+        error:
+          $ref: '#/components/schemas/Error'
     TeamMetric:
       description: Team metric with timestamp
       required:
@@ -4626,6 +4737,7 @@ components:
             (e.g. "my-template" or "my-template:v1"). If tag is included, it will
             be treated as if the tag was provided in the tags array.
           type: string
+          maxLength: 128
         tags:
           type: array
           description: Tags to assign to the template build
@@ -4634,6 +4746,7 @@ components:
         alias:
           description: Alias of the template. Deprecated, use name instead.
           type: string
+          maxLength: 128
           deprecated: true
         teamID:
           deprecated: true
