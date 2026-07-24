@@ -145,7 +145,8 @@
               "docs/sandbox/connect",
               "docs/sandbox/pty",
               "docs/sandbox/ssh-access",
-              "docs/sandbox/secured-access"
+              "docs/sandbox/secured-access",
+              "docs/sandbox/workload-identity"
             ]
           },
           {

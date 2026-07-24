@@ -1,0 +1,64 @@
+---
+title: "Workload identity"
+sidebarTitle: Workload identity
+description: "Give sandbox workloads short-lived identity tokens instead of long-lived secrets."
+---
+
+Workload identity lets code running in a sandbox prove who it is with short-lived identity tokens instead of long-lived credentials.
+Rather than baking cloud API keys into a template or passing them as environment variables, you define named workload tokens when creating the sandbox.
+Each token is scoped to an audience — the external service that will verify it, such as AWS STS — and the service can exchange the token for its own temporary credentials.
+
+<Note>
+Workload identity is currently available for selected teams. If it's not enabled for your team, sandbox creation with the `iam` option fails with `Sandbox IAM workload tokens are not available for your team.` — [contact us](/docs/support) to get access.
+</Note>
+
+## Configure
+
+Pass the `iam` option when creating a sandbox. A non-empty `tokens` map enables workload identity for the sandbox.
+Each entry maps a token name you choose to a token definition, which you can create with the `Secret` helper.
+
+<CodeGroup>
+```js JavaScript & TypeScript
+import { Sandbox, Secret } from 'e2b'
+
+const sandbox = await Sandbox.create({
+  iam: {
+    tokens: {
+      aws: Secret.iamToken({
+        audience: 'sts.amazonaws.com',
+        tokenType: 'JWT-SVID',
+      }),
+    },
+  },
+})
+```
+```python Python
+from e2b import Sandbox, Secret
+
+sandbox = Sandbox.create(
+    iam={
+        "tokens": {
+            "aws": Secret.iam_token(
+                audience="sts.amazonaws.com",
+                token_type="JWT-SVID",
+            ),
+        },
+    },
+)
+```
+</CodeGroup>
+
+You can also pass plain token definitions instead of using the `Secret` helper — `{ audience, tokenType }` objects in JavaScript, `{"audience": ..., "token_type": ...}` dicts in Python.
+
+## Token definitions
+
+Each token definition has two fields:
+
+| Field | Description |
+|-------|-------------|
+| `audience` | Required. The audience of the workload token — the identifier of the service that will verify it. Stored exactly as provided. |
+| `tokenType` (JavaScript) / `token_type` (Python) | Required. The workload token type. `"JWT-SVID"` is the only type supported today; more types may be added later. |
+
+Token names (the keys of the `tokens` map) are yours to choose and must not be empty. A sandbox can define up to **5** workload tokens.
+
+Creating a sandbox without the `iam` option, or with an empty `tokens` map, leaves workload identity disabled.
