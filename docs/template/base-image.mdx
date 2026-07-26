@@ -31,19 +31,22 @@ template = Template(
 
 Every template starts with a base image that provides the foundation for your sandbox environment.
 
-<Warning>
-E2B currently supports only Debian-based images. Your base image must be Debian or a Debian derivative (e.g., `debian`, `ubuntu`, `python`, `node`). Alpine, RedHat-based, and other non-Debian distributions are not supported.
-</Warning>
+<Note>
+E2B identifies your base image from its `/etc/os-release` and supports **Debian/Ubuntu, Fedora and the RHEL family (including Rocky Linux and AlmaLinux), Arch, and Alpine**. Images with no identifiable distribution — no `/etc/os-release`, e.g. `scratch`, distroless, or pure `nixos/nix` — and minimal images missing required packages (e.g. RHEL UBI-minimal with restricted repositories) are not supported and fail the build with a clear error naming the reason.
+</Note>
 
 ### Predefined base images
 
-Use convenience methods for common base images with Ubuntu, Debian, Python, Node.js, or Bun:
+Use convenience methods for common base images with Ubuntu, Debian, Fedora, Alpine, Arch, Python, Node.js, or Bun:
 
 <CodeGroup>
 
 ```typescript JavaScript & TypeScript
 template.fromUbuntuImage("22.04"); // ubuntu:22.04
 template.fromDebianImage("stable-slim"); // debian:stable-slim
+template.fromFedoraImage("42"); // fedora:42
+template.fromAlpineImage("3.22"); // alpine:3.22
+template.fromArchImage("base-devel"); // archlinux:base-devel
 template.fromPythonImage("3.13"); // python:3.13
 template.fromNodeImage("lts"); // node:lts
 template.fromBunImage("1.3"); // oven/bun:1.3
@@ -52,6 +55,9 @@ template.fromBunImage("1.3"); // oven/bun:1.3
 ```python Python
 template.from_ubuntu_image("22.04")  # ubuntu:22.04
 template.from_debian_image("stable-slim")  # debian:stable-slim
+template.from_fedora_image("42")  # fedora:42
+template.from_alpine_image("3.22")  # alpine:3.22
+template.from_arch_image("base-devel")  # archlinux:base-devel
 template.from_python_image("3.13")  # python:3.13
 template.from_node_image("lts")  # node:lts
 template.from_bun_image("1.3")  # oven/bun:1.3
