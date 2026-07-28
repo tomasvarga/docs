@@ -38,6 +38,37 @@ The JavaScript SDK now imports cleanly under Cloudflare Workers and other edge r
 
 </Update>
 
+<Update label="July 21, 2026" description="Sandbox forking, snapshot name filter, and template fixes" tags={["Sandboxes", "SDK", "Templates", "Self-hosted"]} rss={{ title: "Sandbox Forking & Snapshot Name Filters", description: "This week improves sandbox provisioning and snapshot workflows with in-place sandbox forking, name-based snapshot lookup, and Docker-compatible template file copying." }}>
+
+## Sandbox Forking & Snapshot Name Filters
+
+This week improves sandbox provisioning and snapshot workflows with in-place sandbox forking, name-based snapshot lookup, and Docker-compatible template file copying.
+
+### Sandbox forking
+
+You can now fork a running [sandbox](/docs/sandbox) to spin up one or more clones from its exact in-memory state. The source is briefly paused, snapshotted, and resumed with its ID and expiration untouched, while each fork is returned independently as a running sandbox or a per-fork error. Use `sandbox.fork({ count, timeoutMs })` in JavaScript SDK 2.35.0 or `sandbox.fork(count=..., timeout=...)` in Python SDK 2.34.0. ([#3202](https://github.com/e2b-dev/infra/pull/3202), [#1554](https://github.com/e2b-dev/E2B/pull/1554))
+
+### Snapshot filtering by name
+
+`Sandbox.listSnapshots()` and `Sandbox.list_snapshots()` now accept a `name` filter matching a snapshot name or ID, optionally tag-qualified such as `"my-team/my-snapshot:v1"`. It combines with the existing sandbox ID filter and returns an empty page for unknown names. Available in JavaScript SDK 2.34.0 and Python SDK 2.33.0. ([#1523](https://github.com/e2b-dev/E2B/pull/1523))
+
+### Docker-compatible template file copies
+
+The [template `copy` step](/docs/template/defining-template) now merges into existing destination directories instead of replacing them, matching Docker `COPY` semantics. Copying `src/` into an image that already has files under `/app/src/` preserves those entries and only overwrites what the source provides. ([#3283](https://github.com/e2b-dev/infra/pull/3283))
+
+### Fixes
+
+- Fixed template builds occasionally reporting a failed command stream as success, so build failures now surface reliably. ([#3281](https://github.com/e2b-dev/infra/pull/3281))
+- Fixed [template builds](/docs/template/build) sizing the root filesystem from stale free-space totals, which could leave the resized template short on space after an unclean shutdown. ([#3282](https://github.com/e2b-dev/infra/pull/3282))
+- Fixed copying a template layer when the source snapshot contained only a filesystem image and no memory state. ([#3299](https://github.com/e2b-dev/infra/pull/3299))
+- Fixed resumed sandboxes forwarding stale pre-resume log lines with their old timestamps instead of dropping them. ([#3297](https://github.com/e2b-dev/infra/pull/3297))
+- Fixed the JavaScript SDK `Template.copy()` resolving source paths against the SDK's own directory under `target: es2022` and above. ([#1539](https://github.com/e2b-dev/E2B/pull/1539))
+- Fixed the Python SDK leaking a proxy connection pool on every [volume](/docs/volumes) operation when a proxy was configured, and added connect-level retries via `E2B_CONNECTION_RETRIES`. ([#1534](https://github.com/e2b-dev/E2B/pull/1534))
+- Self-hosted: fixed the Nomad node-pool autoscaler terminating random allocations when downscaling ineligible nodes. ([#3301](https://github.com/e2b-dev/infra/pull/3301))
+- Reliability and security hardening across platform services, including dependency and base image CVE patches.
+
+</Update>
+
 <Update label="July 14, 2026" description="Storage, sandbox reliability, and template build fixes" tags={["Sandboxes", "Templates", "Self-hosted"]}>
 
 ## New features
