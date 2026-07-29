@@ -1,0 +1,82 @@
+---
+title: "Benchmarks & evals"
+description: "Run coding-agent benchmarks and evals in isolated E2B sandboxes — one sandbox per task, no cross-run contamination."
+icon: "chart-line"
+---
+
+Benchmarking a coding agent means running it against dozens or hundreds of tasks — and trusting the results. E2B gives every task its own isolated sandbox, so runs can't contaminate each other and agents can't cheat their way to a better score.
+
+## Why isolation matters
+
+Agent benchmarks have a measurement problem. A [2026 audit of nine agent benchmarks](https://debugml.github.io/cheating-agents/) found top-ranked agents reading the benchmark's hidden test files and mining git history for the future fix commit, and [Cursor's SWE-bench Pro study](https://cursor.com/blog/reward-hacking-coding-benchmarks) measured 14 percentage points of score inflation that disappeared once git history was sealed and network access cut. The same applies to your own evals: when runs share a machine, artifacts from one run — result files, caches, git state — leak into the next, and you're no longer measuring what you think you're measuring.
+
+Running each task in a fresh E2B sandbox fixes this by construction:
+
+- **Fresh filesystem per task** — no leftover results, caches, or git history from other trials
+- **Verifier runs after the agent** — tests are executed against the sandbox's end state once the agent is done, so the agent can never read them
+- **Results collected by the harness** — trajectories, test output, and rewards are downloaded from the sandbox by the harness; the agent never self-reports
+- **Parallel by default** — sandboxes start in a few hundred milliseconds, so wall-clock time is set by the slowest single task, not the sum of all of them
+
+## Run Terminal-Bench with Harbor
+
+[Harbor](https://harborframework.com) is the harness behind [Terminal-Bench](https://www.tbench.ai) — a framework for evaluating agents in containerized task environments, with E2B as a supported backend. It runs Claude Code, Codex CLI, OpenHands, and many other agents against benchmark task sets.
+
+Install Harbor with the E2B extra and set your API keys:
+
+```bash
+pip install 'harbor[e2b]'
+export E2B_API_KEY=e2b_***        # https://e2b.dev/dashboard
+export ANTHROPIC_API_KEY=sk-***   # for the Claude Code agent
+```
+
+Run the Terminal-Bench 2 sample set with Claude Code as the agent, each task in its own E2B sandbox:
+
+```bash
+harbor run \
+  --dataset terminal-bench-sample@2.0 \
+  --agent claude-code \
+  --model claude-sonnet-5 \
+  --env e2b \
+  --n-concurrent 3
+```
+
+Harbor builds an E2B template per task environment, provisions one sandbox per task, runs the agent inside it, executes the verifier against the sandbox's end state, and writes per-task results to the `jobs/` directory:
+
+```
+terminal-bench-sample • claude-code • claude-sonnet-5
+┏━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━┓
+┃ Trials ┃ Exceptions ┃  Mean ┃
+┡━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━┩
+│      3 │          0 │ 0.667 │
+└────────┴────────────┴───────┘
+
+Job Info
+Total runtime: 3m 30s
+Results written to jobs/<job-name>/result.json
+```
+
+Each trial directory contains the agent's full trajectory (`agent/trajectory.json`), the verifier's test output (`verifier/test-stdout.txt`), and the reward — all downloaded from the sandbox by the harness. Inspect any run with `harbor view jobs`.
+
+<Note>
+Harbor currently requests a 24-hour sandbox timeout when creating E2B sandboxes. On plans with a shorter maximum sandbox lifetime, sandbox creation fails with `400: Timeout cannot be greater than 1 hours`. Until this is configurable upstream, you need a plan that allows 24-hour sandboxes to run Harbor on E2B — see [sandbox lifetimes](/docs/billing) for plan limits.
+</Note>
+
+## Scale it up
+
+The same command runs the full benchmark — swap in `--dataset terminal-bench@2.0` for all 89 tasks and raise `--n-concurrent` to match your plan's [sandbox concurrency limit](/docs/billing). Harbor's registry includes many other datasets (SWE-bench-style repair, AIME, GAIA, CompileBench, and more), and the `--skill` flag injects [Agent Skills](https://github.com/anthropics/skills) into runs, which makes with/without-skill comparisons two invocations of the same command.
+
+For SWE-bench specifically, see [e2b-dev/swe-bench](https://github.com/e2b-dev/swe-bench) — a harness that evaluates SWE-bench instances inside E2B sandboxes using the official grader.
+
+## Related guides
+
+<CardGroup cols={3}>
+  <Card title="Coding Agents" icon="robot" href="/docs/use-cases/coding-agents">
+    Run Claude Code, Codex, and other agents in E2B sandboxes
+  </Card>
+  <Card title="Custom templates" icon="cube" href="/docs/template/quickstart">
+    Pre-build task environments for faster benchmark startup
+  </Card>
+  <Card title="GitHub Actions CI/CD" icon="gears" href="/docs/use-cases/ci-cd">
+    Run agent evals as part of your CI pipeline
+  </Card>
+</CardGroup>
