@@ -1,0 +1,9 @@
+<svg width="256" height="222" viewBox="0 0 256 222" fill="none" xmlns="http://www.w3.org/2000/svg">
+<style>
+  .ve-mark { fill: #000; }
+  @media (prefers-color-scheme: dark) {
+    .ve-mark { fill: #fff; }
+  }
+</style>
+<path class="ve-mark" d="m128 0 128 221.705H0z"/>
+</svg>

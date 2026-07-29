@@ -71,6 +71,7 @@
               "docs/agents/pi",
               "docs/agents/deep-agents",
               "docs/agents/open-swe",
+              "docs/agents/eve",
               "docs/agents/google-adk",
               "docs/agents/mastra",
               "docs/agents/openai-agents-sdk",
