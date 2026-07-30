@@ -17,9 +17,12 @@ Running each task in a fresh E2B sandbox fixes this by construction:
 - **Results collected by the harness** — trajectories, test output, and rewards are downloaded from the sandbox by the harness; the agent never self-reports
 - **Parallel by default** — sandboxes start in a few hundred milliseconds, so wall-clock time is set by the slowest single task, not the sum of all of them
 
-## Run Terminal-Bench with Harbor
+## Run a public benchmark
 
 [Harbor](https://harborframework.com) is the harness behind [Terminal-Bench](https://www.tbench.ai) — a framework for evaluating agents in containerized task environments, with E2B as a supported backend. It runs Claude Code, Codex CLI, OpenHands, and many other agents against benchmark task sets.
+
+<Tabs>
+<Tab title="Terminal-Bench">
 
 Install Harbor with the E2B extra and set your API keys:
 
@@ -57,9 +60,77 @@ Results written to jobs/<job-name>/result.json
 
 Each trial directory contains the agent's full trajectory (`agent/trajectory.json`), the verifier's test output (`verifier/test-stdout.txt`), and the reward — all downloaded from the sandbox by the harness. Inspect any run with `harbor view jobs`.
 
+</Tab>
+<Tab title="ReactBench">
+
+[ReactBench](https://github.com/millionco/reactbench) evaluates agents on realistic React work, with clean-room grading: the agent's sandbox runs offline, and a *separate* verifier sandbox — which the agent never had access to — grades the result with hidden tests and a pinned [React Doctor](https://github.com/millionco/react-doctor) scan. Its tasks are plain Harbor task directories, so they run on E2B with the same command shape:
+
+```bash
+git clone https://github.com/millionco/reactbench && cd reactbench
+uv sync && uv pip install 'harbor[e2b]'
+export E2B_API_KEY=e2b_***
+export ANTHROPIC_API_KEY=sk-***
+
+uv run --no-sync harbor run -p tasks/hello-react \
+  --agent claude-code \
+  --model claude-sonnet-5 \
+  --env e2b \
+  --allow-agent-host api.anthropic.com \
+  --override-memory-mb 8192 --override-cpus 4
+```
+
+Two of the flags are worth understanding:
+
+- `--allow-agent-host api.anthropic.com` — ReactBench tasks disable internet in the sandbox so agents can't look up solutions. This flag opens exactly one host, only while the agent is running; the sandbox is fully offline again before grading. It uses E2B's per-sandbox network controls under the hood.
+- `--override-memory-mb 8192 --override-cpus 4` — E2B builds templates inside a sandbox that enforces the task's resource limits (unlike `docker build`, which uses your whole machine). ReactBench's React Doctor baseline scan needs more than the task's declared 2 GB at build time.
+
+<Warning>
+E2B's Dockerfile support currently requires two behavior-preserving edits to each ReactBench task before it builds: replace the `ARG BASE_IMAGE` / `FROM ${BASE_IMAGE}` pair with the literal image reference (`FROM ghcr.io/millionco/react-bench-base:latest`) in both `environment/Dockerfile` and `tests/Dockerfile`, and add `RUN mkdir -p /tests` before the `COPY ... /tests/` line in `tests/Dockerfile`. The resulting image is identical to what Docker builds, but the edits change Harbor's task checksums — fine for your own measurements, not for official leaderboard submissions.
+</Warning>
+
+</Tab>
+</Tabs>
+
 <Note>
 Harbor currently requests a 24-hour sandbox timeout when creating E2B sandboxes. On plans with a shorter maximum sandbox lifetime, sandbox creation fails with `400: Timeout cannot be greater than 1 hours`. Until this is configurable upstream, you need a plan that allows 24-hour sandboxes to run Harbor on E2B — see [sandbox lifetimes](/docs/billing) for plan limits.
 </Note>
+
+## Bring your own eval
+
+Public benchmarks measure general capability, but the evals that matter most are yours: your bug patterns, your stack, your acceptance criteria. Harbor tasks are plain directories — the same format ReactBench uses above — and writing one takes a few files. Scaffold it with:
+
+```bash
+harbor init -t your-org/fix-duration-parser
+```
+
+```text
+fix-duration-parser/
+├── task.toml          Metadata, timeouts, network policy
+├── instruction.md     The prompt the agent sees
+├── environment/       Dockerfile defining the task environment
+├── tests/             Held-out verifier (test.sh + pytest specs)
+└── solution/          Reference solution (solve.sh, held out from the agent)
+```
+
+The layout enforces the integrity rules from above: the agent only ever sees `instruction.md` and the environment — `tests/` and `solution/` stay on the host until the harness injects the verifier after the agent finishes.
+
+As an example, this task drops a small Python module with a bug into `/app`, and `instruction.md` is a bug report: `parse_duration("1h30m")` raises, but should return `5400`. The held-out tests then check both directions, SWE-bench style: *fail-to-pass* tests prove the bug is fixed, and *pass-to-pass* tests prove the existing behavior (including all the inputs that must still be rejected) didn't regress.
+
+Before spending money on agents, check that the eval itself works — Harbor ships two built-in agents for exactly this: run your task once with the known-correct solution applied (if that doesn't pass, your tests are broken) and once with nothing done at all (if that passes, your tests accept anything). Only then run a real agent.
+
+```bash
+# 'oracle' applies your solution/solve.sh — the correct fix MUST pass
+harbor run -p fix-duration-parser -a oracle -e e2b       # reward 1.0 — 24s
+
+# 'nop' does nothing — an empty attempt MUST fail
+harbor run -p fix-duration-parser -a nop -e e2b          # reward 0.0 — 8s
+
+# the eval is sound — now measure a real agent
+harbor run -p fix-duration-parser -a claude-code \
+  -m claude-sonnet-5 -e e2b                              # reward 1.0 — 38s
+```
+
+Each run provisions a fresh sandbox from your task's Dockerfile — the E2B template is built once on the first run and cached, so subsequent trials round-trip in seconds.
 
 ## Scale it up
 
